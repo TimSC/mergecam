@@ -71,7 +71,7 @@ class GLReadPbo(object):
 		self.capSize = capSize
 
 		if self.pboSupported:
-			#Create PDO handles
+			#Create PBO handles
 			self.destpbo = glGenBuffers(2)
 
 			#Initialise memory space
@@ -94,12 +94,12 @@ class GLReadPbo(object):
 		self.index = (self.index + 1) % 2
 		self.nextIndex = (self.index + 1) % 2
 
-		#Request a frame on one PDO
+		#Request a frame on one PBO
 		glReadBuffer(GL_FRONT)
 		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[self.index])
 		glReadPixels(0, 0, self.capSize[0], self.capSize[1], GL_RGBA, GL_UNSIGNED_BYTE, 0)
 		
-		#Read back the other PDO
+		#Read back the other PBO
 		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[self.nextIndex])
 		try:
 			buffPtr = ctypes.cast(glMapBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY), ctypes.POINTER(ctypes.c_ubyte))
