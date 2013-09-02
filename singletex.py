@@ -51,10 +51,9 @@ def run():
 	v4l2 = v4l2cap.V4L2()
 	v4l2.Start()
 
-	pbo = gltexture.GLReadPbo()
+	pbo = gltexture.GLReadPbo(SCREEN_SIZE)
 
 	while True:
-		pbo.Prep(SCREEN_SIZE)
 
 		time_passed = clock.tick()
 		time_passed_seconds = time_passed / 1000.

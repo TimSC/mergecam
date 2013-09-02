@@ -64,41 +64,33 @@ class GLTexture(object):
 		glEnd()
 
 class GLReadPbo(object):
-	def __init__(self):
+	def __init__(self, capSize):
 		self.pboSupported = pbo.glInitPixelBufferObjectARB()
 		self.destpbo = glGenBuffers(2)
 		self.index = 0
 
 		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[0])
-		glBufferData(pbo.GL_PIXEL_PACK_BUFFER_ARB, 800*600*4*2, None, GL_STREAM_READ);
+		glBufferData(pbo.GL_PIXEL_PACK_BUFFER_ARB, capSize[0]*capSize[1]*4, None, GL_STREAM_READ);
 		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[1])
-		glBufferData(pbo.GL_PIXEL_PACK_BUFFER_ARB, 800*600*4*2, None, GL_STREAM_READ);
+		glBufferData(pbo.GL_PIXEL_PACK_BUFFER_ARB, capSize[0]*capSize[1]*4, None, GL_STREAM_READ);
+		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, 0)
 
 	def __del__(self):
-		pass
-
-	def Prep(self, capSize):
-		pass
+		glDeleteBuffers(len(self.destpbo), self.destpbo)
+		self.destpbo = None
 
 	def Read(self, capSize):
 		if not self.pboSupported:
 			return ReadSlow()
 
-		#More info: http://www.songho.ca/opengl/gl_pbo.html
+		#Inspired by: http://www.songho.ca/opengl/gl_pbo.html
 		
 		self.index = (self.index + 1) % 2
 		self.nextIndex = (self.index + 1) % 2
 
-		print self.index, self.nextIndex
-
 		glReadBuffer(GL_FRONT)
 		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[self.index])
-
-		#print "x"
-		glReadPixels(0, 0, capSize[0], capSize[1], GL_BGRA, GL_UNSIGNED_BYTE, 0, debug=True)
-		#xa = np.fromstring(px, np.uint8).reshape((capSize[1],capSize[0],4))
-		#xa = xa[::-1,:] #Flip vertically
-		#print "y"
+		glReadPixels(0, 0, capSize[0], capSize[1], GL_BGRA, GL_UNSIGNED_BYTE, 0)
 		
 		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[self.nextIndex])
 
@@ -112,14 +104,10 @@ class GLReadPbo(object):
 			print err
 
 		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, 0)
-		#glDeleteBuffers(1, [self.destpbo])
-		#self.destpbo = None
 		return None		
 
 	def ReadSlow(self, capSize):
-
 		glReadBuffer(GL_FRONT)
-		#glBindBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, 0)
 		px = glReadPixels(0, 0, capSize[0], capSize[1], GL_RGBA, GL_UNSIGNED_BYTE)
 		xa = np.fromstring(px, np.uint8).reshape((capSize[1],capSize[0],4))
 		xa = xa[::-1,:] #Flip vertically
