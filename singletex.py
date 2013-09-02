@@ -10,6 +10,7 @@ import pygame, ctypes, time
 from pygame.locals import *
 import numpy as np
 from scipy import misc
+import cv2
 
 ### OpenGL Utility Functions
 
@@ -24,7 +25,7 @@ def resize(width, height):
 
 def init():
 	
-	glEnable(GL_DEPTH_TEST)
+	glDisable(GL_DEPTH_TEST)
 	glDepthFunc(GL_LEQUAL)
 	glClearColor(1.0, 1.0, 1.0, 0.0)
 
@@ -70,6 +71,11 @@ def run():
 		tex = gltexture.GLTexture()
 		tex.SetFromString(img, v4l2.size_x, v4l2.size_y)
 
+		imgNp = np.fromstring(img, np.uint8)
+		imgNp = imgNp.reshape((v4l2.size_y, v4l2.size_x, 3))
+		detector = cv2.FastFeatureDetector(threshold=50)
+		out = detector.detect(cv2.cvtColor(imgNp,cv2.COLOR_BGR2GRAY))
+
 		# Clear the screen, and z-buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 						
@@ -81,6 +87,18 @@ def run():
 			0., 1., 0.); # up
 
 		tex.Draw()
+
+		for pt in out:
+			glDisable(GL_TEXTURE_2D)
+			glColor4f(1.,0.,0.,1.)
+			glBegin(GL_LINES)
+			x = pt.pt[0] * 10. / v4l2.size_x - 5.
+			y = pt.pt[1] * 10. / v4l2.size_y - 5.
+			glVertex(-0.3+x,0.+y,0.)
+			glVertex(0.3+x,0.+y,0.)
+			glVertex(0.+x,-0.3+y,0.)
+			glVertex(0.+x,0.3+y,0.)
+			glEnd()
 
 		# Show the screen
 		pygame.display.flip()
