@@ -74,6 +74,8 @@ def run():
 		imgNp = np.fromstring(img, np.uint8)
 		imgNp = imgNp.reshape((v4l2.size_y, v4l2.size_x, 3))
 		detector = cv2.FastFeatureDetector(threshold=50)
+		#detector = cv2.SimpleBlobDetector()
+		#detector = cv2.MserFeatureDetector()
 		out = detector.detect(cv2.cvtColor(imgNp,cv2.COLOR_BGR2GRAY))
 
 		# Clear the screen, and z-buffer
@@ -93,7 +95,7 @@ def run():
 			glColor4f(1.,0.,0.,1.)
 			glBegin(GL_LINES)
 			x = pt.pt[0] * 10. / v4l2.size_x - 5.
-			y = pt.pt[1] * 10. / v4l2.size_y - 5.
+			y = - pt.pt[1] * 10. / v4l2.size_y + 5.
 			glVertex(-0.3+x,0.+y,0.)
 			glVertex(0.3+x,0.+y,0.)
 			glVertex(0.+x,-0.3+y,0.)
