@@ -97,7 +97,7 @@ class GLReadPbo(object):
 		#Request a frame on one PDO
 		glReadBuffer(GL_FRONT)
 		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[self.index])
-		glReadPixels(0, 0, self.capSize[0], self.capSize[1], GL_BGRA, GL_UNSIGNED_BYTE, 0)
+		glReadPixels(0, 0, self.capSize[0], self.capSize[1], GL_RGBA, GL_UNSIGNED_BYTE, 0)
 		
 		#Read back the other PDO
 		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[self.nextIndex])
@@ -109,7 +109,6 @@ class GLReadPbo(object):
 			glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, 0)
 
 			buffRect = buffNp.reshape((self.capSize[1],self.capSize[0],4))
-			#buffRect = buffRect[:,:,[2,1,0]] #Reorder color planes
 			return buffRect
 		except Exception as err:
 			print err
@@ -122,6 +121,6 @@ class GLReadPbo(object):
 		glReadBuffer(GL_FRONT)
 		px = glReadPixels(0, 0, self.capSize[0], self.capSize[1], GL_RGBA, GL_UNSIGNED_BYTE)
 		xa = np.fromstring(px, np.uint8).reshape((self.capSize[1],self.capSize[0],4))
-		xa = xa[::-1,:,:] #Flip vertically
+		xa = xa
 		return xa
 
