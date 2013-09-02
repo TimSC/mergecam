@@ -104,10 +104,13 @@ class GLReadPbo(object):
 		try:
 			buffPtr = ctypes.cast(glMapBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY), ctypes.POINTER(ctypes.c_ubyte))
 			buffArr = np.ctypeslib.as_array(buffPtr, (self.capSize[0]*self.capSize[1]*4,))
-			xa = np.fromstring(buffArr, np.uint8, self.capSize[0]*self.capSize[1]*4).reshape((self.capSize[1],self.capSize[0],4))
+			buffNp = np.fromstring(buffArr, np.uint8, self.capSize[0]*self.capSize[1]*4)
 			glUnmapBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB);
 			glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, 0)
-			return xa
+
+			buffRect = buffNp.reshape((self.capSize[1],self.capSize[0],4))
+			#buffRect = buffRect[:,:,[2,1,0]] #Reorder color planes
+			return buffRect
 		except Exception as err:
 			print err
 
@@ -119,6 +122,6 @@ class GLReadPbo(object):
 		glReadBuffer(GL_FRONT)
 		px = glReadPixels(0, 0, self.capSize[0], self.capSize[1], GL_RGBA, GL_UNSIGNED_BYTE)
 		xa = np.fromstring(px, np.uint8).reshape((self.capSize[1],self.capSize[0],4))
-		xa = xa[::-1,:] #Flip vertically
+		xa = xa[::-1,:,:] #Flip vertically
 		return xa
 
