@@ -11,9 +11,6 @@ from pygame.locals import *
 import numpy as np
 from scipy import misc
 
-import OpenGL.raw.GL as rawgl
-import OpenGL.GL.ARB.pixel_buffer_object as pbo
-
 ### OpenGL Utility Functions
 
 def resize(width, height):
@@ -54,8 +51,7 @@ def run():
 	v4l2 = v4l2cap.V4L2()
 	v4l2.Start()
 
-	pboSupported = pbo.glInitPixelBufferObjectARB()
-	print "pboSupported", pboSupported
+	pbo = gltexture.GLReadPbo()
 
 	while True:
 		
@@ -91,31 +87,8 @@ def run():
 
 		del tex
 
-		output_texture = glGenTextures(1)
-		glBindTexture(GL_TEXTURE_2D, output_texture)
-		# set basic parameters
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-
-		data = np.zeros((v4l2.size_x*v4l2.size_y,4),np.uint8)
-		dest_pbo = glGenBuffers(1)
-		glBindBuffer(GL_ARRAY_BUFFER, dest_pbo)
-		glBufferData(GL_ARRAY_BUFFER, data, GL_DYNAMIC_DRAW)
-		glBindBuffer(GL_ARRAY_BUFFER, 0)
-
-		glBindBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, dest_pbo)
-		
-		x = glReadPixels(0,0,SCREEN_SIZE[0],SCREEN_SIZE[1],GL_RGBA, GL_UNSIGNED_BYTE)
-		xa = np.fromstring(x, np.uint8).reshape((SCREEN_SIZE[1],SCREEN_SIZE[0],4))
-		xa = xa[::-1,:] #Flip vertically
-		misc.imsave("test.png", xa)
-
-		glBindBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, 0);
-
-		glBindBuffer(GL_ARRAY_BUFFER, dest_pbo)
-		glDeleteBuffers(1, [dest_pbo]);
+		screen = pbo.Read(SCREEN_SIZE)
+		#misc.imsave("test.jpg", screen)
 
 if __name__ == "__main__":
 

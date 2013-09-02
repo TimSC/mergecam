@@ -7,6 +7,7 @@ from OpenGL.GLU import *
 import numpy as np
 
 import OpenGL.GL.ARB.texture_non_power_of_two as npot
+import OpenGL.GL.ARB.pixel_buffer_object as pbo
 
 def IsPowerOfTwo(x):
     return (int(x) & (int(x) - 1)) == 0
@@ -61,4 +62,35 @@ class GLTexture(object):
 		glVertex(5.,-5.,0.)
 		
 		glEnd()
+
+class GLReadPbo(object):
+	def __init__(self):
+		self.pboSupported = pbo.glInitPixelBufferObjectARB()
+
+	def __del__(self):
+		pass
+
+	def Read(self, capSize):
+		if not self.pboSupported:
+			return self.ReadSlow()
+
+		self.destpbo = glGenBuffers(1)
+		glBindBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, self.destpbo)
+		
+		px = glReadPixels(0, 0, capSize[0], capSize[1], GL_RGBA, GL_UNSIGNED_BYTE)
+		xa = np.fromstring(px, np.uint8).reshape((capSize[1],capSize[0],4))
+		xa = xa[::-1,:] #Flip vertically
+
+		#glBindBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, 0)
+
+		glBindBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, 0)
+		glDeleteBuffers(1, [self.destpbo])
+		return xa
+
+	def ReadSlow(self, capSize):
+		glBindBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, 0)
+		px = glReadPixels(0, 0, capSize[0], capSize[1], GL_RGBA, GL_UNSIGNED_BYTE)
+		xa = np.fromstring(px, np.uint8).reshape((capSize[1],capSize[0],4))
+		xa = xa[::-1,:] #Flip vertically
+		return xa
 
