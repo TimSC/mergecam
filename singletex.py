@@ -73,10 +73,23 @@ def run():
 
 		imgNp = np.fromstring(img, np.uint8)
 		imgNp = imgNp.reshape((v4l2.size_y, v4l2.size_x, 3))
-		detector = cv2.FastFeatureDetector(threshold=50)
-		#detector = cv2.SimpleBlobDetector()
-		#detector = cv2.MserFeatureDetector()
-		out = detector.detect(cv2.cvtColor(imgNp,cv2.COLOR_BGR2GRAY))
+		#detector = cv2.FeatureDetector_create("STAR")
+		#detector = cv2.FeatureDetector_create("FAST")
+		#detector = cv2.FeatureDetector_create("ORB")
+		#detector = cv2.FeatureDetector_create("MSER")
+		detector = cv2.FeatureDetector_create("GFTT")
+
+		#detector = cv2.FastFeatureDetector(threshold=50)
+		#detector = cv2.GoodFeaturesToTrackDetector(200)
+		#detector = cv2.OrbFeaturesFinder()
+
+		descriptor = cv2.DescriptorExtractor_create("ORB")
+
+		#matcher = cv2.FlannBasedMatcher()
+
+		grey = cv2.cvtColor(imgNp,cv2.COLOR_BGR2GRAY)
+		keypoints = detector.detect(grey)
+		(keypoints, descriptors) = descriptor.compute(grey, keypoints)
 
 		# Clear the screen, and z-buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -90,7 +103,7 @@ def run():
 
 		tex.Draw()
 
-		for pt in out:
+		for pt in keypoints:
 			glDisable(GL_TEXTURE_2D)
 			glColor4f(1.,0.,0.,1.)
 			glBegin(GL_LINES)
