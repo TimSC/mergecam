@@ -6,9 +6,15 @@ from OpenGL.GLU import *
 
 import numpy as np
 
+import OpenGL.GL.ARB.texture_non_power_of_two as npot
+
+def IsPowerOfTwo(x):
+    return (int(x) & (int(x) - 1)) == 0
+
 class GLTexture(object):
 	def __init__(self):
 		self.num = None
+		self.supportsNpot = npot.glInitTextureNonPowerOfTwoARB()
 
 	def __del__(self):
 		if self.num is not None:
@@ -21,6 +27,11 @@ class GLTexture(object):
 		self.SetFromString(rawData, img.shape[1], img.shape[0])
 
 	def SetFromString(self, img, w, h):
+		if not IsPowerOfTwo(w) and not self.supportsNpot:
+			raise Exception("Texture dimensions must be power of 2")
+		if not IsPowerOfTwo(h) and not self.supportsNpot:
+			raise Exception("Texture dimensions must be power of 2")
+
 		self.num = glGenTextures(1)
 		glBindTexture(GL_TEXTURE_2D, self.num)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
