@@ -71,21 +71,22 @@ def run():
 		tex = gltexture.GLTexture()
 		tex.SetFromString(img, v4l2.size_x, v4l2.size_y)
 
-		imgNp = np.fromstring(img, np.uint8)
-		imgNp = imgNp.reshape((v4l2.size_y, v4l2.size_x, 3))
-		#detector = cv2.FeatureDetector_create("STAR")
-		#detector = cv2.FeatureDetector_create("FAST")
-		#detector = cv2.FeatureDetector_create("ORB")
-		#detector = cv2.FeatureDetector_create("MSER")
-		detector = cv2.FeatureDetector_create("GFTT")
+		if 0:
+			imgNp = np.fromstring(img, np.uint8)
+			imgNp = imgNp.reshape((v4l2.size_y, v4l2.size_x, 3))
+			#detector = cv2.FeatureDetector_create("STAR")
+			#detector = cv2.FeatureDetector_create("FAST")
+			#detector = cv2.FeatureDetector_create("ORB")
+			#detector = cv2.FeatureDetector_create("MSER")
+			detector = cv2.FeatureDetector_create("GFTT")
 
-		#detector = cv2.FastFeatureDetector(threshold=50)
-		#detector = cv2.GoodFeaturesToTrackDetector(200)
-		#detector = cv2.OrbFeaturesFinder()
+			#detector = cv2.FastFeatureDetector(threshold=50)
+			#detector = cv2.GoodFeaturesToTrackDetector(200)
+			#detector = cv2.OrbFeaturesFinder()
 
-		descriptor = cv2.DescriptorExtractor_create("ORB")
+			descriptor = cv2.DescriptorExtractor_create("ORB")
 
-		#matcher = cv2.FlannBasedMatcher()
+			#matcher = cv2.FlannBasedMatcher()
 
 		grey = cv2.cvtColor(imgNp,cv2.COLOR_BGR2GRAY)
 		keypoints = detector.detect(grey)
@@ -103,17 +104,18 @@ def run():
 
 		tex.Draw()
 
-		for pt in keypoints:
-			glDisable(GL_TEXTURE_2D)
-			glColor4f(1.,0.,0.,1.)
-			glBegin(GL_LINES)
-			x = pt.pt[0] * 10. / v4l2.size_x - 5.
-			y = - pt.pt[1] * 10. / v4l2.size_y + 5.
-			glVertex(-0.3+x,0.+y,0.)
-			glVertex(0.3+x,0.+y,0.)
-			glVertex(0.+x,-0.3+y,0.)
-			glVertex(0.+x,0.3+y,0.)
-			glEnd()
+		if 0:
+			for pt in keypoints:
+				glDisable(GL_TEXTURE_2D)
+				glColor4f(1.,0.,0.,1.)
+				glBegin(GL_LINES)
+				x = pt.pt[0] * 10. / v4l2.size_x - 5.
+				y = - pt.pt[1] * 10. / v4l2.size_y + 5.
+				glVertex(-0.3+x,0.+y,0.)
+				glVertex(0.3+x,0.+y,0.)
+				glVertex(0.+x,-0.3+y,0.)
+				glVertex(0.+x,0.3+y,0.)
+				glEnd()
 
 		# Show the screen
 		pygame.display.flip()
