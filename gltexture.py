@@ -66,17 +66,23 @@ class GLTexture(object):
 class GLReadPbo(object):
 	def __init__(self, capSize):
 		self.pboSupported = pbo.glInitPixelBufferObjectARB()
-		self.destpbo = glGenBuffers(2)
 		self.index = 0
+		self.destpbo = None
 
-		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[0])
-		glBufferData(pbo.GL_PIXEL_PACK_BUFFER_ARB, capSize[0]*capSize[1]*4, None, GL_STREAM_READ);
-		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[1])
-		glBufferData(pbo.GL_PIXEL_PACK_BUFFER_ARB, capSize[0]*capSize[1]*4, None, GL_STREAM_READ);
-		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, 0)
+		if self.pboSupported:
+			#Create PDO handles
+			self.destpbo = glGenBuffers(2)
+
+			#Initialise memory space
+			glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[0])
+			glBufferData(pbo.GL_PIXEL_PACK_BUFFER_ARB, capSize[0]*capSize[1]*4, None, GL_STREAM_READ);
+			glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[1])
+			glBufferData(pbo.GL_PIXEL_PACK_BUFFER_ARB, capSize[0]*capSize[1]*4, None, GL_STREAM_READ);
+			glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, 0)			
 
 	def __del__(self):
-		glDeleteBuffers(len(self.destpbo), self.destpbo)
+		if self.destpbo is not None:
+			glDeleteBuffers(len(self.destpbo), self.destpbo)
 		self.destpbo = None
 
 	def Read(self, capSize):
@@ -84,25 +90,27 @@ class GLReadPbo(object):
 			return ReadSlow()
 
 		#Inspired by: http://www.songho.ca/opengl/gl_pbo.html
-		
 		self.index = (self.index + 1) % 2
 		self.nextIndex = (self.index + 1) % 2
 
+		#Request a frame on one PDO
 		glReadBuffer(GL_FRONT)
 		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[self.index])
 		glReadPixels(0, 0, capSize[0], capSize[1], GL_BGRA, GL_UNSIGNED_BYTE, 0)
 		
+		#Read back the other PDO
 		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[self.nextIndex])
-
 		try:
 			buffPtr = ctypes.cast(glMapBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY), ctypes.POINTER(ctypes.c_ubyte))
 			buffArr = np.ctypeslib.as_array(buffPtr, (800*600*4,))
 			xa = np.fromstring(buffArr, np.uint8, 800*600*4).reshape((capSize[1],capSize[0],4))
 			glUnmapBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB);
+			glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, 0)
 			return xa
 		except Exception as err:
 			print err
 
+		#Return things to normal
 		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, 0)
 		return None		
 
