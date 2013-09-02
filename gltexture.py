@@ -66,6 +66,13 @@ class GLTexture(object):
 class GLReadPbo(object):
 	def __init__(self):
 		self.pboSupported = pbo.glInitPixelBufferObjectARB()
+		self.destpbo = glGenBuffers(2)
+		self.index = 0
+
+		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[0])
+		glBufferData(pbo.GL_PIXEL_PACK_BUFFER_ARB, 800*600*4*2, None, GL_STREAM_READ);
+		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[1])
+		glBufferData(pbo.GL_PIXEL_PACK_BUFFER_ARB, 800*600*4*2, None, GL_STREAM_READ);
 
 	def __del__(self):
 		pass
@@ -79,29 +86,40 @@ class GLReadPbo(object):
 
 		#More info: http://www.songho.ca/opengl/gl_pbo.html
 		
-		self.destpbo = glGenBuffers(1)
+		self.index = (self.index + 1) % 2
+		self.nextIndex = (self.index + 1) % 2
+
+		print self.index, self.nextIndex
 
 		glReadBuffer(GL_FRONT)
-		glBindBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, self.destpbo)
-		glBufferData(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, 800*600*4, None, GL_STREAM_READ);
+		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[self.index])
 
-		px = glReadPixels(0, 0, capSize[0], capSize[1], GL_RGBA, GL_UNSIGNED_BYTE)
-		xa = np.fromstring(px, np.uint8).reshape((capSize[1],capSize[0],4))
-		xa = xa[::-1,:] #Flip vertically
+		#print "x"
+		glReadPixels(0, 0, capSize[0], capSize[1], GL_BGRA, GL_UNSIGNED_BYTE, 0, debug=True)
+		#xa = np.fromstring(px, np.uint8).reshape((capSize[1],capSize[0],4))
+		#xa = xa[::-1,:] #Flip vertically
+		#print "y"
+		
+		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[self.nextIndex])
 
-		#buffPtr = ctypes.cast(glMapBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, GL_READ_ONLY), ctypes.POINTER(ctypes.c_ubyte))
-		#buffArr = np.ctypeslib.as_array(buffPtr, (800*600*4,))
-		#xa = np.fromstring(buffArr, np.uint8, 800*600*4).reshape((capSize[1],capSize[0],4))
+		try:
+			buffPtr = ctypes.cast(glMapBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY), ctypes.POINTER(ctypes.c_ubyte))
+			buffArr = np.ctypeslib.as_array(buffPtr, (800*600*4,))
+			xa = np.fromstring(buffArr, np.uint8, 800*600*4).reshape((capSize[1],capSize[0],4))
+			glUnmapBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB);
+			return xa
+		except Exception as err:
+			print err
 
-		#glUnmapBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB);
-
-		glBindBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, 0)
-		glDeleteBuffers(1, [self.destpbo])
-		self.destpbo = None
-		return xa
+		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, 0)
+		#glDeleteBuffers(1, [self.destpbo])
+		#self.destpbo = None
+		return None		
 
 	def ReadSlow(self, capSize):
-		glBindBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, 0)
+
+		glReadBuffer(GL_FRONT)
+		#glBindBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, 0)
 		px = glReadPixels(0, 0, capSize[0], capSize[1], GL_RGBA, GL_UNSIGNED_BYTE)
 		xa = np.fromstring(px, np.uint8).reshape((capSize[1],capSize[0],4))
 		xa = xa[::-1,:] #Flip vertically

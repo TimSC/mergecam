@@ -71,10 +71,6 @@ def run():
 		tex = gltexture.GLTexture()
 		tex.SetFromString(img, v4l2.size_x, v4l2.size_y)
 
-		start = time.clock()
-		screen = pbo.Read(SCREEN_SIZE)
-		print time.clock() - start
-
 		# Clear the screen, and z-buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 						
@@ -92,7 +88,11 @@ def run():
 
 		del tex
 
-		misc.imsave("test.jpg", screen)
+		start = time.clock()
+		screen = pbo.Read(SCREEN_SIZE)
+		print time.clock() - start
+		if screen is not None:
+			misc.imsave("test.jpg", screen)
 
 if __name__ == "__main__":
 
