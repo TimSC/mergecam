@@ -88,7 +88,7 @@ def run():
 		del tex
 
 		start = time.clock()
-		screen = pbo.Read(SCREEN_SIZE)
+		screen = pbo.Read()
 		print time.clock() - start
 		if screen is not None:
 			misc.imsave("test.jpg", screen)

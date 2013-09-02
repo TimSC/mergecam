@@ -68,6 +68,7 @@ class GLReadPbo(object):
 		self.pboSupported = pbo.glInitPixelBufferObjectARB()
 		self.index = 0
 		self.destpbo = None
+		self.capSize = capSize
 
 		if self.pboSupported:
 			#Create PDO handles
@@ -85,9 +86,9 @@ class GLReadPbo(object):
 			glDeleteBuffers(len(self.destpbo), self.destpbo)
 		self.destpbo = None
 
-	def Read(self, capSize):
+	def Read(self):
 		if not self.pboSupported:
-			return ReadSlow()
+			return self.ReadSlow()
 
 		#Inspired by: http://www.songho.ca/opengl/gl_pbo.html
 		self.index = (self.index + 1) % 2
@@ -96,14 +97,14 @@ class GLReadPbo(object):
 		#Request a frame on one PDO
 		glReadBuffer(GL_FRONT)
 		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[self.index])
-		glReadPixels(0, 0, capSize[0], capSize[1], GL_BGRA, GL_UNSIGNED_BYTE, 0)
+		glReadPixels(0, 0, self.capSize[0], self.capSize[1], GL_BGRA, GL_UNSIGNED_BYTE, 0)
 		
 		#Read back the other PDO
 		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, self.destpbo[self.nextIndex])
 		try:
 			buffPtr = ctypes.cast(glMapBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY), ctypes.POINTER(ctypes.c_ubyte))
-			buffArr = np.ctypeslib.as_array(buffPtr, (800*600*4,))
-			xa = np.fromstring(buffArr, np.uint8, 800*600*4).reshape((capSize[1],capSize[0],4))
+			buffArr = np.ctypeslib.as_array(buffPtr, (self.capSize[0]*self.capSize[1]*4,))
+			xa = np.fromstring(buffArr, np.uint8, self.capSize[0]*self.capSize[1]*4).reshape((self.capSize[1],self.capSize[0],4))
 			glUnmapBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB);
 			glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, 0)
 			return xa
@@ -114,10 +115,10 @@ class GLReadPbo(object):
 		glBindBuffer(pbo.GL_PIXEL_PACK_BUFFER_ARB, 0)
 		return None		
 
-	def ReadSlow(self, capSize):
+	def ReadSlow(self):
 		glReadBuffer(GL_FRONT)
-		px = glReadPixels(0, 0, capSize[0], capSize[1], GL_RGBA, GL_UNSIGNED_BYTE)
-		xa = np.fromstring(px, np.uint8).reshape((capSize[1],capSize[0],4))
+		px = glReadPixels(0, 0, self.capSize[0], self.capSize[1], GL_RGBA, GL_UNSIGNED_BYTE)
+		xa = np.fromstring(px, np.uint8).reshape((self.capSize[1],self.capSize[0],4))
 		xa = xa[::-1,:] #Flip vertically
 		return xa
 
