@@ -6,7 +6,7 @@ import math, v4l2cap, gltexture
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-import pygame, ctypes
+import pygame, ctypes, time
 from pygame.locals import *
 import numpy as np
 from scipy import misc
@@ -54,7 +54,8 @@ def run():
 	pbo = gltexture.GLReadPbo()
 
 	while True:
-		
+		pbo.Prep(SCREEN_SIZE)
+
 		time_passed = clock.tick()
 		time_passed_seconds = time_passed / 1000.
 
@@ -69,6 +70,10 @@ def run():
 		img = v4l2.GetFrame()[0]
 		tex = gltexture.GLTexture()
 		tex.SetFromString(img, v4l2.size_x, v4l2.size_y)
+
+		start = time.clock()
+		screen = pbo.Read(SCREEN_SIZE)
+		print time.clock() - start
 
 		# Clear the screen, and z-buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -87,8 +92,7 @@ def run():
 
 		del tex
 
-		screen = pbo.Read(SCREEN_SIZE)
-		#misc.imsave("test.jpg", screen)
+		misc.imsave("test.jpg", screen)
 
 if __name__ == "__main__":
 

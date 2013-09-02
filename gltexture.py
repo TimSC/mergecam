@@ -1,5 +1,5 @@
 
-import math
+import math, ctypes
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -70,21 +70,34 @@ class GLReadPbo(object):
 	def __del__(self):
 		pass
 
+	def Prep(self, capSize):
+		pass
+
 	def Read(self, capSize):
 		if not self.pboSupported:
-			return self.ReadSlow()
+			return ReadSlow()
 
-		self.destpbo = glGenBuffers(1)
-		glBindBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, self.destpbo)
+		#More info: http://www.songho.ca/opengl/gl_pbo.html
 		
+		self.destpbo = glGenBuffers(1)
+
+		glReadBuffer(GL_FRONT)
+		glBindBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, self.destpbo)
+		glBufferData(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, 800*600*4, None, GL_STREAM_READ);
+
 		px = glReadPixels(0, 0, capSize[0], capSize[1], GL_RGBA, GL_UNSIGNED_BYTE)
 		xa = np.fromstring(px, np.uint8).reshape((capSize[1],capSize[0],4))
 		xa = xa[::-1,:] #Flip vertically
 
-		#glBindBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, 0)
+		#buffPtr = ctypes.cast(glMapBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, GL_READ_ONLY), ctypes.POINTER(ctypes.c_ubyte))
+		#buffArr = np.ctypeslib.as_array(buffPtr, (800*600*4,))
+		#xa = np.fromstring(buffArr, np.uint8, 800*600*4).reshape((capSize[1],capSize[0],4))
+
+		#glUnmapBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB);
 
 		glBindBuffer(pbo.GL_PIXEL_UNPACK_BUFFER_ARB, 0)
 		glDeleteBuffers(1, [self.destpbo])
+		self.destpbo = None
 		return xa
 
 	def ReadSlow(self, capSize):
