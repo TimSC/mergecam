@@ -88,9 +88,9 @@ def run():
 
 			#matcher = cv2.FlannBasedMatcher()
 
-		grey = cv2.cvtColor(imgNp,cv2.COLOR_BGR2GRAY)
-		keypoints = detector.detect(grey)
-		(keypoints, descriptors) = descriptor.compute(grey, keypoints)
+			grey = cv2.cvtColor(imgNp,cv2.COLOR_BGR2GRAY)
+			keypoints = detector.detect(grey)
+			(keypoints, descriptors) = descriptor.compute(grey, keypoints)
 
 		# Clear the screen, and z-buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
