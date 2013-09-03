@@ -79,6 +79,8 @@ if __name__=="__main__":
 	im2 = misc.imread("CIMG8589.JPG")
 
 	detector = cv2.FeatureDetector_create("ORB")
+	#print detector.getParams()
+	detector.setInt("nFeatures", 50)
 	descriptor = cv2.DescriptorExtractor_create("ORB")
 
 	grey1 = cv2.cvtColor(im1,cv2.COLOR_BGR2GRAY)
