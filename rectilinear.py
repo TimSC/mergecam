@@ -3,8 +3,8 @@ import numpy as np
 
 class Rectilinear(object):
 	def __init__(self):
-		self.cLon = 0.5
-		self.cLat = 0.5
+		self.cLon = 0.
+		self.cLat = 0.
 
 	def Proj(self, lat, lon):
 		#http://mathworld.wolfram.com/GnomonicProjection.html
