@@ -12,13 +12,12 @@ class Rectilinear(object):
 		cosc = sin(self.cLat) * sin(lat) + cos(self.cLat) * cos(lat) * cos(lon - self.cLon)
 		x = (cos(lat) * sin(lon - self.cLon)) / cosc
 		y = (cos(self.cLat) * sin(lat) - sin(self.cLat) * cos(lat) * cos(lon - self.cLon)) / cosc
-
 		return x, y
 
 	def UnProj(self, x, y):
 		##http://mathworld.wolfram.com/GnomonicProjection.html
 
-		rho = (x ** 2. + y ** 2) ** 0.5
+		rho = (x ** 2. + y ** 2.) ** 0.5
 		c = atan(rho)
 		sinc = sin(c)
 		cosc = cos(c)
