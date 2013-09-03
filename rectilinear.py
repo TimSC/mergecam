@@ -1,4 +1,4 @@
-from math import sin, cos, atan2, pi
+from math import sin, cos, atan2, pi, asin, atan
 import numpy as np
 
 class Rectilinear(object):
@@ -15,10 +15,25 @@ class Rectilinear(object):
 
 		return x, y
 
+	def UnProj(self, x, y):
+		##http://mathworld.wolfram.com/GnomonicProjection.html
+
+		rho = (x ** 2. + y ** 2) ** 0.5
+		c = atan(rho)
+		sinc = sin(c)
+		cosc = cos(c)
+		lat = asin(cosc * sin(self.cLat) + y * sinc * cos(self.cLat) / rho)
+		lon = self.cLon + atan2(x * sinc, rho * cos(self.cLat) * cosc - y * sin(self.cLat) * sinc)
+		return lat, lon
+
 if __name__ == "__main__":
 	import matplotlib.pyplot as plt
 
 	rectilinear = Rectilinear()
+
+	x, y = rectilinear.Proj(0.1,0.2)
+	print x, y
+	print rectilinear.UnProj(x, y)
 
 	lonVals = np.arange(-1.5, 1.5, 0.1)
 	latVals = np.arange(-1., 1., 0.1)
