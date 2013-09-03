@@ -29,17 +29,21 @@ def VisualiseKeypoints(im, keypoints):
 	
 	plt.show()
 
-def VisualiseMatches(im1, im2, keypoints1, keypoints2, mat):
+def VisualiseMatches(im1, im2, keypoints1, keypoints2, mat, mask = None):
 	combined = np.hstack((im1, im2))
 
 	plt.imshow(combined)
 
-	for dmat in mat:
-		print dmat.distance, dmat.imgIdx, dmat.queryIdx, dmat.trainIdx
+	if mask is None:
+		mask = np.ones((len(mat),))
+
+	for dmat, ma in zip(mat, mask):
+		#print dmat.distance, dmat.imgIdx, dmat.queryIdx, dmat.trainIdx
+		if not ma: continue
 		ptA = keypoints1[dmat.queryIdx].pt
 		ptB = keypoints2[dmat.trainIdx].pt
-
-		plt.plot((ptA[0], ptB[0] + im1.shape[1]), (ptA[1], ptB[1]))
+		if ptA[0] > 400:
+			plt.plot((ptA[0], ptB[0] + im1.shape[1]), (ptA[1], ptB[1]))
 	
 	plt.show()
 
@@ -89,14 +93,14 @@ if __name__=="__main__":
 	print "Extracting points of interest 1"
 	#keypoints1 = detector.detect(grey1)
 	keypoints1 = DetectAcrossImage(grey1, detector)
-	VisualiseKeypoints(grey1, keypoints1)
-	exit(0)
+	#VisualiseKeypoints(grey1, keypoints1)
 	(keypoints1, descriptors1) = descriptor.compute(grey1, keypoints1)
 	
 	print "Extracting points of interest 2"
 	keypoints2 = DetectAcrossImage(grey2, detector)
 	(keypoints2, descriptors2) = descriptor.compute(grey2, keypoints2)
 
+	#Find corresponding points using FLANN
 	FLANN_INDEX_LSH = 6
 	flann_params = dict(algorithm = FLANN_INDEX_LSH,
 	                   table_number = 6, # 12
@@ -109,8 +113,8 @@ if __name__=="__main__":
 	#for dmat in mat:
 	#	print dmat.distance, dmat.imgIdx, dmat.queryIdx, dmat.trainIdx
 		
-	#Transform keypoints from rectilinear to polar space
 	ptsPos1 = [a.pt for a in keypoints1]
+	ptsPos2 = [a.pt for a in keypoints2]
 
 	if 0:
 		for pt in ptsPos1:
@@ -127,6 +131,7 @@ if __name__=="__main__":
 		plt.plot(pts[:,0], -pts[:,1], '.')
 		plt.show()
 
+	#Transform keypoints from rectilinear to polar space
 	pts = TransformKeyPoints(ptsPos1, 49.0, 35.4, im1.shape[1], im1.shape[0])
 
 	if 0:
@@ -134,5 +139,21 @@ if __name__=="__main__":
 		plt.plot(pts[:,1], -pts[:,0], '.')
 		plt.show()
 
-	VisualiseMatches(im1, im2, keypoints1, keypoints2, mat)
+	#VisualiseMatches(im1, im2, keypoints1, keypoints2, mat)
+
+	#Generate list of corresponding points
+	corresp1, corresp2 = [], []
+	for dmat in mat:
+		corresp1.append(keypoints1[dmat.queryIdx].pt)
+		corresp2.append(keypoints2[dmat.trainIdx].pt)
+	corresp1 = np.array(corresp1)
+	corresp2 = np.array(corresp2)
+
+	#Determine homography using ransac
+	H = cv2.findHomography(corresp1, corresp2, cv2.RANSAC, ransacReprojThreshold=20.)
+	print "Homography", H[0]
+	print "Fraction used", np.array(H[1]).mean()
+
+	VisualiseMatches(im1, im2, keypoints1, keypoints2, mat, H[1])
+
 
