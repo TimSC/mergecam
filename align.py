@@ -11,13 +11,30 @@ def TransformKeyPoints(pts, hFov, vFov, imgW, imgH):
 	centred = pts - (imgW/2., imgH/2.)
 	scaled = centred / (imgW/2., imgH/2.)
 	
-	print hFov, vFov, imgH, imgW
+	#print hFov, vFov, imgH, imgW
 	
 	hwidth = rectilin.UnProj(0., hFov / 2.)[0]
 	hheight = rectilin.UnProj(vFov / 2., 0.)[1]
 	normImg = scaled * (hwidth, hheight)
 	polar = [rectilin.Proj(*pt) for pt in normImg]
 	return polar
+
+def VisualiseMatches(im1, im2, keypoints1, keypoints2, mat):
+	combined = np.hstack((im1, im2))
+
+	plt.imshow(combined)
+
+	for dmat in mat:
+		print dmat.distance, dmat.imgIdx, dmat.queryIdx, dmat.trainIdx
+		ptA = keypoints1[dmat.queryIdx].pt
+		ptB = keypoints2[dmat.trainIdx].pt
+
+		if ptA[0] > 400:
+			plt.plot((ptA[0], ptB[0] + im1.shape[1]), (ptA[1], ptB[1]))
+	
+	plt.show()
+
+
 
 if __name__=="__main__":
 	im1 = misc.imread("CIMG8588.JPG")
@@ -74,4 +91,5 @@ if __name__=="__main__":
 		plt.plot(pts[:,1], -pts[:,0], '.')
 		plt.show()
 
+	VisualiseMatches(im1, im2, keypoints1, keypoints2, mat)
 
