@@ -1,9 +1,10 @@
 
 import scipy.misc as misc
-import cv2
+import cv2, cv
 import rectilinear
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 
 def TransformKeyPoints(pts, hFov, vFov, imgW, imgH):
 	rectilin = rectilinear.Rectilinear()
@@ -19,6 +20,15 @@ def TransformKeyPoints(pts, hFov, vFov, imgW, imgH):
 	polar = [rectilin.Proj(*pt) for pt in normImg]
 	return polar
 
+def VisualiseKeypoints(im, keypoints):
+	plt.imshow(im, cmap = cm.Greys_r)
+	pts = np.array([kp.pt for kp in keypoints])
+
+
+	plt.plot(pts[:,0], pts[:,1], '.')
+	
+	plt.show()
+
 def VisualiseMatches(im1, im2, keypoints1, keypoints2, mat):
 	combined = np.hstack((im1, im2))
 
@@ -29,11 +39,39 @@ def VisualiseMatches(im1, im2, keypoints1, keypoints2, mat):
 		ptA = keypoints1[dmat.queryIdx].pt
 		ptB = keypoints2[dmat.trainIdx].pt
 
-		if ptA[0] > 400:
-			plt.plot((ptA[0], ptB[0] + im1.shape[1]), (ptA[1], ptB[1]))
+		plt.plot((ptA[0], ptB[0] + im1.shape[1]), (ptA[1], ptB[1]))
 	
 	plt.show()
 
+def DetectAcrossImage(img, detector, targetPatchSize = 100.):
+	print img.shape
+	
+	wsteps = int(round(img.shape[1] / targetPatchSize))
+	hsteps = int(round(img.shape[0] / targetPatchSize))
+	if wsteps == 0: wsteps = 1
+	if hsteps == 0: hsteps = 1
+
+	wvals = np.linspace(0, img.shape[1], wsteps)
+	hvals = np.linspace(0, img.shape[0], wsteps)
+	margin = 30
+	out = []
+	for w in range(len(wvals)-1):
+		for h in range(len(hvals)-1):	
+			rowInd = np.arange(int(hvals[h]-margin),int(hvals[h+1]+margin),1)
+			rowInd = np.mod(rowInd, img.shape[0])
+			colInd = np.arange(int(wvals[w]-margin),int(wvals[w+1]+margin),1)
+			colInd = np.mod(colInd, img.shape[1])
+			patch = img[rowInd, :]
+			patch = patch[:, colInd]
+			assert patch.shape[0] > 0
+			assert patch.shape[1] > 0
+
+			#print wvals[w], hvals[h], patch.shape
+			kps = detector.detect(patch)
+			for kp in kps:
+				kp.pt = (kp.pt[0]+wvals[w]-margin, kp.pt[1]+hvals[h]-margin)
+				out.append(kp)
+	return out
 
 
 if __name__=="__main__":
@@ -47,11 +85,14 @@ if __name__=="__main__":
 	grey2 = cv2.cvtColor(im2,cv2.COLOR_BGR2GRAY)
 
 	print "Extracting points of interest 1"
-	keypoints1 = detector.detect(grey1)
+	#keypoints1 = detector.detect(grey1)
+	keypoints1 = DetectAcrossImage(grey1, detector)
+	VisualiseKeypoints(grey1, keypoints1)
+	exit(0)
 	(keypoints1, descriptors1) = descriptor.compute(grey1, keypoints1)
 	
 	print "Extracting points of interest 2"
-	keypoints2 = detector.detect(grey2)
+	keypoints2 = DetectAcrossImage(grey2, detector)
 	(keypoints2, descriptors2) = descriptor.compute(grey2, keypoints2)
 
 	FLANN_INDEX_LSH = 6
