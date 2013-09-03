@@ -85,7 +85,7 @@ if __name__=="__main__":
 	detector = cv2.FeatureDetector_create("ORB")
 	#print detector.getParams()
 	detector.setInt("nFeatures", 50)
-	descriptor = cv2.DescriptorExtractor_create("ORB")
+	descriptor = cv2.DescriptorExtractor_create("BRIEF")
 
 	grey1 = cv2.cvtColor(im1,cv2.COLOR_BGR2GRAY)
 	grey2 = cv2.cvtColor(im2,cv2.COLOR_BGR2GRAY)
