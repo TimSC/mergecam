@@ -24,20 +24,36 @@ class CameraArrangement(object):
 			plt.show()
 
 		initialVals = []
+		initialValKey = {}
 		for i, phot in enumerate(self.addedPhotos):
 			if i==0: continue
 			camModel = self.addedPhotos[phot]
+			initialValKey[phot] = {}
+			initialValKey[phot]["lat"] = len(initialVals)
 			initialVals.append(camModel.rectilinear.cLat)
+			initialValKey[phot]["lon"] = len(initialVals)
 			initialVals.append(camModel.rectilinear.cLon)
 
 		print initialVals
 
-		final = optimize.minimize(self.Eval, initialVals, method="Powell")
-		print "score", final.x, final.fun
+		if 0:
+			final = optimize.minimize(self.Eval, initialVals, (0, initialValKey), method="Powell")
+			print "score", final.x, final.fun
+		if 1:
+			final = optimize.leastsq(self.Eval, initialVals, (1, initialValKey))
+			print "score", final
+			finalVals = final[0]
 
-	def Eval(self, vals):
+		#Set values
+		for phot in initialValKey:
+			params = initialValKey[phot]
+			self.addedPhotos[phot].rectilinear.cLat = finalVals[params["lat"]]
+			self.addedPhotos[phot].rectilinear.cLon = finalVals[params["lon"]]
+
+	def Eval(self, vals, separateTerms, initialValKey):
 
 		dists = []
+		countPairs = 0
 		for pair in self.imgPairs:
 			weight = pair[0]
 			if weight < 0.1: continue #Discard poor pairings
@@ -46,30 +62,47 @@ class CameraArrangement(object):
 			fina2 = pair[2]
 			if fina1 not in self.addedPhotos: continue
 			if fina2 not in self.addedPhotos: continue
-
-			fina1index = self.addedPhotos.keys().index(fina1)
-			fina2index = self.addedPhotos.keys().index(fina2)
+			countPairs += 1
 
 			#print fina1, fina2, fina1index, fina2index
 			camModel1 = self.addedPhotos[fina1]
-			if fina1index >= 1:
-				camModel1.rectilinear.cLat = vals[(fina1index-1)*2]
-				camModel1.rectilinear.cLon = vals[(fina1index-1)*2+1]
+			if fina1 in initialValKey:
+				camModel1.rectilinear.cLat = vals[initialValKey[fina1]["lat"]]
+				camModel1.rectilinear.cLon = vals[initialValKey[fina1]["lon"]]
+
 			camModel2 = self.addedPhotos[fina2]
-			if fina2index >= 1:
-				camModel2.rectilinear.cLat = vals[(fina2index-1)*2]
-				camModel2.rectilinear.cLon = vals[(fina2index-1)*2+1]
+			if fina2 in initialValKey:
+				camModel2.rectilinear.cLat = vals[initialValKey[fina2]["lat"]]
+				camModel2.rectilinear.cLon = vals[initialValKey[fina2]["lon"]]
+
 			ptsA = np.array(pair[3])
 			ptsB = np.array(pair[4])
+			
+			#Use only a subset of points
+			ptsA = ptsA[:,:]
+			ptsB = ptsB[:,:]
 
 			proj1 = camModel1.Proj(ptsA)
 			proj2 = camModel2.Proj(ptsB)
 			
+			distsX = []
+			distsY = []
 			for pt1, pt2 in zip(proj1, proj2):
-				malDist = abs(pt1[0]-pt2[0]) + abs(pt1[1]-pt2[1])
-				dists.append(malDist * weight)
-		score = np.array(dists).mean()
+				malDist1 = abs(pt1[0]-pt2[0])
+				malDist2 = abs(pt1[1]-pt2[1])
+				distsX.append(malDist1 * weight)
+				distsY.append(malDist2 * weight)
+
+			dists.append(np.array(distsX).mean())
+			dists.append(np.array(distsY).mean())
+
+
 		#print vals, score
+		#print countPairs
+
+		if separateTerms:
+			return dists
+		score = np.array(dists).mean()
 		return score
 
 def SelectPhotoToAdd(imgPairs, cameraArrangement):
