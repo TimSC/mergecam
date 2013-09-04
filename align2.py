@@ -39,6 +39,9 @@ class CameraArrangement(object):
 
 		dists = []
 		for pair in self.imgPairs:
+			weight = pair[0]
+			if weight < 0.1: continue #Discard poor pairings
+
 			fina1 = pair[1]
 			fina2 = pair[2]
 			if fina1 not in self.addedPhotos: continue
@@ -64,10 +67,29 @@ class CameraArrangement(object):
 			
 			for pt1, pt2 in zip(proj1, proj2):
 				malDist = abs(pt1[0]-pt2[0]) + abs(pt1[1]-pt2[1])
-				dists.append(malDist)
+				dists.append(malDist * weight)
 		score = np.array(dists).mean()
 		#print vals, score
 		return score
+
+def SelectPhotoToAdd(imgPairs, cameraArrangement):
+	bestScore = None
+	bestPair = None
+	bestNewInd = None
+	for pair in imgPairs:
+		pairScore = pair[0]
+		
+		included1 = pair[1] in cameraArrangement.addedPhotos
+		included2 = pair[2] in cameraArrangement.addedPhotos
+		if included1 + included2 != 1: continue
+		#print pairScore, pair[1:3], included1, included2
+		if bestScore is None or pairScore > bestScore:
+			bestScore = pairScore
+			bestPair = pair
+			bestNewInd = included1
+
+	return bestPair, bestNewInd
+
 
 if __name__=="__main__":
 	imgPairs = pickle.load(open("imgpairs.dat", "rb"))
@@ -79,25 +101,26 @@ if __name__=="__main__":
 	imgPairs.sort()
 	imgPairs.reverse()
 	bestPair = imgPairs[0]
-	print "Using initial photos", bestPair[7], bestPair[0]
+	print "Using initial photos", bestPair[1], bestPair[2]
 
 	cameraArrangement = CameraArrangement(imgPairs)
 	cameraArrangement.addedPhotos[bestPair[1]] = rectilinear.RectilinearCam()
 	cameraArrangement.addedPhotos[bestPair[2]] = rectilinear.RectilinearCam()
 
 	cameraArrangement.OptimiseFit()
-
-	bestScore = None
-	bestPair = None
-	for pair in imgPairs:
-		pairScore = pair[0]
+	
+	while bestPair is not None:
+		bestPair, newInd = SelectPhotoToAdd(imgPairs, cameraArrangement)
+		if bestPair is None: continue
+		print bestPair[:3], newInd
 		
-		included1 = pair[1] in cameraArrangement.addedPhotos
-		included2 = pair[2] in cameraArrangement.addedPhotos
-		if included1 + included2 != 1: continue
-		print pairScore, pair[1:3], included1, included2
-		if bestScore is None or pairScore > bestScore:
-			bestScore = pairScore
-			bestPair = pair
-	print bestPair[:3]
+		if newInd:
+			print "Adding", bestPair[2]
+			cameraArrangement.addedPhotos[bestPair[2]] = rectilinear.RectilinearCam()
+		else:
+			print "Adding", bestPair[2]
+			cameraArrangement.addedPhotos[bestPair[1]] = rectilinear.RectilinearCam()
+
+		cameraArrangement.OptimiseFit()
+
 
