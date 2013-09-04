@@ -53,8 +53,11 @@ if __name__ == "__main__":
 	print x, y
 	print rectilinear.UnProj(x, y)
 
-	lonVals = np.arange(-1.5, 1.5, 0.1)
-	latVals = np.arange(-1., 1., 0.1)
+	rectilinear.cLat = 0.
+	rectilinear.cLon = 0.
+
+	lonVals = np.arange(-1.5+rectilinear.cLon, 1.5+rectilinear.cLon, 0.1)
+	latVals = np.arange(-1.+rectilinear.cLat, 1.+rectilinear.cLat, 0.1)
 	for lon in lonVals:
 		li = []
 		for lat in latVals:
