@@ -1,6 +1,6 @@
 
 import scipy.misc as misc
-import cv2, cv
+import cv2, cv, os
 import rectilinear
 import numpy as np
 import matplotlib.pyplot as plt
@@ -42,14 +42,12 @@ def VisualiseMatches(im1, im2, keypoints1, keypoints2, mat, mask = None):
 		if not ma: continue
 		ptA = keypoints1[dmat.queryIdx].pt
 		ptB = keypoints2[dmat.trainIdx].pt
-		if ptA[0] > 400:
-			plt.plot((ptA[0], ptB[0] + im1.shape[1]), (ptA[1], ptB[1]))
+		plt.plot((ptA[0], ptB[0] + im1.shape[1]), (ptA[1], ptB[1]))
 	
 	plt.show()
 
 def DetectAcrossImage(img, detector, targetPatchSize = 100.):
-	print img.shape
-	
+
 	wsteps = int(round(img.shape[1] / targetPatchSize))
 	hsteps = int(round(img.shape[0] / targetPatchSize))
 	if wsteps == 0: wsteps = 1
@@ -77,11 +75,8 @@ def DetectAcrossImage(img, detector, targetPatchSize = 100.):
 				out.append(kp)
 	return out
 
-
-if __name__=="__main__":
-	im1 = misc.imread("CIMG8588.JPG")
-	im2 = misc.imread("CIMG8589.JPG")
-
+def CalcHomographyForImagePair(im1, im2):
+	
 	detector = cv2.FeatureDetector_create("ORB")
 	#print detector.getParams()
 	detector.setInt("nFeatures", 50)
@@ -90,13 +85,13 @@ if __name__=="__main__":
 	grey1 = cv2.cvtColor(im1,cv2.COLOR_BGR2GRAY)
 	grey2 = cv2.cvtColor(im2,cv2.COLOR_BGR2GRAY)
 
-	print "Extracting points of interest 1"
+	#print "Extracting points of interest 1"
 	#keypoints1 = detector.detect(grey1)
 	keypoints1 = DetectAcrossImage(grey1, detector)
 	#VisualiseKeypoints(grey1, keypoints1)
 	(keypoints1, descriptors1) = descriptor.compute(grey1, keypoints1)
 	
-	print "Extracting points of interest 2"
+	#print "Extracting points of interest 2"
 	keypoints2 = DetectAcrossImage(grey2, detector)
 	(keypoints2, descriptors2) = descriptor.compute(grey2, keypoints2)
 
@@ -151,9 +146,37 @@ if __name__=="__main__":
 
 	#Determine homography using ransac
 	H = cv2.findHomography(corresp1, corresp2, cv2.RANSAC, ransacReprojThreshold=20.)
-	print "Homography", H[0]
-	print "Fraction used", np.array(H[1]).mean()
+	#VisualiseMatches(im1, im2, keypoints1, keypoints2, mat, H[1])
 
-	VisualiseMatches(im1, im2, keypoints1, keypoints2, mat, H[1])
+	return H[0], np.array(H[1]).mean()
+
+def HomographyQualityScore(hom):
+	cost = [abs(hom[0,0]- 1.)]
+	cost.append(abs(hom[1,1]- 1.))
+	cost.append(abs(hom[1,0]))
+	cost.append(abs(hom[0,1]))
+	costsum = np.array(cost).sum()
+	if costsum == 0.:
+		return 1000.
+	return 1./costsum
+
+if __name__=="__main__":
+	#im1 = misc.imread("CIMG8588.JPG")
+	#im2 = misc.imread("CIMG8589.JPG")
+
+	l = "/home/tim/dev/glcamdata/house"
+	filist = os.listdir(l)
+	for i, fina in enumerate(filist):
+		for i2, fina2 in enumerate(filist):
+			if i <= i2: continue
+			print i, i2
+			im1 = misc.imread(l+"/"+fina)
+			im2 = misc.imread(l+"/"+fina2)
+
+			H, frac = CalcHomographyForImagePair(im1, im2)
+			homqual = HomographyQualityScore(H)
+			#print "Homography", H
+			print "Fraction used", frac
+			print "Quality", homqual
 
 
