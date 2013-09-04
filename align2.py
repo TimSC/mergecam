@@ -87,11 +87,17 @@ if __name__=="__main__":
 
 	cameraArrangement.OptimiseFit()
 
+	bestScore = None
+	bestPair = None
 	for pair in imgPairs:
 		pairScore = pair[0]
 		
 		included1 = pair[1] in cameraArrangement.addedPhotos
 		included2 = pair[2] in cameraArrangement.addedPhotos
+		if included1 + included2 != 1: continue
 		print pairScore, pair[1:3], included1, included2
-
+		if bestScore is None or pairScore > bestScore:
+			bestScore = pairScore
+			bestPair = pair
+	print bestPair[:3]
 
