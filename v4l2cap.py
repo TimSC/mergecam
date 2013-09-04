@@ -10,13 +10,16 @@ class V4L2(object):
 		if self.video is not None:
 			self.video.close()
 
-	def Start(self):
+	def Start(self, dev = None):
 		# Open the video device.
-		self.video = v4l2capture.Video_device("/dev/video0")
+		if dev is None:
+			dev = "/dev/video0"
+		self.video = v4l2capture.Video_device(dev)
 
 		# Suggest an image size to the device. The device may choose and
 		# return another size if it doesn't support the suggested one.
-		self.size_x, self.size_y = self.video.set_format(1280, 1024)
+		#self.size_x, self.size_y = self.video.set_format(1280, 1024)
+		self.size_x, self.size_y = self.video.set_format(640, 480)
 
 		# Create a buffer to store image data in. This must be done before
 		# calling 'start' if v4l2capture is compiled with libv4l2. Otherwise

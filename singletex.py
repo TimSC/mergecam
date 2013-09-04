@@ -50,7 +50,9 @@ def run():
 	glMaterial(GL_FRONT, GL_DIFFUSE, (1.0, 1.0, 1.0, 1.0))
 
 	v4l2 = v4l2cap.V4L2()
-	v4l2.Start()
+	v4l2.Start("/dev/video0")
+	#v4l2.Start("/dev/v4l/by-id/usb-046d_0825_EE888D90-video-index0")
+	#v4l2.Start("/dev/v4l/by-id/usb-GenesysLogic_Technology_Co.__Ltd._USB2.0_UVC_PC_Camera-video-index0")
 
 	pbo = gltexture.GLReadPbo(SCREEN_SIZE)
 

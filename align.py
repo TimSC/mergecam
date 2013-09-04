@@ -75,26 +75,23 @@ def DetectAcrossImage(img, detector, targetPatchSize = 100.):
 				out.append(kp)
 	return out
 
-def CalcHomographyForImagePair(im1, im2):
-	
+def GetKeypointsAndDescriptors(im1):
 	detector = cv2.FeatureDetector_create("ORB")
 	#print detector.getParams()
 	detector.setInt("nFeatures", 50)
 	descriptor = cv2.DescriptorExtractor_create("BRIEF")
 
 	grey1 = cv2.cvtColor(im1,cv2.COLOR_BGR2GRAY)
-	grey2 = cv2.cvtColor(im2,cv2.COLOR_BGR2GRAY)
 
 	#print "Extracting points of interest 1"
 	#keypoints1 = detector.detect(grey1)
 	keypoints1 = DetectAcrossImage(grey1, detector)
 	#VisualiseKeypoints(grey1, keypoints1)
 	(keypoints1, descriptors1) = descriptor.compute(grey1, keypoints1)
-	
-	#print "Extracting points of interest 2"
-	keypoints2 = DetectAcrossImage(grey2, detector)
-	(keypoints2, descriptors2) = descriptor.compute(grey2, keypoints2)
+	return (keypoints1, descriptors1)
 
+def CalcHomographyForImagePair(keypoints1, descriptors1, keypoints2, descriptors2):
+	
 	#Find corresponding points using FLANN
 	FLANN_INDEX_LSH = 6
 	flann_params = dict(algorithm = FLANN_INDEX_LSH,
@@ -127,7 +124,7 @@ def CalcHomographyForImagePair(im1, im2):
 		plt.show()
 
 	#Transform keypoints from rectilinear to polar space
-	pts = TransformKeyPoints(ptsPos1, 49.0, 35.4, im1.shape[1], im1.shape[0])
+	#pts = TransformKeyPoints(ptsPos1, 49.0, 35.4, im1.shape[1], im1.shape[0])
 
 	if 0:
 		pts = np.array(pts)
@@ -163,9 +160,23 @@ def HomographyQualityScore(hom):
 if __name__=="__main__":
 	#im1 = misc.imread("CIMG8588.JPG")
 	#im2 = misc.imread("CIMG8589.JPG")
+	pairs = []
 
 	l = "/home/tim/dev/glcamdata/house"
 	filist = os.listdir(l)
+
+	#Extract keypoints and descriptors
+	keyPointsLi, descriptorsLi = [], []
+	for i, fina in enumerate(filist):
+		print "Extracting keypoints and descriptors", fina
+		im1 = misc.imread(l+"/"+fina)
+		keypoints1, descriptors1 = GetKeypointsAndDescriptors(im1)
+		if len(keypoints1)==0:
+			print "Warning: no keypoints found"
+		keyPointsLi.append(keypoints1)
+		descriptorsLi.append(descriptors1)
+
+	#Calc homography between pairs
 	for i, fina in enumerate(filist):
 		for i2, fina2 in enumerate(filist):
 			if i <= i2: continue
@@ -173,10 +184,21 @@ if __name__=="__main__":
 			im1 = misc.imread(l+"/"+fina)
 			im2 = misc.imread(l+"/"+fina2)
 
-			H, frac = CalcHomographyForImagePair(im1, im2)
+			keypoints1, descriptors1 = keyPointsLi[i], descriptorsLi[i]
+			keypoints2, descriptors2 = keyPointsLi[i2], descriptorsLi[i2]
+			if len(keypoints1) == 0 or len(keypoints2) == 0:
+				print "No keypoints in photo"
+				continue
+
+			H, frac = CalcHomographyForImagePair(keypoints1, descriptors1, keypoints2, descriptors2)
 			homqual = HomographyQualityScore(H)
 			#print "Homography", H
 			print "Fraction used", frac
 			print "Quality", homqual
 
+			pairs.append((frac*homqual, fina, fina2))
+		
+	pairs.sort()
+	for pair in pairs:
+		print pair
 
