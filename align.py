@@ -1,24 +1,10 @@
 
 import scipy.misc as misc
-import cv2, cv, os
+import cv2, cv, os, pickle
 import rectilinear
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-
-def TransformKeyPoints(pts, hFov, vFov, imgW, imgH):
-	rectilin = rectilinear.Rectilinear()
-	pts = np.array(pts)
-	centred = pts - (imgW/2., imgH/2.)
-	scaled = centred / (imgW/2., imgH/2.)
-	
-	#print hFov, vFov, imgH, imgW
-	
-	hwidth = rectilin.UnProj(0., hFov / 2.)[0]
-	hheight = rectilin.UnProj(vFov / 2., 0.)[1]
-	normImg = scaled * (hwidth, hheight)
-	polar = [rectilin.Proj(*pt) for pt in normImg]
-	return polar
 
 def VisualiseKeypoints(im, keypoints):
 	plt.imshow(im, cmap = cm.Greys_r)
@@ -144,8 +130,11 @@ def CalcHomographyForImagePair(keypoints1, descriptors1, keypoints2, descriptors
 	#Determine homography using ransac
 	H = cv2.findHomography(corresp1, corresp2, cv2.RANSAC, ransacReprojThreshold=20.)
 	#VisualiseMatches(im1, im2, keypoints1, keypoints2, mat, H[1])
+	mask = np.array(H[1], dtype=np.bool)[:,0]
+	corresp1Inliers = corresp1[mask]
+	corresp2Inliers = corresp2[mask]
 
-	return H[0], np.array(H[1]).mean()
+	return H[0], mask.mean(), corresp1Inliers, corresp2Inliers
 
 def HomographyQualityScore(hom):
 	cost = [abs(hom[0,0]- 1.)]
@@ -190,15 +179,19 @@ if __name__=="__main__":
 				print "No keypoints in photo"
 				continue
 
-			H, frac = CalcHomographyForImagePair(keypoints1, descriptors1, keypoints2, descriptors2)
+			H, frac, inliers1, inliers2 = CalcHomographyForImagePair(keypoints1, descriptors1, keypoints2, descriptors2)
 			homqual = HomographyQualityScore(H)
 			#print "Homography", H
 			print "Fraction used", frac
 			print "Quality", homqual
+			#print inliers1
+			#print inliers2
 
-			pairs.append((frac*homqual, fina, fina2))
+			pairs.append((frac*homqual, fina, fina2, inliers1, inliers2, im1.shape, im2.shape, H))
 		
 	pairs.sort()
+	pairs.reverse()
+	pickle.dump(pairs, open("imgpairs.dat","wb"), protocol=-1)
 	for pair in pairs:
 		print pair
 

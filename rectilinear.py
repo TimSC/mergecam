@@ -25,6 +25,24 @@ class Rectilinear(object):
 		lon = self.cLon + atan2(x * sinc, rho * cos(self.cLat) * cosc - y * sin(self.cLat) * sinc)
 		return lat, lon
 
+class RectilinearCam(object):
+	def __init__(self):
+		self.rectilinear = Rectilinear()
+		self.imgW = 640
+		self.imgH = 480
+		self.hFov = 49.0
+		self.vFov = 35.4
+
+	def Proj(self, pts):
+		pts = np.array(pts)
+		centred = pts - (self.imgW/2., self.imgH/2.)
+		scaled = centred / (self.imgW/2., self.imgH/2.)
+		hwidth = self.rectilinear.UnProj(0., self.hFov / 2.)[0]
+		hheight = self.rectilinear.UnProj(self.vFov / 2., 0.)[1]
+		normImg = scaled * (hwidth, hheight)
+		polar = [self.rectilinear.Proj(*pt) for pt in normImg]
+		return polar
+
 if __name__ == "__main__":
 	import matplotlib.pyplot as plt
 
