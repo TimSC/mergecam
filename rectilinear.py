@@ -1,4 +1,5 @@
 from math import sin, cos, atan2, pi, asin, atan
+import math
 import numpy as np
 
 class Rectilinear(object):
@@ -30,8 +31,8 @@ class RectilinearCam(object):
 		self.rectilinear = Rectilinear()
 		self.imgW = 640
 		self.imgH = 480
-		self.hFov = 49.0
-		self.vFov = 35.4
+		self.hFov = math.radians(49.0)
+		self.vFov = math.radians(35.4)
 
 	def Proj(self, pts):
 		pts = np.array(pts)
