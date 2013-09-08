@@ -96,29 +96,31 @@ class RectilinearCam(object):
 			out.append((lat, lon))
 		return out
 
-	def Proj(self, ptsLatLon): #Lat, lon radians to image px
+	def Proj(self, np.ndarray[np.float32_t,ndim=2] ptsLatLon): #Lat, lon radians to image px
 
 		cdef float x = 0., y = 0.
 		cdef int valid = 1
+		cdef np.ndarray[np.float32_t,ndim=2] imgPts = np.empty((ptsLatLon.shape[0],ptsLatLon.shape[1]), dtype=np.float32)
+		cdef np.ndarray[np.int8_t,ndim=1] validLi = np.empty((ptsLatLon.shape[0],), dtype=np.int8)
 
-		normImg = []
-		validLi = []
-		for pt in ptsLatLon:
-			RectilinearProj(pt[0], pt[1], self.cLat, self.cLon, &x, &y, &valid)
+		for ptNum in range(ptsLatLon.shape[0]):
+			RectilinearProj(ptsLatLon[ptNum,0], ptsLatLon[ptNum,1], self.cLat, self.cLon, &x, &y, &valid)
 			if valid:
-				normImg.append((x, y))
-				validLi.append(True)
+				imgPts[ptNum,0] = x
+				imgPts[ptNum,1] = y
+				validLi[ptNum] = 1
 			else:
-				normImg.append((0.,0.))
-				validLi.append(False)
+				imgPts[ptNum,0] = 0.
+				imgPts[ptNum,1] = 0.
+				validLi[ptNum] = 0
 
-		normImg = np.array(normImg)
-		scaled = normImg / (self.hHRange, self.hVRange)
-		centred = scaled * (self.imgW/2., self.imgH/2.)
-		imgPts = centred + (self.imgW/2., self.imgH/2.)
+		imgPts /= (self.hHRange, self.hVRange)
+		imgPts *= (self.imgW/2., self.imgH/2.)
+		imgPts += (self.imgW/2., self.imgH/2.)
 
-		for ind in np.where(np.array(validLi) == False):
-			imgPts[ind] = (None, None)
+		for ind in np.where(validLi == False):
+			imgPts[ind,0] = None
+			imgPts[ind,1] = None
 
 		return imgPts
 
