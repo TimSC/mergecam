@@ -137,24 +137,25 @@ def SelectPhotoToAdd(imgPairs, cameraArrangement):
 def VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement):
 
 	im = Image.new("RGB", (800, 600))
+	eqRect = rectilinear.EquirectangularCam()
+	eqRect.imgW = im.size[0]
+	eqRect.imgH = im.size[1]
 
 	for photoId in cameraArrangement.addedPhotos.keys():
 		camParams = cameraArrangement.addedPhotos[photoId]
 		imgEdgePts = [(0,0),(camParams.imgW,0),(camParams.imgW,camParams.imgH),(0, camParams.imgH)]
 		worldPts = camParams.UnProj(imgEdgePts)
-		eqRect = rectilinear.EquirectangularCam()
-		eqRect.imgW = im.size[0]
-		eqRect.imgH = im.size[1]
 		imgPts = eqRect.Proj(worldPts)
 
+		#Draw bounding box
 		draw = ImageDraw.Draw(im) 
 		for i in range(len(imgPts)):
 			pt1 = list(imgPts[i])
 			pt2 = list(imgPts[(i+1)%len(imgPts)])
 			draw.line(pt1+pt2, fill=128)
 		del draw
-	im.show()
-	exit(0)
+
+	return im
 
 
 if __name__=="__main__":
@@ -162,6 +163,8 @@ if __name__=="__main__":
 
 	poolPath = "/home/tim/dev/glcamdata/house"
 	poolPhotos = os.listdir(poolPath)
+
+	log = open("log.txt", "wt")
 	
 	#Add two best photos
 	imgPairs.sort()
@@ -172,6 +175,10 @@ if __name__=="__main__":
 	cameraArrangement = CameraArrangement(imgPairs)
 	cameraArrangement.addedPhotos[bestPair[1]] = rectilinear.RectilinearCam()
 	cameraArrangement.addedPhotos[bestPair[2]] = rectilinear.RectilinearCam()
+
+	log.write("Starting with "+str(bestPair[1])+"\n")
+	log.write("Starting with "+str(bestPair[2])+"\n")
+	log.flush()
 
 	cameraArrangement.OptimiseFit([bestPair[2]])
 	
@@ -187,6 +194,9 @@ if __name__=="__main__":
 			print "Adding", bestPair[1]
 			photoToAdd = bestPair[1]
 
+		log.write("Adding "+str(photoToAdd)+"\n")
+		log.flush()
+
 		cameraArrangement.addedPhotos[photoToAdd] = rectilinear.RectilinearCam()
 		
 		cameraArrangement.OptimiseFit([photoToAdd])
@@ -195,7 +205,10 @@ if __name__=="__main__":
 			photo = cameraArrangement.addedPhotos[photoId]
 			print photoId, photo.rectilinear.cLat, photo.rectilinear.cLon
 
-		VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement)
+		vis = VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement)
+		vis.save("vis{0}.png".format(len(cameraArrangement.addedPhotos)))
 
 	pickle.dump(cameraArrangement.addedPhotos, open("camarr.dat","wb"), protocol=-1)
+
+	log.flush()
 
