@@ -90,8 +90,8 @@ class CameraArrangement(object):
 				ptsA = ptsA[:,:]
 				ptsB = ptsB[:,:]
 
-				proj1 = camModel1.Proj(ptsA)
-				proj2 = camModel2.Proj(ptsB)
+				proj1 = camModel1.UnProj(ptsA)
+				proj2 = camModel2.UnProj(ptsB)
 			
 				distsX = []
 				distsY = []
@@ -141,7 +141,7 @@ def VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement):
 	for photoId in cameraArrangement.addedPhotos.keys():
 		camParams = cameraArrangement.addedPhotos[photoId]
 		print camParams.rectilinear.cLat, camParams.rectilinear.cLon
-		worldPts = camParams.Proj([(-0.5*camParams.hFov, -0.5*camParams.vFov),(0.5*camParams.hFov, -0.5*camParams.vFov),(0.5*camParams.hFov, 0.5*camParams.vFov),(-0.5*camParams.hFov, 0.5*camParams.vFov)])
+		worldPts = camParams.UnProj([(0,0),(camParams.imgW,0),(camParams.imgW,camParams.imgH),(0, camParams.imgH)])
 		print "worldPts", worldPts
 		eqRect = rectilinear.EquirectangularCam()
 		eqRect.imgW = im.size[0]
