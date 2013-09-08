@@ -30,6 +30,15 @@ cdef class Rectilinear(object):
 		xOut[0] = (cos(lat) * sin(lon - self.cLon)) / cosc
 		yOut[0] = (cos(self.cLon) * sin(lat) - sin(self.cLon) * cos(lat) * cos(lon - self.cLon)) / cosc
 
+	def ProjSlow(self, float lat, float lon):
+		cdef float x=0., y=0.
+		cdef int valid = 0
+		self.Proj(lat, lon, &x, &y, &valid)
+		if valid:
+			return x, y
+		else:
+			return None, None
+
 	cdef UnProj(self, float x, float y, float *latOut, float *lonOut, int *validOut):
 		#http://mathworld.wolfram.com/GnomonicProjection.html
 
@@ -40,6 +49,15 @@ cdef class Rectilinear(object):
 		validOut[0] = 1
 		latOut[0] = asin(cosc * sin(self.cLat) + y * sinc * cos(self.cLat) / rho)
 		lonOut[0] = self.cLon + atan2(x * sinc, rho * cos(self.cLat) * cosc - y * sin(self.cLat) * sinc)
+
+	def UnProjSlow(self, float x, float y):
+		cdef float lat=0., lon=0.
+		cdef int valid = 0
+		self.UnProj(x, y, &lat, &lon, &valid)
+		if valid:
+			return lat, lon
+		else:
+			return None, None
 
 	def __reduce__(self):
 		state = {}
@@ -75,32 +93,43 @@ class RectilinearCam(object):
 		self.rectStatic.Proj(self.vFov / 2., 0., temp, self.hheight, valid)
 
 	def UnProj(self, pts): #Image px to Lat, lon radians
+		cdef float lat = 0., lon = 0.
+		cdef int valid = 0
+
 		pts = np.array(pts)
 		centred = pts - (self.imgW/2., self.imgH/2.)
 		scaled = centred / (self.imgW/2., self.imgH/2.)
 
 		normImg = scaled * (self.hwidth, self.hheight)
-		polar = [self.rectilinear.UnProj(*pt) for pt in normImg]
-		return polar
+		out = []
+		for pt in normImg:
+			self.rectilinear.UnProj(pt[0], pt[1], lat, lon, valid)
+			assert valid
+			out.append((lat, lon))
+		return out
 
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
+
+		cdef float x = 0., y = 0.
+		cdef int valid = 0
+
 		normImg = []
-		valid = []
+		validLi = []
 		for pt in ptsLatLon:
-			pt2 = self.rectilinear.Proj(*pt)
-			if pt2[0] is not None:
-				normImg.append(pt2)
-				valid.append(True)
+			self.rectilinear.Proj(pt[0], pt[1], x, y, valid)
+			if valid:
+				normImg.append((x, y))
+				validLi.append(True)
 			else:
 				normImg.append((0.,0.))
-				valid.append(False)
+				validLi.append(False)
 
 		normImg = np.array(normImg)
 		scaled = normImg / (self.hwidth, self.hheight)
 		centred = scaled * (self.imgW/2., self.imgH/2.)
 		imgPts = centred + (self.imgW/2., self.imgH/2.)
 
-		for ind in np.where(np.array(valid) == False):
+		for ind in np.where(np.array(validLi) == False):
 			imgPts[ind] = (None, None)
 
 		return imgPts
