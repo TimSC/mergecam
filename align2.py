@@ -149,11 +149,11 @@ def VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement):
 		for y in range(im.size[1]):
 			pix.append((x, y))
 
-	print len(pix)
 	pixWorld = eqRect.UnProj(pix)
-	print len(pixWorld)
-
-#	for photoId in cameraArrangement.addedPhotos.keys():
+	for photoId in cameraArrangement.addedPhotos.keys():
+		camParams = cameraArrangement.addedPhotos[photoId]
+		imPos = camParams.Proj(pixWorld)
+		print np.array(imPos)
 
 	for photoId in cameraArrangement.addedPhotos.keys():
 		camParams = cameraArrangement.addedPhotos[photoId]
