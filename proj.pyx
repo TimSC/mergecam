@@ -1,32 +1,64 @@
-from math import sin, cos, atan2, pi, asin, atan
+# cython: profile=True
+# cython: cdivision=True
+# cython: boundscheck=False
+# cython: wraparound=False
+
+from math import pi
+from libc.math cimport sin, cos, atan2, asin, atan
 import math
 import numpy as np
+cimport numpy as np
+import pickle
 
-class Rectilinear(object):
+cdef class Rectilinear(object):
+	cdef float cLon, cLat
+
 	def __init__(self):
 		self.cLon = 0.
 		self.cLat = 0.
 
-	def Proj(self, lat, lon):
+	cdef Proj(self, float lat, float lon, float *xOut, float *yOut, int *validOut):
 		#http://mathworld.wolfram.com/GnomonicProjection.html
 
-		cosc = sin(self.cLat) * sin(lat) + cos(self.cLat) * cos(lat) * cos(lon - self.cLon)
+		cdef float cosc = sin(self.cLon) * sin(lat) + cos(self.cLon) * cos(lat) * cos(lon - self.cLon)
 		if cosc < 0.:
-			return None, None
-		x = (cos(lat) * sin(lon - self.cLon)) / cosc
-		y = (cos(self.cLat) * sin(lat) - sin(self.cLat) * cos(lat) * cos(lon - self.cLon)) / cosc
-		return x, y
+			validOut[0] = 0
+			xOut[0] = 0.
+			yOut[0] = 0.
 
-	def UnProj(self, x, y):
-		##http://mathworld.wolfram.com/GnomonicProjection.html
+		validOut[0] = 1
+		xOut[0] = (cos(lat) * sin(lon - self.cLon)) / cosc
+		yOut[0] = (cos(self.cLon) * sin(lat) - sin(self.cLon) * cos(lat) * cos(lon - self.cLon)) / cosc
 
-		rho = (x ** 2. + y ** 2.) ** 0.5
-		c = atan(rho)
-		sinc = sin(c)
-		cosc = cos(c)
-		lat = asin(cosc * sin(self.cLat) + y * sinc * cos(self.cLat) / rho)
-		lon = self.cLon + atan2(x * sinc, rho * cos(self.cLat) * cosc - y * sin(self.cLat) * sinc)
-		return lat, lon
+	cdef UnProj(self, float x, float y, float *latOut, float *lonOut, int *validOut):
+		#http://mathworld.wolfram.com/GnomonicProjection.html
+
+		cdef float rho = (x ** 2. + y ** 2.) ** 0.5
+		cdef float c = atan(rho)
+		cdef float sinc = sin(c)
+		cdef float cosc = cos(c)
+		validOut[0] = 1
+		latOut[0] = asin(cosc * sin(self.cLat) + y * sinc * cos(self.cLat) / rho)
+		lonOut[0] = self.cLon + atan2(x * sinc, rho * cos(self.cLat) * cosc - y * sin(self.cLat) * sinc)
+
+	def __reduce__(self):
+		state = {}
+		state['lat'] = self.cLat
+		state['lon'] = self.cLon
+		return (RectilinearFactory, (pickle.dumps(state, protocol=-1),))
+
+	def SetCentre(self, float lat, float lon):
+		self.cLon = lon
+		self.cLat = lat
+
+	def GetCentre(self):
+		return self.cLat, self.cLon
+
+def RectilinearFactory(args):
+	r = Rectilinear()
+	stateDict = pickle.loads(args)
+	r.SetCentre(stateDict['lat'], stateDict['lon'])
+	return r
 
 class RectilinearCam(object):
 	def __init__(self):
@@ -36,8 +68,11 @@ class RectilinearCam(object):
 		self.hFov = math.radians(49.0)
 		self.vFov = math.radians(35.4)
 		self.rectStatic = Rectilinear()
-		self.hwidth = self.rectStatic.Proj(0., self.hFov / 2.)[0]
-		self.hheight = self.rectStatic.Proj(self.vFov / 2., 0.)[1]
+		self.hwidth = -1.
+		self.hheight = -1.
+		temp, valid = -1., 0
+		self.rectStatic.Proj(0., self.hFov / 2., self.hwidth, temp, valid)
+		self.rectStatic.Proj(self.vFov / 2., 0., temp, self.hheight, valid)
 
 	def UnProj(self, pts): #Image px to Lat, lon radians
 		pts = np.array(pts)
