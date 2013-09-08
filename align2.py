@@ -140,7 +140,8 @@ def VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement):
 
 	for photoId in cameraArrangement.addedPhotos.keys():
 		camParams = cameraArrangement.addedPhotos[photoId]
-		worldPts = camParams.UnProj([(0,0),(camParams.imgW,0),(camParams.imgW,camParams.imgH),(0, camParams.imgH)])
+		imgEdgePts = [(0,0),(camParams.imgW,0),(camParams.imgW,camParams.imgH),(0, camParams.imgH)]
+		worldPts = camParams.UnProj(imgEdgePts)
 		eqRect = rectilinear.EquirectangularCam()
 		eqRect.imgW = im.size[0]
 		eqRect.imgH = im.size[1]

@@ -33,13 +33,14 @@ class RectilinearCam(object):
 		self.imgH = 480
 		self.hFov = math.radians(49.0)
 		self.vFov = math.radians(35.4)
+		self.rectStatuc = Rectilinear()
 
 	def UnProj(self, pts): #Image px to Lat, lon radians
 		pts = np.array(pts)
 		centred = pts - (self.imgW/2., self.imgH/2.)
 		scaled = centred / (self.imgW/2., self.imgH/2.)
-		hwidth = self.rectilinear.Proj(0., self.hFov / 2.)[0]
-		hheight = self.rectilinear.Proj(self.vFov / 2., 0.)[1]
+		hwidth = self.rectStatuc.Proj(0., self.hFov / 2.)[0]
+		hheight = self.rectStatuc.Proj(self.vFov / 2., 0.)[1]
 		normImg = scaled * (hwidth, hheight)
 		polar = [self.rectilinear.UnProj(*pt) for pt in normImg]
 		return polar
