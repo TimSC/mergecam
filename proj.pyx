@@ -64,6 +64,7 @@ class RectilinearCam(object):
 		self.hHRange = -1.
 		self.hVRange = -1.
 		self.SetFov(49.0, 35.4)
+		self.hsize = np.array((self.imgW/2, self.imgH/2))
 
 	def SetFov(self, hfovIn, vfovIn):
 		cdef float tempX = 0., tempY = 0.
@@ -79,16 +80,17 @@ class RectilinearCam(object):
 		RectilinearProj(hvFov, 0., 0., 0., &tempX, &tempY, &valid)
 		assert valid
 		self.hVRange = tempY
+		self.hRange = np.array((self.hHRange, self.hVRange))
 
 	def UnProj(self, pts): #Image px to Lat, lon radians
 		cdef float lat = 0., lon = 0.
 		cdef int valid = 1
 
 		pts = np.array(pts)
-		centred = pts - (self.imgW/2., self.imgH/2.)
-		scaled = centred / (self.imgW/2., self.imgH/2.)
+		centred = pts - self.hsize
+		scaled = centred / self.hsize
 
-		normImg = scaled * (self.hHRange, self.hVRange)
+		normImg = scaled * self.hRange
 		out = []
 		for pt in normImg:
 			RectilinearUnProj(pt[0], pt[1], self.cLat, self.cLon, &lat, &lon, &valid)
@@ -114,9 +116,9 @@ class RectilinearCam(object):
 				imgPts[ptNum,1] = 0.
 				validLi[ptNum] = 0
 
-		imgPts /= (self.hHRange, self.hVRange)
-		imgPts *= (self.imgW/2., self.imgH/2.)
-		imgPts += (self.imgW/2., self.imgH/2.)
+		imgPts /= self.hRange
+		imgPts *= self.hsize
+		imgPts += self.hsize
 
 		for ind in np.where(validLi == False):
 			imgPts[ind,0] = None
