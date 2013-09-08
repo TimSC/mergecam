@@ -209,7 +209,7 @@ if __name__=="__main__":
 
 	cameraArrangement.OptimiseFit([bestPair[2]])
 	
-	while bestPair is not None:
+	while bestPair is not None and len(cameraArrangement.addedPhotos) < 5:
 		bestPair, newInd = SelectPhotoToAdd(imgPairs, cameraArrangement)
 		if bestPair is None: continue
 		print bestPair[:3], newInd
