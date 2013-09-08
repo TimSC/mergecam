@@ -11,6 +11,8 @@ class Rectilinear(object):
 		#http://mathworld.wolfram.com/GnomonicProjection.html
 
 		cosc = sin(self.cLat) * sin(lat) + cos(self.cLat) * cos(lat) * cos(lon - self.cLon)
+		if cosc < 0.:
+			return None, None
 		x = (cos(lat) * sin(lon - self.cLon)) / cosc
 		y = (cos(self.cLat) * sin(lat) - sin(self.cLat) * cos(lat) * cos(lon - self.cLon)) / cosc
 		return x, y
@@ -48,12 +50,24 @@ class RectilinearCam(object):
 
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
 		normImg = []
+		valid = []
 		for pt in ptsLatLon:
-			normImg.append(self.rectilinear.Proj(*pt))
+			pt2 = self.rectilinear.Proj(*pt)
+			if pt2[0] is not None:
+				normImg.append(pt2)
+				valid.append(True)
+			else:
+				normImg.append((0.,0.))
+				valid.append(False)
+
 		normImg = np.array(normImg)
 		scaled = normImg / (self.hwidth, self.hheight)
 		centred = scaled * (self.imgW/2., self.imgH/2.)
 		imgPts = centred + (self.imgW/2., self.imgH/2.)
+
+		for ind in np.where(np.array(valid) == False):
+			imgPts[ind] = (None, None)
+
 		return imgPts
 
 class EquirectangularCam(object):

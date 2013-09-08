@@ -165,7 +165,8 @@ def VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement):
 			if imIn[1] < 0 or imIn[1] >= camParams.imgH: continue
 			
 			#Copy pixel to output
-			iml[imOut[0], imOut[1]] = camImgl[imIn[0], imIn[1]]
+			if not math.isnan(imIn[0]):
+				iml[imOut[0], imOut[1]] = camImgl[imIn[0], imIn[1]]
 
 	for photoId in cameraArrangement.addedPhotos.keys():
 		camParams = cameraArrangement.addedPhotos[photoId]
