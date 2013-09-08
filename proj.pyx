@@ -13,15 +13,17 @@ import pickle
 cdef RectilinearProj(float lat, float lon, float cLat, float cLon, float *xOut, float *yOut, int *validOut):
 	#http://mathworld.wolfram.com/GnomonicProjection.html
 
-	cdef float cosc = sin(cLon) * sin(lat) + cos(cLon) * cos(lat) * cos(lon - cLon)
+	cdef float cosc = sin(cLat) * sin(lat) + cos(cLat) * cos(lat) * cos(lon - cLon)
+
 	if cosc < 0.:
 		validOut[0] = 0
 		xOut[0] = 0.
 		yOut[0] = 0.
+		return
 
 	validOut[0] = 1
 	xOut[0] = (cos(lat) * sin(lon - cLon)) / cosc
-	yOut[0] = (cos(cLon) * sin(lat) - sin(cLon) * cos(lat) * cos(lon - cLon)) / cosc
+	yOut[0] = (cos(cLat) * sin(lat) - sin(cLat) * cos(lat) * cos(lon - cLon)) / cosc
 
 cdef RectilinearUnProj(float x, float y, float cLat, float cLon, float *latOut, float *lonOut, int *validOut):
 	#http://mathworld.wolfram.com/GnomonicProjection.html
@@ -89,7 +91,8 @@ class RectilinearCam(object):
 		normImg = scaled * (self.hHRange, self.hVRange)
 		out = []
 		for pt in normImg:
-			lat, lon = RectilinearUnProjSlow(pt[0], pt[1], self.cLat, self.cLon)
+			RectilinearUnProj(pt[0], pt[1], self.cLat, self.cLon, &lat, &lon, &valid)
+			assert valid
 			out.append((lat, lon))
 		return out
 
@@ -101,7 +104,7 @@ class RectilinearCam(object):
 		normImg = []
 		validLi = []
 		for pt in ptsLatLon:
-			x, y = RectilinearProjSlow(pt[0], pt[1], self.cLat, self.cLon)
+			RectilinearProj(pt[0], pt[1], self.cLat, self.cLon, &x, &y, &valid)
 			if valid:
 				normImg.append((x, y))
 				validLi.append(True)
