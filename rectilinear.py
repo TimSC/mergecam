@@ -34,7 +34,7 @@ class RectilinearCam(object):
 		self.hFov = math.radians(49.0)
 		self.vFov = math.radians(35.4)
 
-	def Proj(self, pts):
+	def Proj(self, pts): #Lat, lon radians to image px
 		pts = np.array(pts)
 		centred = pts - (self.imgW/2., self.imgH/2.)
 		scaled = centred / (self.imgW/2., self.imgH/2.)
@@ -43,6 +43,24 @@ class RectilinearCam(object):
 		normImg = scaled * (hwidth, hheight)
 		polar = [self.rectilinear.Proj(*pt) for pt in normImg]
 		return polar
+
+class EquirectangularCam(object):
+	def __init__(self):
+		self.imgW = 1024
+		self.imgH = self.imgW / 2
+		self.cLat = 0.
+		self.cLon = 0.
+		self.hFov = math.radians(360.0)
+		self.vFov = math.radians(180.4)
+		
+	def Proj(self, ptsLatLon): #Lat, lon radians to image px
+		out = []
+		for pt in ptsLatLon:
+			centred = (pt[0]-self.cLon, pt[1]-self.cLat)
+			scaled = (centred[0] * 2. / self.hFov, centred[1] * 2. / self.vFov)
+			imgPos = ((scaled[0] + 1.) * self.imgW * 0.5, (scaled[1] + 1.) * self.imgH * 0.5)
+			out.append(imgPos)
+		return out
 
 if __name__ == "__main__":
 	import matplotlib.pyplot as plt

@@ -3,6 +3,7 @@ import pickle, rectilinear, os
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.optimize as optimize
+from PIL import Image, ImageDraw
 
 class CameraArrangement(object):
 	def __init__(self, imgPairs):
@@ -133,12 +134,37 @@ def SelectPhotoToAdd(imgPairs, cameraArrangement):
 
 	return bestPair, bestNewInd
 
+def VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement):
+
+	im = Image.new("RGB", (800, 600))
+
+	for photoId in cameraArrangement.addedPhotos.keys():
+		camParams = cameraArrangement.addedPhotos[photoId]
+		print camParams.rectilinear.cLat, camParams.rectilinear.cLon
+		worldPts = camParams.Proj([(-0.5*camParams.hFov, -0.5*camParams.vFov),(0.5*camParams.hFov, -0.5*camParams.vFov),(0.5*camParams.hFov, 0.5*camParams.vFov),(-0.5*camParams.hFov, 0.5*camParams.vFov)])
+		print "worldPts", worldPts
+		eqRect = rectilinear.EquirectangularCam()
+		eqRect.imgW = im.size[0]
+		eqRect.imgH = im.size[1]
+		imgPts = eqRect.Proj(worldPts)
+		print "imgPts", imgPts
+
+		draw = ImageDraw.Draw(im) 
+		for i in range(len(imgPts)):
+			pt1 = list(imgPts[i])
+			pt2 = list(imgPts[(i+1)%len(imgPts)])
+			print pt1, pt2
+			draw.line(pt1+pt2, fill=128)
+		del draw
+	im.show()
+	exit(0)
+
 
 if __name__=="__main__":
 	imgPairs = pickle.load(open("imgpairs.dat", "rb"))
 
-	l = "/home/tim/dev/glcamdata/house"
-	poolPhotos = os.listdir(l)
+	poolPath = "/home/tim/dev/glcamdata/house"
+	poolPhotos = os.listdir(poolPath)
 	
 	#Add two best photos
 	imgPairs.sort()
@@ -171,6 +197,8 @@ if __name__=="__main__":
 		for photoId in cameraArrangement.addedPhotos:
 			photo = cameraArrangement.addedPhotos[photoId]
 			print photoId, photo.rectilinear.cLat, photo.rectilinear.cLon
+
+		VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement)
 
 	pickle.dump(cameraArrangement.addedPhotos, open("camarr.dat","wb"), protocol=-1)
 
