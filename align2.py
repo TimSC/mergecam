@@ -140,6 +140,7 @@ def SelectPhotoToAdd(imgPairs, cameraArrangement):
 def VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement):
 
 	im = Image.new("RGB", (800, 600))
+	iml = im.load()
 	eqRect = rectilinear.EquirectangularCam()
 	eqRect.imgW = im.size[0]
 	eqRect.imgH = im.size[1]
@@ -150,10 +151,21 @@ def VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement):
 			pix.append((x, y))
 
 	pixWorld = eqRect.UnProj(pix)
+	#For each photo
 	for photoId in cameraArrangement.addedPhotos.keys():
+		#Project world positions into this camera's image space
 		camParams = cameraArrangement.addedPhotos[photoId]
 		imPos = camParams.Proj(pixWorld)
-		print np.array(imPos)
+		camImg = Image.open(poolPath+"/"+photoId)
+		camImgl = camImg.load()
+		
+		#Check which are valid pixels within bounds
+		for imIn, imOut in zip(imPos, pix):
+			if imIn[0] < 0 or imIn[0] >= camParams.imgW: continue
+			if imIn[1] < 0 or imIn[1] >= camParams.imgH: continue
+			
+			#Copy pixel to output
+			iml[imOut[0], imOut[1]] = camImgl[imIn[0], imIn[1]]
 
 	for photoId in cameraArrangement.addedPhotos.keys():
 		camParams = cameraArrangement.addedPhotos[photoId]

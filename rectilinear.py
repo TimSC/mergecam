@@ -42,16 +42,16 @@ class RectilinearCam(object):
 		centred = pts - (self.imgW/2., self.imgH/2.)
 		scaled = centred / (self.imgW/2., self.imgH/2.)
 
-		normImg = scaled * (hwidth, hheight)
+		normImg = scaled * (self.hwidth, self.hheight)
 		polar = [self.rectilinear.UnProj(*pt) for pt in normImg]
 		return polar
 
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
 		normImg = []
 		for pt in ptsLatLon:
-			normImg.append(self.rectilinear.Proj(ptsLatLon))
+			normImg.append(self.rectilinear.Proj(*pt))
 		normImg = np.array(normImg)
-		scaled = normImg / (hwidth, hheight)
+		scaled = normImg / (self.hwidth, self.hheight)
 		centred = scaled * (self.imgW/2., self.imgH/2.)
 		imgPts = centred + (self.imgW/2., self.imgH/2.)
 		return imgPts
