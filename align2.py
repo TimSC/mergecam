@@ -1,5 +1,5 @@
 
-import pickle, rectilinear, os
+import pickle, rectilinear, os, math
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.optimize as optimize
@@ -96,8 +96,11 @@ class CameraArrangement(object):
 				distsX = []
 				distsY = []
 				for pt1, pt2 in zip(proj1, proj2):
-					malDist1 = abs(pt1[0]-pt2[0])
-					malDist2 = abs(pt1[1]-pt2[1])
+					malDist1 = abs(pt1[0]-pt2[0])#Lat 
+					malDist2 = abs(pt1[1]-pt2[1])#Lon
+					while malDist2 > math.pi: #Limit difference to -pi to +pi range
+						malDist2 -= 2. * math.pi
+
 					distsX.append(malDist1 * weight)
 					distsY.append(malDist2 * weight)
 
