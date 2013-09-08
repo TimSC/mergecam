@@ -148,19 +148,19 @@ def VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement):
 		for y in range(im.size[1]):
 			pix.append((x, y))
 
-	pixWorld = eqRect.UnProj(pix)
+	pixWorld = np.array(eqRect.UnProj(pix), dtype=np.float32)
 	#For each photo
 	for photoId in cameraArrangement.addedPhotos.keys():
 		#Project world positions into this camera's image space
 		camParams = cameraArrangement.addedPhotos[photoId]
-		imPos = camParams.Proj(np.array(pixWorld, dtype=np.float32))
+		imPos = camParams.Proj(pixWorld)
 		camImg = Image.open(poolPath+"/"+photoId)
 		camImgl = camImg.load()
 		
 		#Check which are valid pixels within bounds
 		for imIn, imOut in zip(imPos, pix):
 			if math.isnan(imIn[0]): continue
-			imIn = map(int,map(round,imIn))
+			imIn = (int(round(imIn[0])), int(round(imIn[1])))
 			if imIn[0] < 0 or imIn[0] >= camParams.imgW: continue
 			if imIn[1] < 0 or imIn[1] >= camParams.imgH: continue
 
@@ -207,7 +207,7 @@ if __name__=="__main__":
 
 	cameraArrangement.OptimiseFit([bestPair[2]])
 	
-	while bestPair is not None and len(cameraArrangement.addedPhotos) < 5:
+	while bestPair is not None:# and len(cameraArrangement.addedPhotos) < 5:
 		bestPair, newInd = SelectPhotoToAdd(imgPairs, cameraArrangement)
 		if bestPair is None: continue
 		print bestPair[:3], newInd
