@@ -140,20 +140,16 @@ def VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement):
 
 	for photoId in cameraArrangement.addedPhotos.keys():
 		camParams = cameraArrangement.addedPhotos[photoId]
-		print camParams.rectilinear.cLat, camParams.rectilinear.cLon
 		worldPts = camParams.UnProj([(0,0),(camParams.imgW,0),(camParams.imgW,camParams.imgH),(0, camParams.imgH)])
-		print "worldPts", worldPts
 		eqRect = rectilinear.EquirectangularCam()
 		eqRect.imgW = im.size[0]
 		eqRect.imgH = im.size[1]
 		imgPts = eqRect.Proj(worldPts)
-		print "imgPts", imgPts
 
 		draw = ImageDraw.Draw(im) 
 		for i in range(len(imgPts)):
 			pt1 = list(imgPts[i])
 			pt2 = list(imgPts[(i+1)%len(imgPts)])
-			print pt1, pt2
 			draw.line(pt1+pt2, fill=128)
 		del draw
 	im.show()
