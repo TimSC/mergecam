@@ -141,6 +141,17 @@ def VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement):
 	eqRect.imgW = im.size[0]
 	eqRect.imgH = im.size[1]
 
+	pix = []
+	for x in range(im.size[0]):
+		for y in range(im.size[1]):
+			pix.append((x, y))
+
+	print len(pix)
+	pixWorld = eqRect.UnProj(pix)
+	print len(pixWorld)
+
+#	for photoId in cameraArrangement.addedPhotos.keys():
+
 	for photoId in cameraArrangement.addedPhotos.keys():
 		camParams = cameraArrangement.addedPhotos[photoId]
 		imgEdgePts = [(0,0),(camParams.imgW,0),(camParams.imgW,camParams.imgH),(0, camParams.imgH)]
@@ -211,4 +222,5 @@ if __name__=="__main__":
 	pickle.dump(cameraArrangement.addedPhotos, open("camarr.dat","wb"), protocol=-1)
 
 	log.flush()
+
 

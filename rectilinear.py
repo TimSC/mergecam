@@ -57,10 +57,20 @@ class EquirectangularCam(object):
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
 		out = []
 		for pt in ptsLatLon:
-			centred = (pt[0]-self.cLon, pt[1]-self.cLat)
+			centred = (pt[1]-self.cLon, pt[0]-self.cLat)
 			scaled = (centred[0] * 2. / self.hFov, centred[1] * 2. / self.vFov)
-			imgPos = ((scaled[0] + 1.) * self.imgW * 0.5, (scaled[1] + 1.) * self.imgH * 0.5)
+			scaled2 = (math.modf(scaled[0])[0], math.modf(scaled[1])[0])
+			imgPos = ((scaled2[0] + 1.) * self.imgW * 0.5, (scaled2[1] + 1.) * self.imgH * 0.5)
 			out.append(imgPos)
+		return out
+
+	def UnProj(self, ptsPix): #Image px to Lat, lon radians
+		out = []
+		for pt in ptsPix:
+			centred = ((pt[0] * 2. / self.imgW) - 1., (pt[1] * 2. / self.imgH) - 1.)
+			scaled = (centred[0] * self.hFov / 2., centred[1] * self.vFov / 2.)
+			worldPos = (scaled[1] + self.cLon, scaled[0] + self.cLon)
+			out.append(worldPos)
 		return out
 
 if __name__ == "__main__":
