@@ -10,113 +10,98 @@ import numpy as np
 cimport numpy as np
 import pickle
 
-cdef class Rectilinear(object):
-	cdef float cLon, cLat
+cdef RectilinearProj(float lat, float lon, float cLat, float cLon, float *xOut, float *yOut, int *validOut):
+	#http://mathworld.wolfram.com/GnomonicProjection.html
 
-	def __init__(self):
-		self.cLon = 0.
-		self.cLat = 0.
+	cdef float cosc = sin(cLon) * sin(lat) + cos(cLon) * cos(lat) * cos(lon - cLon)
+	if cosc < 0.:
+		validOut[0] = 0
+		xOut[0] = 0.
+		yOut[0] = 0.
 
-	cdef Proj(self, float lat, float lon, float *xOut, float *yOut, int *validOut):
-		#http://mathworld.wolfram.com/GnomonicProjection.html
+	validOut[0] = 1
+	xOut[0] = (cos(lat) * sin(lon - cLon)) / cosc
+	yOut[0] = (cos(cLon) * sin(lat) - sin(cLon) * cos(lat) * cos(lon - cLon)) / cosc
 
-		cdef float cosc = sin(self.cLon) * sin(lat) + cos(self.cLon) * cos(lat) * cos(lon - self.cLon)
-		if cosc < 0.:
-			validOut[0] = 0
-			xOut[0] = 0.
-			yOut[0] = 0.
+cdef RectilinearUnProj(float x, float y, float cLat, float cLon, float *latOut, float *lonOut, int *validOut):
+	#http://mathworld.wolfram.com/GnomonicProjection.html
 
-		validOut[0] = 1
-		xOut[0] = (cos(lat) * sin(lon - self.cLon)) / cosc
-		yOut[0] = (cos(self.cLon) * sin(lat) - sin(self.cLon) * cos(lat) * cos(lon - self.cLon)) / cosc
+	cdef float rho = (x ** 2. + y ** 2.) ** 0.5
+	cdef float c = atan(rho)
+	cdef float sinc = sin(c)
+	cdef float cosc = cos(c)
+	validOut[0] = 1
+	latOut[0] = asin(cosc * sin(cLat) + y * sinc * cos(cLat) / rho)
+	lonOut[0] = cLon + atan2(x * sinc, rho * cos(cLat) * cosc - y * sin(cLat) * sinc)
 
-	def ProjSlow(self, float lat, float lon):
-		cdef float x=0., y=0.
-		cdef int valid = 0
-		self.Proj(lat, lon, &x, &y, &valid)
-		if valid:
-			return x, y
-		else:
-			return None, None
+def RectilinearProjSlow(float lat, float lon, float cLat, float cLon):
+	cdef float x=0., y=0.
+	cdef int valid = 0
+	RectilinearProj(lat, lon, cLat, cLon, &x, &y, &valid)
+	if valid:
+		return x, y
+	else:
+		return None, None
 
-	cdef UnProj(self, float x, float y, float *latOut, float *lonOut, int *validOut):
-		#http://mathworld.wolfram.com/GnomonicProjection.html
-
-		cdef float rho = (x ** 2. + y ** 2.) ** 0.5
-		cdef float c = atan(rho)
-		cdef float sinc = sin(c)
-		cdef float cosc = cos(c)
-		validOut[0] = 1
-		latOut[0] = asin(cosc * sin(self.cLat) + y * sinc * cos(self.cLat) / rho)
-		lonOut[0] = self.cLon + atan2(x * sinc, rho * cos(self.cLat) * cosc - y * sin(self.cLat) * sinc)
-
-	def UnProjSlow(self, float x, float y):
-		cdef float lat=0., lon=0.
-		cdef int valid = 0
-		self.UnProj(x, y, &lat, &lon, &valid)
-		if valid:
-			return lat, lon
-		else:
-			return None, None
-
-	def __reduce__(self):
-		state = {}
-		state['lat'] = self.cLat
-		state['lon'] = self.cLon
-		return (RectilinearFactory, (pickle.dumps(state, protocol=-1),))
-
-	def SetCentre(self, float lat, float lon):
-		self.cLon = lon
-		self.cLat = lat
-
-	def GetCentre(self):
-		return self.cLat, self.cLon
-
-def RectilinearFactory(args):
-	r = Rectilinear()
-	stateDict = pickle.loads(args)
-	r.SetCentre(stateDict['lat'], stateDict['lon'])
-	return r
+def RectilinearUnProjSlow(float x, float y, float cLat, float cLon):
+	cdef float lat=0., lon=0.
+	cdef int valid = 0
+	RectilinearUnProj(x, y, cLat, cLon, &lat, &lon, &valid)
+	if valid:
+		return lat, lon
+	else:
+		return None, None
 
 class RectilinearCam(object):
 	def __init__(self):
-		self.rectilinear = Rectilinear()
 		self.imgW = 640
 		self.imgH = 480
-		self.hFov = math.radians(49.0)
-		self.vFov = math.radians(35.4)
-		self.rectStatic = Rectilinear()
-		self.hwidth = -1.
-		self.hheight = -1.
-		temp, valid = -1., 0
-		self.rectStatic.Proj(0., self.hFov / 2., self.hwidth, temp, valid)
-		self.rectStatic.Proj(self.vFov / 2., 0., temp, self.hheight, valid)
+		self.cLat = 0.
+		self.cLon = 0.
+
+		self.hHRange = -1.
+		self.hVRange = -1.
+		self.SetFov(49.0, 35.4)
+
+	def SetFov(self, hfovIn, vfovIn):
+		cdef float tempX = 0., tempY = 0.
+		cdef int valid = 0
+		self.hFov = math.radians(hfovIn)
+		self.vFov = math.radians(vfovIn)
+		cdef float hhFov = self.hFov / 2.
+		cdef float hvFov = self.vFov / 2.
+
+		RectilinearProj(0., hhFov, 0., 0., &tempX, &tempY, &valid)
+		assert valid
+		self.hHRange = tempX
+		RectilinearProj(hvFov, 0., 0., 0., &tempX, &tempY, &valid)
+		assert valid
+		self.hVRange = tempY
 
 	def UnProj(self, pts): #Image px to Lat, lon radians
 		cdef float lat = 0., lon = 0.
-		cdef int valid = 0
+		cdef int valid = 1
 
 		pts = np.array(pts)
 		centred = pts - (self.imgW/2., self.imgH/2.)
 		scaled = centred / (self.imgW/2., self.imgH/2.)
 
-		normImg = scaled * (self.hwidth, self.hheight)
+		normImg = scaled * (self.hHRange, self.hVRange)
 		out = []
 		for pt in normImg:
-			self.rectilinear.UnProj(pt[0], pt[1], lat, lon, valid)
-			assert valid
+			lat, lon = RectilinearUnProjSlow(pt[0], pt[1], self.cLat, self.cLon)
 			out.append((lat, lon))
 		return out
 
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
 
 		cdef float x = 0., y = 0.
-		cdef int valid = 0
+		cdef int valid = 1
 
 		normImg = []
 		validLi = []
 		for pt in ptsLatLon:
-			self.rectilinear.Proj(pt[0], pt[1], x, y, valid)
+			x, y = RectilinearProjSlow(pt[0], pt[1], self.cLat, self.cLon)
 			if valid:
 				normImg.append((x, y))
 				validLi.append(True)
@@ -125,7 +110,7 @@ class RectilinearCam(object):
 				validLi.append(False)
 
 		normImg = np.array(normImg)
-		scaled = normImg / (self.hwidth, self.hheight)
+		scaled = normImg / (self.hHRange, self.hVRange)
 		centred = scaled * (self.imgW/2., self.imgH/2.)
 		imgPts = centred + (self.imgW/2., self.imgH/2.)
 

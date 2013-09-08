@@ -1,5 +1,5 @@
 
-import pickle, rectilinear, os, math
+import pickle, proj, os, math
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.optimize as optimize
@@ -34,11 +34,9 @@ class CameraArrangement(object):
 			camModel = self.addedPhotos[phot]
 			initialValKey[phot] = {}
 			initialValKey[phot]["lat"] = len(initialVals)
-			initialVals.append(camModel.rectilinear.cLat)
+			initialVals.append(camModel.cLat)
 			initialValKey[phot]["lon"] = len(initialVals)
-			initialVals.append(camModel.rectilinear.cLon)
-
-		print initialVals
+			initialVals.append(camModel.cLon)
 
 		if 0:
 			final = optimize.minimize(self.Eval, initialVals, (0, initialValKey, photToOpt), method="Powell")
@@ -51,8 +49,8 @@ class CameraArrangement(object):
 		#Set values
 		for phot in initialValKey:
 			params = initialValKey[phot]
-			self.addedPhotos[phot].rectilinear.cLat = finalVals[params["lat"]]
-			self.addedPhotos[phot].rectilinear.cLon = finalVals[params["lon"]]
+			self.addedPhotos[phot].cLat = finalVals[params["lat"]]
+			self.addedPhotos[phot].cLon = finalVals[params["lon"]]
 
 	def Eval(self, vals, separateTerms, initialValKey, photToOpt):
 
@@ -75,13 +73,13 @@ class CameraArrangement(object):
 				#print fina1, fina2, fina1index, fina2index
 				camModel1 = self.addedPhotos[fina1]
 				if fina1 in initialValKey:
-					camModel1.rectilinear.cLat = vals[initialValKey[fina1]["lat"]]
-					camModel1.rectilinear.cLon = vals[initialValKey[fina1]["lon"]]
+					camModel1.cLat = vals[initialValKey[fina1]["lat"]]
+					camModel1.cLon = vals[initialValKey[fina1]["lon"]]
 
 				camModel2 = self.addedPhotos[fina2]
 				if fina2 in initialValKey:
-					camModel2.rectilinear.cLat = vals[initialValKey[fina2]["lat"]]
-					camModel2.rectilinear.cLon = vals[initialValKey[fina2]["lon"]]
+					camModel2.cLat = vals[initialValKey[fina2]["lat"]]
+					camModel2.cLon = vals[initialValKey[fina2]["lon"]]
 
 				ptsA = np.array(pair[3])
 				ptsB = np.array(pair[4])
@@ -141,7 +139,7 @@ def VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement):
 
 	im = Image.new("RGB", (800, 600))
 	iml = im.load()
-	eqRect = rectilinear.EquirectangularCam()
+	eqRect = proj.EquirectangularCam()
 	eqRect.imgW = im.size[0]
 	eqRect.imgH = im.size[1]
 
@@ -161,12 +159,11 @@ def VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement):
 		
 		#Check which are valid pixels within bounds
 		for imIn, imOut in zip(imPos, pix):
+			if math.isnan(imIn[0]): continue
 			if imIn[0] < 0 or imIn[0] >= camParams.imgW: continue
 			if imIn[1] < 0 or imIn[1] >= camParams.imgH: continue
 			
-			#Copy pixel to output
-			if not math.isnan(imIn[0]):
-				iml[imOut[0], imOut[1]] = camImgl[imIn[0], imIn[1]]
+			iml[imOut[0], imOut[1]] = camImgl[imIn[0], imIn[1]]
 
 	for photoId in cameraArrangement.addedPhotos.keys():
 		camParams = cameraArrangement.addedPhotos[photoId]
@@ -200,8 +197,8 @@ if __name__=="__main__":
 	print "Using initial photos", bestPair[1], bestPair[2]
 
 	cameraArrangement = CameraArrangement(imgPairs)
-	cameraArrangement.addedPhotos[bestPair[1]] = rectilinear.RectilinearCam()
-	cameraArrangement.addedPhotos[bestPair[2]] = rectilinear.RectilinearCam()
+	cameraArrangement.addedPhotos[bestPair[1]] = proj.RectilinearCam()
+	cameraArrangement.addedPhotos[bestPair[2]] = proj.RectilinearCam()
 
 	log.write("Starting with "+str(bestPair[1])+"\n")
 	log.write("Starting with "+str(bestPair[2])+"\n")
@@ -224,13 +221,13 @@ if __name__=="__main__":
 		log.write("Adding "+str(photoToAdd)+"\n")
 		log.flush()
 
-		cameraArrangement.addedPhotos[photoToAdd] = rectilinear.RectilinearCam()
+		cameraArrangement.addedPhotos[photoToAdd] = proj.RectilinearCam()
 		
 		cameraArrangement.OptimiseFit([photoToAdd])
 
 		for photoId in cameraArrangement.addedPhotos:
 			photo = cameraArrangement.addedPhotos[photoId]
-			print photoId, photo.rectilinear.cLat, photo.rectilinear.cLon
+			print photoId, photo.cLat, photo.cLon
 
 		vis = VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement)
 		vis.save("vis{0}.png".format(len(cameraArrangement.addedPhotos)))
