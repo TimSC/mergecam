@@ -1,4 +1,4 @@
 glcam
 =====
 
-Propriatary code for webcam and opengl video tool
+Proprietary code for webcam and opengl video tool
