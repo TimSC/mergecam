@@ -150,7 +150,7 @@ def VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement):
 		for y in range(im.size[1]):
 			pix.append((x, y))
 
-	pixWorld = eqRect.UnProj(pix)
+	pixWorld = np.array(eqRect.UnProj(pix), dtype=np.float64)
 	#For each photo
 	for photoId in cameraArrangement.addedPhotos.keys():
 		#Project world positions into this camera's image space

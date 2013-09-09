@@ -22,6 +22,15 @@ cdef RectilinearProj(double lat, double lon, double cLat, double cLon, double *x
 	yOut[0] = (cos(cLat) * sin(lat) - sin(cLat) * cos(lat) * cos(lon - cLon)) / cosc
 	validOut[0] = 1
 
+def RectilinearProjSlow(double lat, double lon, double cLat, double cLon):
+	cdef double x=0., y=0.
+	cdef int valid = 0
+	RectilinearProj(lat, lon, cLat, cLon, &x, &y, &valid)
+	if valid:
+		return x, y
+	else:
+		return None, None
+
 cdef RectilinearUnProj(double x, double y, double cLat, double cLon, double *latOut, double *lonOut, int *validOut):
 	#http://mathworld.wolfram.com/GnomonicProjection.html
 
@@ -33,61 +42,84 @@ cdef RectilinearUnProj(double x, double y, double cLat, double cLon, double *lat
 	lonOut[0] = cLon + atan2(x * sinc, rho * cos(cLat) * cosc - y * sin(cLat) * sinc)
 	validOut[0] = 1
 
+def RectilinearUnProjSlow(double x, double y, double cLat, double cLon):
+	cdef double lat=0., lon=0.
+	cdef int valid = 0
+	RectilinearUnProj(x, y, cLat, cLon, &lat, &lon, &valid)
+	if valid:
+		return lat, lon
+	else:
+		return None, None
+
 class RectilinearCam(object):
 	def __init__(self):
 		self.imgW = 640
 		self.imgH = 480
-		self.cLon = 0.
 		self.cLat = 0.
-		self.hFov = math.radians(49.0)
-		self.vFov = math.radians(35.4)
+		self.cLon = 0.
 
-		cdef double latTmp = 0., lonTmp = 0.
+		self.hHRange = -1.
+		self.hVRange = -1.
+		self.SetFov(49.0, 35.4)
+		self.hsize = np.array((self.imgW/2, self.imgH/2))
+
+	def SetFov(self, hfovIn, vfovIn):
+		cdef double tempX = 0., tempY = 0.
 		cdef int valid = 0
-		RectilinearProj(0., self.hFov / 2.,self.cLat,self.cLon,&latTmp,&lonTmp,&valid)
-		self.hwidth = latTmp
-		RectilinearProj(self.vFov / 2., 0.,self.cLat,self.cLon,&latTmp,&lonTmp,&valid)
-		self.hheight = lonTmp
+		self.hFov = math.radians(hfovIn)
+		self.vFov = math.radians(vfovIn)
+		cdef double hhFov = self.hFov / 2.
+		cdef double hvFov = self.vFov / 2.
+
+		RectilinearProj(0., hhFov, 0., 0., &tempX, &tempY, &valid)
+		assert valid
+		self.hHRange = tempX
+		RectilinearProj(hvFov, 0., 0., 0., &tempX, &tempY, &valid)
+		assert valid
+		self.hVRange = tempY
+		self.hRange = np.array((self.hHRange, self.hVRange))
 
 	def UnProj(self, pts): #Image px to Lat, lon radians
-		cdef double latTmp = 0., lonTmp = 0.
-		cdef int validTmp = 0
+		cdef double lat = 0., lon = 0.
+		cdef int valid = 1
 
 		pts = np.array(pts)
-		centred = pts - (self.imgW/2., self.imgH/2.)
-		scaled = centred / (self.imgW/2., self.imgH/2.)
+		centred = pts - self.hsize
+		scaled = centred / self.hsize
 
-		normImg = scaled * (self.hwidth, self.hheight)
-		polar = []
+		normImg = scaled * self.hRange
+		out = []
 		for pt in normImg:
-			RectilinearUnProj(pt[0],pt[1],self.cLat,self.cLon,&latTmp,&lonTmp,&validTmp)
-			polar.append((latTmp,lonTmp))
-		return polar
+			RectilinearUnProj(pt[0], pt[1], self.cLat, self.cLon, &lat, &lon, &valid)
+			assert valid
+			out.append((lat, lon))
+		return out
 
-	def Proj(self, ptsLatLon): #Lat, lon radians to image px
-		cdef double xTmp = 0., yTmp = 0.
-		cdef int validTmp = 0
+	def Proj(self, np.ndarray[np.float64_t,ndim=2] ptsLatLon): #Lat, lon radians to image px
 
-		normImg = []
-		valid = []
-		for pt in ptsLatLon:
+		cdef double x = 0., y = 0.
+		cdef int valid = 1
+		cdef np.ndarray[np.float64_t,ndim=2] imgPts = np.empty((ptsLatLon.shape[0],ptsLatLon.shape[1]), dtype=np.float64)
+		cdef np.ndarray[np.int8_t,ndim=1] validLi = np.empty((ptsLatLon.shape[0],), dtype=np.int8)
 
-			RectilinearProj(pt[0],pt[1],self.cLat,self.cLon,&xTmp,&yTmp,&validTmp)
-
-			if validTmp:
-				normImg.append((xTmp, yTmp))
-				valid.append(True)
+		for ptNum in range(ptsLatLon.shape[0]):
+			RectilinearProj(ptsLatLon[ptNum,0], ptsLatLon[ptNum,1], self.cLat, self.cLon, &x, &y, &valid)
+			if valid:
+				imgPts[ptNum,0] = x
+				imgPts[ptNum,1] = y
+				validLi[ptNum] = 1
 			else:
-				normImg.append((0.,0.))
-				valid.append(False)
+				imgPts[ptNum,0] = 0.
+				imgPts[ptNum,1] = 0.
+				validLi[ptNum] = 0
 
-		normImg = np.array(normImg)
-		scaled = normImg / (self.hwidth, self.hheight)
-		centred = scaled * (self.imgW/2., self.imgH/2.)
-		imgPts = centred + (self.imgW/2., self.imgH/2.)
+		imgPts /= self.hRange
+		imgPts *= self.hsize
+		imgPts += self.hsize
 
-		for ind in np.where(np.array(valid) == False):
-			imgPts[ind] = (None, None)
+		for ind in np.where(validLi == False):
+			imgPts[ind,0] = None
+			imgPts[ind,1] = None
 
 		return imgPts
 
