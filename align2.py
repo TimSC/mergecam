@@ -1,5 +1,5 @@
 
-import pickle, rectilinear, os, math
+import pickle, proj, os, math
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.optimize as optimize
@@ -141,7 +141,7 @@ def VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement):
 
 	im = Image.new("RGB", (800, 600))
 	iml = im.load()
-	eqRect = rectilinear.EquirectangularCam()
+	eqRect = proj.EquirectangularCam()
 	eqRect.imgW = im.size[0]
 	eqRect.imgH = im.size[1]
 
@@ -200,8 +200,8 @@ if __name__=="__main__":
 	print "Using initial photos", bestPair[1], bestPair[2]
 
 	cameraArrangement = CameraArrangement(imgPairs)
-	cameraArrangement.addedPhotos[bestPair[1]] = rectilinear.RectilinearCam()
-	cameraArrangement.addedPhotos[bestPair[2]] = rectilinear.RectilinearCam()
+	cameraArrangement.addedPhotos[bestPair[1]] = proj.RectilinearCam()
+	cameraArrangement.addedPhotos[bestPair[2]] = proj.RectilinearCam()
 
 	log.write("Starting with "+str(bestPair[1])+"\n")
 	log.write("Starting with "+str(bestPair[2])+"\n")
@@ -224,7 +224,7 @@ if __name__=="__main__":
 		log.write("Adding "+str(photoToAdd)+"\n")
 		log.flush()
 
-		cameraArrangement.addedPhotos[photoToAdd] = rectilinear.RectilinearCam()
+		cameraArrangement.addedPhotos[photoToAdd] = proj.RectilinearCam()
 		
 		cameraArrangement.OptimiseFit([photoToAdd])
 

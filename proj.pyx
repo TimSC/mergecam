@@ -2,43 +2,37 @@ from math import sin, cos, atan2, pi, asin, atan
 import math
 import numpy as np
 
-class Rectilinear(object):
-	def __init__(self):
-		pass
+def RectilinearProj(lat, lon, cLat, cLon):
+	#http://mathworld.wolfram.com/GnomonicProjection.html
 
-	def Proj(self, lat, lon, cLat, cLon):
-		#http://mathworld.wolfram.com/GnomonicProjection.html
+	cosc = sin(cLat) * sin(lat) + cos(cLat) * cos(lat) * cos(lon - cLon)
+	if cosc < 0.:
+		return None, None
+	x = (cos(lat) * sin(lon - cLon)) / cosc
+	y = (cos(cLat) * sin(lat) - sin(cLat) * cos(lat) * cos(lon - cLon)) / cosc
+	return x, y
 
-		cosc = sin(cLat) * sin(lat) + cos(cLat) * cos(lat) * cos(lon - cLon)
-		if cosc < 0.:
-			return None, None
-		x = (cos(lat) * sin(lon - cLon)) / cosc
-		y = (cos(cLat) * sin(lat) - sin(cLat) * cos(lat) * cos(lon - cLon)) / cosc
-		return x, y
+def RectilinearUnProj(x, y, cLat, cLon):
+	#http://mathworld.wolfram.com/GnomonicProjection.html
 
-	def UnProj(self, x, y, cLat, cLon):
-		##http://mathworld.wolfram.com/GnomonicProjection.html
-
-		rho = (x ** 2. + y ** 2.) ** 0.5
-		c = atan(rho)
-		sinc = sin(c)
-		cosc = cos(c)
-		lat = asin(cosc * sin(cLat) + y * sinc * cos(cLat) / rho)
-		lon = cLon + atan2(x * sinc, rho * cos(cLat) * cosc - y * sin(cLat) * sinc)
-		return lat, lon
+	rho = (x ** 2. + y ** 2.) ** 0.5
+	c = atan(rho)
+	sinc = sin(c)
+	cosc = cos(c)
+	lat = asin(cosc * sin(cLat) + y * sinc * cos(cLat) / rho)
+	lon = cLon + atan2(x * sinc, rho * cos(cLat) * cosc - y * sin(cLat) * sinc)
+	return lat, lon
 
 class RectilinearCam(object):
 	def __init__(self):
-		self.rectilinear = Rectilinear()
 		self.imgW = 640
 		self.imgH = 480
 		self.cLon = 0.
 		self.cLat = 0.
 		self.hFov = math.radians(49.0)
 		self.vFov = math.radians(35.4)
-		self.rectStatic = Rectilinear()
-		self.hwidth = self.rectStatic.Proj(0., self.hFov / 2.,self.cLat,self.cLon)[0]
-		self.hheight = self.rectStatic.Proj(self.vFov / 2., 0.,self.cLat,self.cLon)[1]
+		self.hwidth = RectilinearProj(0., self.hFov / 2.,self.cLat,self.cLon)[0]
+		self.hheight = RectilinearProj(self.vFov / 2., 0.,self.cLat,self.cLon)[1]
 
 	def UnProj(self, pts): #Image px to Lat, lon radians
 		pts = np.array(pts)
@@ -46,14 +40,14 @@ class RectilinearCam(object):
 		scaled = centred / (self.imgW/2., self.imgH/2.)
 
 		normImg = scaled * (self.hwidth, self.hheight)
-		polar = [self.rectilinear.UnProj(pt[0],pt[1],self.cLat,self.cLon) for pt in normImg]
+		polar = [RectilinearUnProj(pt[0],pt[1],self.cLat,self.cLon) for pt in normImg]
 		return polar
 
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
 		normImg = []
 		valid = []
 		for pt in ptsLatLon:
-			pt2 = self.rectilinear.Proj(pt[0],pt[1],self.cLat,self.cLon)
+			pt2 = RectilinearProj(pt[0],pt[1],self.cLat,self.cLon)
 			if pt2[0] is not None:
 				normImg.append(pt2)
 				valid.append(True)
@@ -98,35 +92,4 @@ class EquirectangularCam(object):
 			worldPos = (scaled[1] + self.cLon, scaled[0] + self.cLon)
 			out.append(worldPos)
 		return out
-
-if __name__ == "__main__":
-	import matplotlib.pyplot as plt
-
-	rectilinear = Rectilinear()
-
-	x, y = rectilinear.Proj(0.1,0.2)
-	print x, y
-	print rectilinear.UnProj(x, y)
-
-	rectilinear.cLat = 0.
-	rectilinear.cLon = 0.
-
-	lonVals = np.arange(-1.5+rectilinear.cLon, 1.5+rectilinear.cLon, 0.1)
-	latVals = np.arange(-1.+rectilinear.cLat, 1.+rectilinear.cLat, 0.1)
-	for lon in lonVals:
-		li = []
-		for lat in latVals:
-			li.append(rectilinear.Proj(lat, lon))
-		lia = np.array(li)
-		plt.plot(lia[:,0], lia[:,1])
-
-	for lat in latVals:
-		li = []
-		for lon in lonVals:
-			li.append(rectilinear.Proj(lat, lon))
-		lia = np.array(li)
-		#print li
-		plt.plot(lia[:,0], lia[:,1])
-
-	plt.show()
 
