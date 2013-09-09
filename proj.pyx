@@ -1,26 +1,33 @@
-from math import sin, cos, atan2, pi, asin, atan
+# cython: profile=True
+# cython: cdivision=True
+# cython: boundscheck=False
+# cython: wraparound=False
+
+from math import pi
+from libc.math cimport sin, cos, atan2, asin, atan
 import math
 import numpy as np
+cimport numpy as np
 
-def RectilinearProj(lat, lon, cLat, cLon):
+def RectilinearProj(double lat, double lon, double cLat, double cLon):
 	#http://mathworld.wolfram.com/GnomonicProjection.html
 
-	cosc = sin(cLat) * sin(lat) + cos(cLat) * cos(lat) * cos(lon - cLon)
+	cdef double cosc = sin(cLat) * sin(lat) + cos(cLat) * cos(lat) * cos(lon - cLon)
 	if cosc < 0.:
 		return None, None
-	x = (cos(lat) * sin(lon - cLon)) / cosc
-	y = (cos(cLat) * sin(lat) - sin(cLat) * cos(lat) * cos(lon - cLon)) / cosc
+	cdef double x = (cos(lat) * sin(lon - cLon)) / cosc
+	cdef double y = (cos(cLat) * sin(lat) - sin(cLat) * cos(lat) * cos(lon - cLon)) / cosc
 	return x, y
 
-def RectilinearUnProj(x, y, cLat, cLon):
+def RectilinearUnProj(double x, double y, double cLat, double cLon):
 	#http://mathworld.wolfram.com/GnomonicProjection.html
 
-	rho = (x ** 2. + y ** 2.) ** 0.5
-	c = atan(rho)
-	sinc = sin(c)
-	cosc = cos(c)
-	lat = asin(cosc * sin(cLat) + y * sinc * cos(cLat) / rho)
-	lon = cLon + atan2(x * sinc, rho * cos(cLat) * cosc - y * sin(cLat) * sinc)
+	cdef double rho = (x ** 2. + y ** 2.) ** 0.5
+	cdef double c = atan(rho)
+	cdef double sinc = sin(c)
+	cdef double cosc = cos(c)
+	cdef double lat = asin(cosc * sin(cLat) + y * sinc * cos(cLat) / rho)
+	cdef double lon = cLon + atan2(x * sinc, rho * cos(cLat) * cosc - y * sin(cLat) * sinc)
 	return lat, lon
 
 class RectilinearCam(object):
