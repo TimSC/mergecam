@@ -13,7 +13,7 @@ if __name__ == "__main__":
 	rc = proj.RectilinearCam()
 	rc.cLat = 0.
 	rc.cLon = -0.3
-	test1 = rc.Proj([(0., -0.3)])
+	test1 = rc.Proj(np.array([(0., -0.3)]))
 	print test1
 	test2 = rc.UnProj(test1)
 	print test2

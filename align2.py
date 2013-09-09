@@ -38,6 +38,8 @@ class CameraArrangement(object):
 			initialValKey[phot]["lon"] = len(initialVals)
 			initialVals.append(camModel.cLon)
 
+		print initialVals
+
 		if 0:
 			final = optimize.minimize(self.Eval, initialVals, (0, initialValKey, photToOpt), method="Powell")
 			print "score", final.x, final.fun
@@ -148,7 +150,7 @@ def VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement):
 		for y in range(im.size[1]):
 			pix.append((x, y))
 
-	pixWorld = np.array(eqRect.UnProj(pix), dtype=np.float32)
+	pixWorld = np.array(eqRect.UnProj(pix), dtype=np.float64)
 	#For each photo
 	for photoId in cameraArrangement.addedPhotos.keys():
 		#Project world positions into this camera's image space
@@ -159,12 +161,12 @@ def VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement):
 		
 		#Check which are valid pixels within bounds
 		for imIn, imOut in zip(imPos, pix):
-			if math.isnan(imIn[0]): continue
-			imIn = (int(round(imIn[0])), int(round(imIn[1])))
 			if imIn[0] < 0 or imIn[0] >= camParams.imgW: continue
 			if imIn[1] < 0 or imIn[1] >= camParams.imgH: continue
-
-			iml[imOut[0], imOut[1]] = camImgl[imIn[0], imIn[1]]
+			
+			#Copy pixel to output
+			if not math.isnan(imIn[0]):
+				iml[imOut[0], imOut[1]] = camImgl[imIn[0], imIn[1]]
 
 	for photoId in cameraArrangement.addedPhotos.keys():
 		camParams = cameraArrangement.addedPhotos[photoId]
@@ -207,7 +209,7 @@ if __name__=="__main__":
 
 	cameraArrangement.OptimiseFit([bestPair[2]])
 	
-	while bestPair is not None:# and len(cameraArrangement.addedPhotos) < 5:
+	while bestPair is not None and len(cameraArrangement.addedPhotos) < 5:
 		bestPair, newInd = SelectPhotoToAdd(imgPairs, cameraArrangement)
 		if bestPair is None: continue
 		print bestPair[:3], newInd
