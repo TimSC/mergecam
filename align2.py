@@ -34,9 +34,9 @@ class CameraArrangement(object):
 			camModel = self.addedPhotos[phot]
 			initialValKey[phot] = {}
 			initialValKey[phot]["lat"] = len(initialVals)
-			initialVals.append(camModel.rectilinear.cLat)
+			initialVals.append(camModel.cLat)
 			initialValKey[phot]["lon"] = len(initialVals)
-			initialVals.append(camModel.rectilinear.cLon)
+			initialVals.append(camModel.cLon)
 
 		print initialVals
 
@@ -51,8 +51,8 @@ class CameraArrangement(object):
 		#Set values
 		for phot in initialValKey:
 			params = initialValKey[phot]
-			self.addedPhotos[phot].rectilinear.cLat = finalVals[params["lat"]]
-			self.addedPhotos[phot].rectilinear.cLon = finalVals[params["lon"]]
+			self.addedPhotos[phot].cLat = finalVals[params["lat"]]
+			self.addedPhotos[phot].cLon = finalVals[params["lon"]]
 
 	def Eval(self, vals, separateTerms, initialValKey, photToOpt):
 
@@ -75,13 +75,13 @@ class CameraArrangement(object):
 				#print fina1, fina2, fina1index, fina2index
 				camModel1 = self.addedPhotos[fina1]
 				if fina1 in initialValKey:
-					camModel1.rectilinear.cLat = vals[initialValKey[fina1]["lat"]]
-					camModel1.rectilinear.cLon = vals[initialValKey[fina1]["lon"]]
+					camModel1.cLat = vals[initialValKey[fina1]["lat"]]
+					camModel1.cLon = vals[initialValKey[fina1]["lon"]]
 
 				camModel2 = self.addedPhotos[fina2]
 				if fina2 in initialValKey:
-					camModel2.rectilinear.cLat = vals[initialValKey[fina2]["lat"]]
-					camModel2.rectilinear.cLon = vals[initialValKey[fina2]["lon"]]
+					camModel2.cLat = vals[initialValKey[fina2]["lat"]]
+					camModel2.cLon = vals[initialValKey[fina2]["lon"]]
 
 				ptsA = np.array(pair[3])
 				ptsB = np.array(pair[4])
@@ -230,7 +230,7 @@ if __name__=="__main__":
 
 		for photoId in cameraArrangement.addedPhotos:
 			photo = cameraArrangement.addedPhotos[photoId]
-			print photoId, photo.rectilinear.cLat, photo.rectilinear.cLon
+			print photoId, photo.cLat, photo.cLon
 
 		vis = VisualiseArrangement(poolPhotos, poolPath, imgPairs, cameraArrangement)
 		vis.save("vis{0}.png".format(len(cameraArrangement.addedPhotos)))
