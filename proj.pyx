@@ -9,26 +9,29 @@ import math
 import numpy as np
 cimport numpy as np
 
-def RectilinearProj(double lat, double lon, double cLat, double cLon):
+cdef RectilinearProj(double lat, double lon, double cLat, double cLon, double *xOut, double *yOut, int *validOut):
 	#http://mathworld.wolfram.com/GnomonicProjection.html
 
 	cdef double cosc = sin(cLat) * sin(lat) + cos(cLat) * cos(lat) * cos(lon - cLon)
 	if cosc < 0.:
-		return None, None
-	cdef double x = (cos(lat) * sin(lon - cLon)) / cosc
-	cdef double y = (cos(cLat) * sin(lat) - sin(cLat) * cos(lat) * cos(lon - cLon)) / cosc
-	return x, y
+		xOut[0] = 0
+		yOut[0] = 0
+		validOut[0] = 0
+		return
+	xOut[0] = (cos(lat) * sin(lon - cLon)) / cosc
+	yOut[0] = (cos(cLat) * sin(lat) - sin(cLat) * cos(lat) * cos(lon - cLon)) / cosc
+	validOut[0] = 1
 
-def RectilinearUnProj(double x, double y, double cLat, double cLon):
+cdef RectilinearUnProj(double x, double y, double cLat, double cLon, double *latOut, double *lonOut, int *validOut):
 	#http://mathworld.wolfram.com/GnomonicProjection.html
 
 	cdef double rho = (x ** 2. + y ** 2.) ** 0.5
 	cdef double c = atan(rho)
 	cdef double sinc = sin(c)
 	cdef double cosc = cos(c)
-	cdef double lat = asin(cosc * sin(cLat) + y * sinc * cos(cLat) / rho)
-	cdef double lon = cLon + atan2(x * sinc, rho * cos(cLat) * cosc - y * sin(cLat) * sinc)
-	return lat, lon
+	latOut[0] = asin(cosc * sin(cLat) + y * sinc * cos(cLat) / rho)
+	lonOut[0] = cLon + atan2(x * sinc, rho * cos(cLat) * cosc - y * sin(cLat) * sinc)
+	validOut[0] = 1
 
 class RectilinearCam(object):
 	def __init__(self):
@@ -38,25 +41,41 @@ class RectilinearCam(object):
 		self.cLat = 0.
 		self.hFov = math.radians(49.0)
 		self.vFov = math.radians(35.4)
-		self.hwidth = RectilinearProj(0., self.hFov / 2.,self.cLat,self.cLon)[0]
-		self.hheight = RectilinearProj(self.vFov / 2., 0.,self.cLat,self.cLon)[1]
+
+		cdef double latTmp = 0., lonTmp = 0.
+		cdef int valid = 0
+		RectilinearProj(0., self.hFov / 2.,self.cLat,self.cLon,&latTmp,&lonTmp,&valid)
+		self.hwidth = latTmp
+		RectilinearProj(self.vFov / 2., 0.,self.cLat,self.cLon,&latTmp,&lonTmp,&valid)
+		self.hheight = lonTmp
 
 	def UnProj(self, pts): #Image px to Lat, lon radians
+		cdef double latTmp = 0., lonTmp = 0.
+		cdef int validTmp = 0
+
 		pts = np.array(pts)
 		centred = pts - (self.imgW/2., self.imgH/2.)
 		scaled = centred / (self.imgW/2., self.imgH/2.)
 
 		normImg = scaled * (self.hwidth, self.hheight)
-		polar = [RectilinearUnProj(pt[0],pt[1],self.cLat,self.cLon) for pt in normImg]
+		polar = []
+		for pt in normImg:
+			RectilinearUnProj(pt[0],pt[1],self.cLat,self.cLon,&latTmp,&lonTmp,&validTmp)
+			polar.append((latTmp,lonTmp))
 		return polar
 
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
+		cdef double xTmp = 0., yTmp = 0.
+		cdef int validTmp = 0
+
 		normImg = []
 		valid = []
 		for pt in ptsLatLon:
-			pt2 = RectilinearProj(pt[0],pt[1],self.cLat,self.cLon)
-			if pt2[0] is not None:
-				normImg.append(pt2)
+
+			RectilinearProj(pt[0],pt[1],self.cLat,self.cLon,&xTmp,&yTmp,&validTmp)
+
+			if validTmp:
+				normImg.append((xTmp, yTmp))
 				valid.append(True)
 			else:
 				normImg.append((0.,0.))
