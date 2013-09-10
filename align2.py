@@ -43,7 +43,7 @@ class CameraArrangement(object):
 			final = optimize.minimize(self.Eval, initialVals, (0, initialValKey, photToOpt), method="Powell")
 			print "score", final.x, final.fun
 		if 1:
-			final = optimize.leastsq(self.Eval, initialVals, (1, initialValKey, photToOpt))
+			final = optimize.leastsq(self.Eval, initialVals, (1, initialValKey, photToOpt), xtol=1e-3)
 			print "score", final
 			finalVals = final[0]
 
@@ -57,58 +57,50 @@ class CameraArrangement(object):
 
 		dists = []
 		countPairs = 0
-		weightThreshold = 0.2
 
-		while len(dists) == 0:
-			for pair in self.imgPairs:
-				weight = pair[0]
-				if weight < weightThreshold: continue #Discard poor pairings
+		for pair in self.imgPairs:
+			weight = pair[0]
+			fina1 = pair[1]
+			fina2 = pair[2]
+			if fina1 not in self.addedPhotos: continue
+			if fina2 not in self.addedPhotos: continue
+			if fina1 not in photToOpt and fina2 not in photToOpt: continue
+			countPairs += 1
 
-				fina1 = pair[1]
-				fina2 = pair[2]
-				if fina1 not in self.addedPhotos: continue
-				if fina2 not in self.addedPhotos: continue
-				if fina1 not in photToOpt and fina2 not in photToOpt: continue
-				countPairs += 1
+			#print fina1, fina2, fina1index, fina2index
+			camModel1 = self.addedPhotos[fina1]
+			if fina1 in initialValKey:
+				camModel1.cLat = vals[initialValKey[fina1]["lat"]]
+				camModel1.cLon = vals[initialValKey[fina1]["lon"]]
 
-				#print fina1, fina2, fina1index, fina2index
-				camModel1 = self.addedPhotos[fina1]
-				if fina1 in initialValKey:
-					camModel1.cLat = vals[initialValKey[fina1]["lat"]]
-					camModel1.cLon = vals[initialValKey[fina1]["lon"]]
+			camModel2 = self.addedPhotos[fina2]
+			if fina2 in initialValKey:
+				camModel2.cLat = vals[initialValKey[fina2]["lat"]]
+				camModel2.cLon = vals[initialValKey[fina2]["lon"]]
 
-				camModel2 = self.addedPhotos[fina2]
-				if fina2 in initialValKey:
-					camModel2.cLat = vals[initialValKey[fina2]["lat"]]
-					camModel2.cLon = vals[initialValKey[fina2]["lon"]]
-
-				ptsA = np.array(pair[3])
-				ptsB = np.array(pair[4])
+			ptsA = np.array(pair[3])
+			ptsB = np.array(pair[4])
 			
-				#Use only a subset of points
-				ptsA = ptsA[:,:]
-				ptsB = ptsB[:,:]
+			#Use only a subset of points
+			ptsA = ptsA[:,:]
+			ptsB = ptsB[:,:]
 
-				proj1 = camModel1.UnProj(ptsA)
-				proj2 = camModel2.UnProj(ptsB)
+			proj1 = camModel1.UnProj(ptsA)
+			proj2 = camModel2.UnProj(ptsB)
 			
-				distsX = []
-				distsY = []
-				for pt1, pt2 in zip(proj1, proj2):
-					malDist1 = abs(pt1[0]-pt2[0])#Lat 
-					malDist2 = abs(pt1[1]-pt2[1])#Lon
-					while malDist2 > math.pi: #Limit difference to -pi to +pi range
-						malDist2 -= 2. * math.pi
+			distsX = []
+			distsY = []
+			for pt1, pt2 in zip(proj1, proj2):
+				malDist1 = abs(pt1[0]-pt2[0])#Lat 
+				malDist2 = abs(pt1[1]-pt2[1])#Lon
+				while malDist2 > math.pi: #Limit difference to -pi to +pi range
+					malDist2 -= 2. * math.pi
 
-					distsX.append(malDist1 * weight)
-					distsY.append(malDist2 * weight)
+				distsX.append(malDist1 * weight)
+				distsY.append(malDist2 * weight)
 
-				dists.append(np.array(distsX).mean())
-				dists.append(np.array(distsY).mean())
-
-			if len(dists) == 0:
-				weightThreshold /= 2
-				print "Reducing threshold to", weightThreshold
+			dists.append(np.array(distsX).mean())
+			dists.append(np.array(distsY).mean())
 
 		#print vals, score
 		#print countPairs
@@ -144,13 +136,19 @@ if __name__=="__main__":
 
 	log = open("log.txt", "wt")
 	
+	#Select valid pairings
+	filteredImgPairs = []
+	for pair in imgPairs:
+		if pair[0] > 0.1:
+			filteredImgPairs.append(pair)
+
 	#Add two best photos
-	imgPairs.sort()
-	imgPairs.reverse()
-	bestPair = imgPairs[0]
+	filteredImgPairs.sort()
+	filteredImgPairs.reverse()
+	bestPair = filteredImgPairs[0]
 	print "Using initial photos", bestPair[1], bestPair[2]
 
-	cameraArrangement = CameraArrangement(imgPairs)
+	cameraArrangement = CameraArrangement(filteredImgPairs)
 	cameraArrangement.addedPhotos[bestPair[1]] = proj.RectilinearCam()
 	cameraArrangement.addedPhotos[bestPair[2]] = proj.RectilinearCam()
 
@@ -162,8 +160,8 @@ if __name__=="__main__":
 
 	visobj = visualise.VisualiseArrangement()
 	
-	while bestPair is not None and len(cameraArrangement.addedPhotos) < 5:
-		bestPair, newInd = SelectPhotoToAdd(imgPairs, cameraArrangement)
+	while bestPair is not None:# and len(cameraArrangement.addedPhotos) < 5:
+		bestPair, newInd = SelectPhotoToAdd(filteredImgPairs, cameraArrangement)
 		if bestPair is None: continue
 		print bestPair[:3], newInd
 		
@@ -185,11 +183,18 @@ if __name__=="__main__":
 			photo = cameraArrangement.addedPhotos[photoId]
 			print photoId, photo.cLat, photo.cLon
 
-		vis = visobj.Vis(poolPhotos, poolPath, imgPairs, cameraArrangement)
-		vis.save("vis{0}.png".format(len(cameraArrangement.addedPhotos)))
+		if 0:
+			vis = visobj.Vis(poolPhotos, poolPath, filteredImgPairs, cameraArrangement)
+			vis.save("vis{0}.png".format(len(cameraArrangement.addedPhotos)))
+
+	print "Optimise all cameras"
+
+	cameraArrangement.OptimiseFit()
 
 	pickle.dump(cameraArrangement.addedPhotos, open("camarr.dat","wb"), protocol=-1)
 
 	log.flush()
 
+	vis = visobj.Vis(poolPhotos, poolPath, filteredImgPairs, cameraArrangement)
+	vis.save("vis{0}.png".format(len(cameraArrangement.addedPhotos)))
 
