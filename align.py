@@ -1,7 +1,6 @@
 
 import scipy.misc as misc
 import cv2, cv, os, pickle
-import rectilinear
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
