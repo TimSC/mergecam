@@ -1,9 +1,8 @@
 
-import pickle, proj, os, math
+import pickle, proj, os, math, visualise
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.optimize as optimize
-from PIL import Image, ImageDraw
 
 class CameraArrangement(object):
 	def __init__(self, imgPairs):
@@ -137,71 +136,6 @@ def SelectPhotoToAdd(imgPairs, cameraArrangement):
 
 	return bestPair, bestNewInd
 
-class VisualiseArrangement(object):
-
-	def __init__(self):
-
-		self.imSize = (800, 600)
-		self.eqRect = proj.EquirectangularCam()
-		self.eqRect.imgW = self.imSize[0]
-		self.eqRect.imgH = self.imSize[1]
-
-		self.pix = []
-		for x in range(self.imSize[0]):
-			for y in range(self.imSize[1]):
-				self.pix.append((x, y))
-		self.pixWorld = np.array(self.eqRect.UnProj(self.pix), dtype=np.float64)
-
-	def VisImages(self, poolPhotos, poolPath, imgPairs, cameraArrangement, im, iml):
-
-		#For each photo
-		for photoId in cameraArrangement.addedPhotos.keys():
-			#Project world positions into this camera's image space
-			camParams = cameraArrangement.addedPhotos[photoId]
-			imPos = camParams.Proj(self.pixWorld)
-			camImg = Image.open(poolPath+"/"+photoId)
-			camImgl = camImg.load()
-		
-			self.VisImageSingle(camParams, camImgl, iml, imPos)
-
-	def VisImageSingle(self, camParams, camImgl, iml, imPos):
-
-		#Check which are valid pixels within bounds
-		for imIn, imOut in zip(imPos, self.pix):
-			if imIn[0] < 0 or imIn[0] >= camParams.imgW: continue
-			if imIn[1] < 0 or imIn[1] >= camParams.imgH: continue
-			
-			#Copy pixel to output
-			if not math.isnan(imIn[0]):
-				iml[imOut[0], imOut[1]] = camImgl[imIn[0], imIn[1]]
-
-	def VisImageOutlines(self, poolPhotos, poolPath, imgPairs, cameraArrangement, im, iml):
-
-		for photoId in cameraArrangement.addedPhotos.keys():
-			camParams = cameraArrangement.addedPhotos[photoId]
-			imgEdgePts = [(0,0),(camParams.imgW,0),(camParams.imgW,camParams.imgH),(0, camParams.imgH)]
-			worldPts = camParams.UnProj(imgEdgePts)
-			imgPts = self.eqRect.Proj(worldPts)
-
-			#Draw bounding box
-			draw = ImageDraw.Draw(im) 
-			for i in range(len(imgPts)):
-				pt1 = list(imgPts[i])
-				pt2 = list(imgPts[(i+1)%len(imgPts)])
-				draw.line(pt1+pt2, fill=128)
-			del draw
-
-	def Vis(self, poolPhotos, poolPath, imgPairs, cameraArrangement):
-
-		im = Image.new("RGB", self.imSize)
-		iml = im.load()
-
-		self.VisImages(poolPhotos, poolPath, imgPairs, cameraArrangement, im, iml)
-		self.VisImageOutlines(poolPhotos, poolPath, imgPairs, cameraArrangement, im, iml)
-
-		return im
-
-
 if __name__=="__main__":
 	imgPairs = pickle.load(open("imgpairs.dat", "rb"))
 
@@ -226,7 +160,7 @@ if __name__=="__main__":
 
 	cameraArrangement.OptimiseFit([bestPair[2]])
 
-	visobj = VisualiseArrangement()
+	visobj = visualise.VisualiseArrangement()
 	
 	while bestPair is not None and len(cameraArrangement.addedPhotos) < 5:
 		bestPair, newInd = SelectPhotoToAdd(imgPairs, cameraArrangement)
