@@ -97,19 +97,19 @@ class CameraArrangement(object):
 			proj1 = camModel1.UnProj(ptsA)
 			proj2 = camModel2.UnProj(ptsB)
 			
-			distsX = []
-			distsY = []
+			#distsX = []
+			#distsY = []
 			for pt1, pt2 in zip(proj1, proj2):
 				malDist1 = abs(pt1[0]-pt2[0])#Lat 
 				malDist2 = abs(pt1[1]-pt2[1])#Lon
 				while malDist2 > math.pi: #Limit difference to -pi to +pi range
 					malDist2 -= 2. * math.pi
 
-				distsX.append(malDist1 * weight)
-				distsY.append(malDist2 * weight)
+				dists.append(malDist1 * weight)
+				dists.append(malDist2 * weight)
 
-			dists.append(np.array(distsX).mean())
-			dists.append(np.array(distsY).mean())
+			#dists.append(np.array(distsX).mean())
+			#dists.append(np.array(distsY).mean())
 
 		#print vals, score
 		#print countPairs
@@ -217,7 +217,7 @@ if __name__=="__main__":
 		cameraArrangement.addedPhotos[photoToAdd] = proj.RectilinearCam()
 		
 		if 1:		
-			cameraArrangement.OptimiseFit([photoToAdd])
+			cameraArrangement.OptimiseFit([photoToAdd], optRotation = True)
 
 		for photoId in cameraArrangement.addedPhotos:
 			photo = cameraArrangement.addedPhotos[photoId]
@@ -227,9 +227,9 @@ if __name__=="__main__":
 			vis = visobj.Vis(poolPhotos, poolPath, filteredImgPairs, cameraArrangement)
 			vis.save("vis{0}.png".format(len(cameraArrangement.addedPhotos)))
 
-	if 1:
+	if 0:
 		print "Optimise all cameras"
-		cameraArrangement.OptimiseFit(optRotation = True)
+		cameraArrangement.OptimiseFit()
 
 	pickle.dump(cameraArrangement.addedPhotos, open("camarr.dat","wb"), protocol=-1)
 
