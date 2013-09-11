@@ -57,6 +57,7 @@ class RectilinearCam(object):
 		self.imgH = 480
 		self.cLat = 0.
 		self.cLon = 0.
+		self.rot = 0.
 
 		self.hHRange = -1.
 		self.hVRange = -1.
@@ -85,6 +86,11 @@ class RectilinearCam(object):
 
 		pts = np.array(pts)
 		centred = pts - self.hsize
+
+		#Inverse rotate about origin
+		mat = np.array([[cos(self.rot), -sin(self.rot)], [sin(self.rot), cos(self.rot)]])
+		centred = np.dot(centred, mat)
+
 		scaled = centred / self.hsize
 
 		normImg = scaled * self.hRange
@@ -115,6 +121,11 @@ class RectilinearCam(object):
 
 		imgPts /= self.hRange
 		imgPts *= self.hsize
+
+		mat = np.array([[cos(self.rot), sin(self.rot)], [-sin(self.rot), cos(self.rot)]])
+		imgPts = np.dot(imgPts, mat)
+
+		#Move origin to corner
 		imgPts += self.hsize
 
 		for ind in np.where(validLi == False):

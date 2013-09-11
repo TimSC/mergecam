@@ -9,7 +9,7 @@ class CameraArrangement(object):
 		self.imgPairs = imgPairs
 		self.addedPhotos = {}
 
-	def OptimiseFit(self, photToOpt = None):
+	def OptimiseFit(self, photToOpt = None, optRotation=False):
 
 		if 0:
 			plt.plot(ptsA[:,0], ptsA[:,1], '.')
@@ -36,6 +36,9 @@ class CameraArrangement(object):
 			initialVals.append(camModel.cLat)
 			initialValKey[phot]["lon"] = len(initialVals)
 			initialVals.append(camModel.cLon)
+			if optRotation:
+				initialValKey[phot]["rot"] = len(initialVals)
+				initialVals.append(camModel.rot)
 
 		print initialVals
 
@@ -43,7 +46,7 @@ class CameraArrangement(object):
 			final = optimize.minimize(self.Eval, initialVals, (0, initialValKey, photToOpt), method="Powell")
 			print "score", final.x, final.fun
 		if 1:
-			final = optimize.leastsq(self.Eval, initialVals, (1, initialValKey, photToOpt), xtol=1e-3)
+			final = optimize.leastsq(self.Eval, initialVals, (1, initialValKey, photToOpt), xtol=1e-4)
 			print "score", final
 			finalVals = final[0]
 
@@ -52,6 +55,8 @@ class CameraArrangement(object):
 			params = initialValKey[phot]
 			self.addedPhotos[phot].cLat = finalVals[params["lat"]]
 			self.addedPhotos[phot].cLon = finalVals[params["lon"]]
+			if "rot" in params:
+				self.addedPhotos[phot].rot = finalVals[params["rot"]]
 
 	def Eval(self, vals, separateTerms, initialValKey, photToOpt):
 
@@ -72,11 +77,15 @@ class CameraArrangement(object):
 			if fina1 in initialValKey:
 				camModel1.cLat = vals[initialValKey[fina1]["lat"]]
 				camModel1.cLon = vals[initialValKey[fina1]["lon"]]
+				if "rot" in initialValKey[fina1]:
+					camModel1.rot = vals[initialValKey[fina1]["rot"]]
 
 			camModel2 = self.addedPhotos[fina2]
 			if fina2 in initialValKey:
 				camModel2.cLat = vals[initialValKey[fina2]["lat"]]
 				camModel2.cLon = vals[initialValKey[fina2]["lon"]]
+				if "rot" in initialValKey[fina2]:
+					camModel2.rot = vals[initialValKey[fina2]["rot"]]
 
 			ptsA = np.array(pair[3])
 			ptsB = np.array(pair[4])
@@ -106,8 +115,8 @@ class CameraArrangement(object):
 		#print countPairs
 
 		if separateTerms:
-			return dists
-		score = np.array(dists).mean()
+			return np.power(dists, 1.)
+		score = np.array(dists).mean() ** 1.
 		return score
 
 def SelectPhotoToAdd(imgPairs, cameraArrangement):
@@ -128,6 +137,17 @@ def SelectPhotoToAdd(imgPairs, cameraArrangement):
 
 	return bestPair, bestNewInd
 
+def GetStrongestLinkForPhotoId(imgPairs, photoId):
+
+	bestScore = None
+	bestPair = None
+	for pair in imgPairs:
+		if photoId != pair[1] and photoId != pair[2]: continue
+		if bestScore is None or pair[0] > bestScore:
+			bestScore = pair[0]
+			bestPair = pair
+	return bestPair, bestScore
+
 if __name__=="__main__":
 	imgPairs = pickle.load(open("imgpairs.dat", "rb"))
 
@@ -136,11 +156,30 @@ if __name__=="__main__":
 
 	log = open("log.txt", "wt")
 	
-	#Select valid pairings
+	#Select valid pairings based on threshold
 	filteredImgPairs = []
 	for pair in imgPairs:
 		if pair[0] > 0.1:
 			filteredImgPairs.append(pair)
+
+	#Check all photos are referenced in filtered set
+	refPhotos = set()
+	for pair in filteredImgPairs:
+		refPhotos.add(pair[1])
+		refPhotos.add(pair[2])
+
+	missingPhotos = set()
+	for photoId in poolPhotos:
+		if photoId in refPhotos: continue
+		missingPhotos.add(photoId)
+
+	if 0:
+		#For photos with no links, add their best link
+		for photoId in missingPhotos:
+			pair, score = GetStrongestLinkForPhotoId(imgPairs, photoId)
+			print photoId, score
+			if pair is not None:
+				filteredImgPairs.append(pair)
 
 	#Add two best photos
 	filteredImgPairs.sort()
@@ -177,7 +216,8 @@ if __name__=="__main__":
 
 		cameraArrangement.addedPhotos[photoToAdd] = proj.RectilinearCam()
 		
-		cameraArrangement.OptimiseFit([photoToAdd])
+		if 1:		
+			cameraArrangement.OptimiseFit([photoToAdd])
 
 		for photoId in cameraArrangement.addedPhotos:
 			photo = cameraArrangement.addedPhotos[photoId]
@@ -187,9 +227,9 @@ if __name__=="__main__":
 			vis = visobj.Vis(poolPhotos, poolPath, filteredImgPairs, cameraArrangement)
 			vis.save("vis{0}.png".format(len(cameraArrangement.addedPhotos)))
 
-	print "Optimise all cameras"
-
-	cameraArrangement.OptimiseFit()
+	if 1:
+		print "Optimise all cameras"
+		cameraArrangement.OptimiseFit(optRotation = True)
 
 	pickle.dump(cameraArrangement.addedPhotos, open("camarr.dat","wb"), protocol=-1)
 
