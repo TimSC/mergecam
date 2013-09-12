@@ -1,5 +1,5 @@
 
-import select, time
+import select, time, os
 import v4l2capture
 
 class V4L2(object):
@@ -45,11 +45,37 @@ class V4L2(object):
 		except Exception as err:
 			return None
 
+def ListDevices():
+	file_names = [x for x in os.listdir("/dev") if x.startswith("video")]
+	file_names.sort()
+
+	out = []
+	for file_name in file_names:
+		path = "/dev/" + file_name
+		print path
+		try:
+			video = v4l2capture.Video_device(path)
+			driver, card, bus_info, capabilities = video.get_info()
+			out.append((path, driver, card, bus_info, capabilities))
+			
+			video.close()
+		except IOError as e:
+			print e
+
+	return out
 
 if __name__=="__main__":
 
+	devList = ListDevices()
+	for dev in devList:
+		print dev
+
+	if len(devList) == 0:
+		print "No capture device found"
+		exit(0)
+
 	v4l2 = V4L2()
-	v4l2.Start()
+	v4l2.Start(devList[0][0])
 
 	while(1):
 	
