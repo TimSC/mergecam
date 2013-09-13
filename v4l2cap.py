@@ -12,7 +12,7 @@ class V4L2(object):
 		if self.video is not None:
 			self.video.close()
 
-	def Start(self, dev = None, reqSize=(640, 480), reqFps = 30):
+	def Start(self, dev = None, reqSize=(640, 480), reqFps = 30, fmt = "MJPEG"):
 		# Open the video device.
 		if dev is None:
 			dev = "/dev/video0"
@@ -20,7 +20,7 @@ class V4L2(object):
 
 		# Suggest an image size to the device. The device may choose and
 		# return another size if it doesn't support the suggested one.
-		self.size_x, self.size_y = self.video.set_format(reqSize[0], reqSize[1], "MJPEG")
+		self.size_x, self.size_y = self.video.set_format(reqSize[0], reqSize[1], fmt)
 
 		#Set target frames per second
 		self.fps = self.video.set_fps(reqFps)
@@ -40,9 +40,15 @@ class V4L2(object):
 	def GetFrame(self, blocking=1):
 		assert self.video is not None
 
-		if blocking:
-			# Wait for the device to fill the buffer.
-			select.select((self.video,), (), ())
+		timeout = 1.
+		if not blocking: timeout = 0.
+
+		# Wait for the device to fill the buffer.
+		ret = select.select((self.video,), (), (), timeout)
+
+		if len(ret[0]) == 0:
+			#Device timed out
+			return None
 
 		try:
 			return self.video.read_and_queue(1)

@@ -10,11 +10,11 @@ if __name__=="__main__":
 
 	for deviceObj, deviceParams in zip(v4l2, devList):
 		print "Starting", deviceParams[0]
-		deviceObj.Start(deviceParams[0])
+		deviceObj.Start(deviceParams[0], fmt="MJPEG")
 
 	while(1):
 		for deviceObj, deviceParams in zip(v4l2, devList):
-			data = deviceObj.GetFrame(blocking=0)
+			data = deviceObj.GetFrame(blocking=1)
 			if data is not None:
 				print deviceParams[0], len(data)
 		time.sleep(0.01)
