@@ -1,6 +1,8 @@
 
 import select, time, os
 import v4l2capture
+from v4l2 import *
+from PIL import Image
 
 class V4L2(object):
 	def __init__(self):
@@ -18,8 +20,7 @@ class V4L2(object):
 
 		# Suggest an image size to the device. The device may choose and
 		# return another size if it doesn't support the suggested one.
-		yuv420 = 1
-		self.size_x, self.size_y = self.video.set_format(reqSize[0], reqSize[1], yuv420)
+		self.size_x, self.size_y = self.video.set_format(reqSize[0], reqSize[1], "MJPEG")
 
 		#Set target frames per second
 		self.fps = self.video.set_fps(reqFps)
@@ -84,6 +85,13 @@ if __name__=="__main__":
 	
 		data = v4l2.GetFrame()
 		print len(data)
+		if len(data) > 0:
+			print len(data[0])
+			fi = open("test.jpeg", "wb")
+			fi.write(data[0])
+			fi.flush()
+			#im = Image.fromstring("RGB", (640, 480), data[0], 'jpeg', "RGB", '')
+
 		time.sleep(0.001)
 
 
