@@ -1,5 +1,5 @@
 
-import select, time
+import select, time, os
 import v4l2capture, v4l2cap
 
 if __name__=="__main__":
@@ -12,7 +12,7 @@ if __name__=="__main__":
 
 	for deviceObj, deviceParams in zip(v4l2, devList):
 		print "Starting", deviceParams[0]
-		deviceObj.Start(deviceParams[0], fmt="MJPEG")
+		deviceObj.Start(deviceParams[0], reqSize=(640, 480), fmt="MJPEG")
 
 	while(1):
 		for deviceObj, deviceParams in zip(v4l2, devList):
@@ -28,10 +28,17 @@ if __name__=="__main__":
 				while len(frameTimes[devName]) > 10:
 					frameTimes[devName].pop(0)
 
+				#Save frame
+				devNameSplit = os.path.split(devName)
+				fi = open(devNameSplit[-1]+".mjpeg", "wb")
+				fi.write(data[0])
+				fi.close()
+
 		if showRateTime is None or showRateTime + 1. < time.time():
 			#Estimate frame rates
 			for devName in frameTimes:
 				devTimes = frameTimes[devName]
+				if len(devTimes) < 2: continue
 				elapse = time.time() - devTimes[0]
 				if elapse == 0.: continue
 				rate = len(devTimes) / elapse

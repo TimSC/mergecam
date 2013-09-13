@@ -170,7 +170,7 @@ class ParseJpeg(object):
 if __name__ == "__main__":
 
 	pj = ParseJpeg()
-	pj.InsertHuffmanTable(open("test.mjpeg","rb"), open("test2.jpeg","wb"), verbose = 1)
+	pj.InsertHuffmanTable(open("video0.mjpeg","rb"), open("video0.jpeg","wb"), verbose = 1)
 	#pj.InsertHuffmanTable(open("IMG_6618.JPG","rb"), open("IMG_6618b.JPG","wb"))
 	#pj.Open(open("IMG_6618.JPG","rb"), verbose = 1)
 
