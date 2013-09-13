@@ -41,7 +41,11 @@ class ParseJpeg(object):
 	def __init__(self):
 		pass
 
-	def Open(self, fiHandle, verbose = 0):		
+	def Open(self, fiHandle, verbose = 0):	
+		#This function steps through the JPEG structure but
+		#does nothing useful. It might be a useful basis for
+		#extension.
+	
 		data = fiHandle.read()
 		parsing = True
 		frameStartPos = 0
@@ -61,6 +65,9 @@ class ParseJpeg(object):
 
 	def InsertHuffmanTable(self, fiHandle, outHandle, verbose = 0):
 		#This converts an MJPEG frame into a standard JPEG binary
+		#MJPEG images omit the huffman table if the standard table
+		#is used. If it is missing, this function adds the table
+		#into the file structure.
 
 		data = fiHandle.read()
 		parsing = True
@@ -127,7 +134,9 @@ class ParseJpeg(object):
 
 			#Seek through frame
 			run = True
+			entropyData = ""
 			while run:
+				byteEnc = data[cursor]
 				byte = struct.unpack_from("B", data, cursor)[0]
 				cursor += 1
 			
@@ -143,6 +152,12 @@ class ParseJpeg(object):
 							#End of frame
 							run = 0
 							cursor -= 2
+					else:
+						#Add escaped 0xff value in entropy data
+						entropyData += byteEnc
+				else:
+					entropyData += byteEnc
+
 			return twoBytes, frameStartPos, cursor
 
 		#More cursor for all other segment types
@@ -157,6 +172,6 @@ if __name__ == "__main__":
 	pj = ParseJpeg()
 	pj.InsertHuffmanTable(open("test.mjpeg","rb"), open("test2.jpeg","wb"), verbose = 1)
 	#pj.InsertHuffmanTable(open("IMG_6618.JPG","rb"), open("IMG_6618b.JPG","wb"))
-	#pj.Open(open("IMG_6618.JPG","rb"))
+	#pj.Open(open("IMG_6618.JPG","rb"), verbose = 1)
 
 	
