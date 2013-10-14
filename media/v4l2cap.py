@@ -7,6 +7,7 @@ from PIL import Image
 class V4L2(object):
 	def __init__(self):
 		self.video = None
+		self.pixelFmt = None
 
 	def __del__(self):
 		if self.video is not None:
@@ -21,6 +22,9 @@ class V4L2(object):
 		# Suggest an image size to the device. The device may choose and
 		# return another size if it doesn't support the suggested one.
 		self.size_x, self.size_y = self.video.set_format(reqSize[0], reqSize[1], fmt)
+
+		#Store pixel format to use later in decoding
+		self.pixelFmt = fmt;
 
 		#Set target frames per second
 		self.fps = self.video.set_fps(reqFps)
@@ -50,10 +54,19 @@ class V4L2(object):
 			#Device timed out
 			return None
 
+		frame = None
 		try:
-			return self.video.read_and_queue(1)
+			frame = self.video.read_and_queue(1)
 		except Exception as err:
 			return None
+
+		#Decode frame
+		if self.pixelFmt == "MJPEG":
+			print "mjpeg decode"
+			return frame
+
+		return frame
+
 
 def ListDevices():
 	file_names = [x for x in os.listdir("/dev") if x.startswith("video")]

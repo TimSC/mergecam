@@ -2,23 +2,35 @@
 Copyright (c) 2013, Tim Sheerman-Chase
 All rights reserved.
 '''
-import sys, time, cv
+import sys, time
 from PyQt4 import QtGui, QtCore
-	
+from media import v4l2cap
+
 class CamWorker(QtCore.QThread): 
     def __init__(self): 
 		super(CamWorker, self).__init__() 
-		self.cap = cv.CaptureFromCAM(-1)
-		capture_size = (640,480)
-		cv.SetCaptureProperty(self.cap, cv.CV_CAP_PROP_FRAME_WIDTH, capture_size[0])
-		cv.SetCaptureProperty(self.cap, cv.CV_CAP_PROP_FRAME_HEIGHT, capture_size[1])
+		self.devList = v4l2cap.ListDevices()
+		print self.devList
+		self.devs = []
 
     def run(self):
+		for devName in self.devList:
+			v4l2 = v4l2cap.V4L2()
+			v4l2.Start(devName[0])
+			self.devs.append(v4l2)
+
 		while 1:
 			time.sleep(0.01)
-			frame = cv.QueryFrame(self.cap)
-			im = QtGui.QImage(frame.tostring(), frame.width, frame.height, QtGui.QImage.Format_RGB888).rgbSwapped()	
-			self.emit(QtCore.SIGNAL('webcam_frame(QImage)'), im)
+
+			#Poll cameras for updates
+			for devInfo, dev in zip(self.devList, self.devs):
+				data = dev.GetFrame(0)
+				if data is None: continue
+				print data[1:], devInfo
+				
+
+
+			#self.emit(QtCore.SIGNAL('webcam_frame(QImage)'), im)
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self):
