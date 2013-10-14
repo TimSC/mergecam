@@ -1,5 +1,5 @@
 
-import select, time, os
+import select, time, os, mjpeg, cStringIO
 import v4l2capture
 from v4l2 import *
 from PIL import Image
@@ -62,8 +62,15 @@ class V4L2(object):
 
 		#Decode frame
 		if self.pixelFmt == "MJPEG":
-			print "mjpeg decode"
-			return frame
+			frame = list(frame)
+			pixelData = frame[0]
+			parseJpeg = mjpeg.ParseJpeg()
+			fixedJpeg = cStringIO.StringIO()
+			parseJpeg.InsertHuffmanTable(cStringIO.StringIO(pixelData), fixedJpeg)
+			fixedJpeg.seek(0)
+			im = Image.open(fixedJpeg)
+			im = im.convert("RGB")
+			frame[0] = im.tostring()
 
 		return frame
 

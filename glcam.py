@@ -27,10 +27,10 @@ class CamWorker(QtCore.QThread):
 				data = dev.GetFrame(0)
 				if data is None: continue
 				print data[1:], devInfo
-				
 
+				im = QtGui.QImage(data[0], 640, 480, QtGui.QImage.Format_RGB888)#.rgbSwapped()
 
-			#self.emit(QtCore.SIGNAL('webcam_frame(QImage)'), im)
+				self.emit(QtCore.SIGNAL('webcam_frame(QImage)'), im)
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self):
