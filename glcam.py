@@ -71,7 +71,9 @@ class MainWindow(QtGui.QMainWindow):
 		camKeys = self.currentFrames.keys()
 		camKeys.sort()
 		ind = camKeys.index(camId)
-		gpm.setPos(0, ind*480)
+		x = ind / 2
+		y = ind % 2
+		gpm.setPos(x * 640, y * 480)
 		
 		self.scene.addItem(gpm)
 
