@@ -62,7 +62,7 @@ class MainWindow(QtGui.QMainWindow):
 		print type("test")
 
 		im2 = QtGui.QImage(im, 640, 480, QtGui.QImage.Format_RGB888)
-		im2.save(QtCore.QString("test.jpeg"), "jpeg")
+		#im2.save(QtCore.QString("test.jpeg"), "jpeg")
 		pix = QtGui.QPixmap(im2)
 		self.currentFrame = im2
 		self.currentFrameData = im
