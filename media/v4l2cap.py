@@ -66,7 +66,11 @@ class V4L2(object):
 			pixelData = frame[0]
 			parseJpeg = mjpeg.ParseJpeg()
 			fixedJpeg = cStringIO.StringIO()
-			parseJpeg.InsertHuffmanTable(cStringIO.StringIO(pixelData), fixedJpeg)
+			try:
+				parseJpeg.InsertHuffmanTable(cStringIO.StringIO(pixelData), fixedJpeg)
+			except:
+				print "MJPEG decoding failed"
+				return None
 			fixedJpeg.seek(0)
 			im = Image.open(fixedJpeg)
 			im = im.convert("RGB")

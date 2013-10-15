@@ -26,18 +26,15 @@ class CamWorker(QtCore.QThread):
 			for devInfo, dev in zip(self.devList, self.devs):
 				data = dev.GetFrame(0)
 				if data is None: continue
-				print data[1:], devInfo
+				dataStruc = data
+				dataStruc.extend(devInfo)
 
-				#im = QtGui.QImage(data[0], 640, 480, QtGui.QImage.Format_RGB888)
-				qs = data[0]
-
-				self.emit(QtCore.SIGNAL('webcam_frame'), qs)
+				self.emit(QtCore.SIGNAL('webcam_frame'), dataStruc)
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self):
 		super(MainWindow, self).__init__() 
-		self.currentFrame = None
-		self.currentFrameData = None
+		self.currentFrames = {}
 
 		self.resize(700, 550)
 		self.move(300, 300)
@@ -56,18 +53,27 @@ class MainWindow(QtGui.QMainWindow):
 
 
 	def ProcessFrame(self, im):
-		print "Frame update", type(im)
-		self.scene.clear()
+		print "Frame update", im[1:]
+		camId = im[4]
+		if camId in self.currentFrames:
+			self.scene.removeItem(self.currentFrames[camId])
+			del self.currentFrames[camId]
 
-		print type("test")
+		#self.scene.clear()
 
-		im2 = QtGui.QImage(im, 640, 480, QtGui.QImage.Format_RGB888)
-		#im2.save(QtCore.QString("test.jpeg"), "jpeg")
+		im2 = QtGui.QImage(im[0], 640, 480, QtGui.QImage.Format_RGB888)
 		pix = QtGui.QPixmap(im2)
-		self.currentFrame = im2
-		self.currentFrameData = im
 		
-		self.scene.addPixmap(pix)
+
+		#Calc an index for camera
+		gpm = QtGui.QGraphicsPixmapItem(pix)
+		self.currentFrames[camId] = gpm
+		camKeys = self.currentFrames.keys()
+		camKeys.sort()
+		ind = camKeys.index(camId)
+		gpm.setPos(0, ind*480)
+		
+		self.scene.addItem(gpm)
 
 
 if __name__ == '__main__':
