@@ -28,13 +28,17 @@ class CamWorker(QtCore.QThread):
 				if data is None: continue
 				print data[1:], devInfo
 
-				im = QtGui.QImage(data[0], 640, 480, QtGui.QImage.Format_RGB888)#.rgbSwapped()
+				#im = QtGui.QImage(data[0], 640, 480, QtGui.QImage.Format_RGB888)
+				qs = data[0]
 
-				self.emit(QtCore.SIGNAL('webcam_frame(QImage)'), im)
+				self.emit(QtCore.SIGNAL('webcam_frame'), qs)
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self):
 		super(MainWindow, self).__init__() 
+		self.currentFrame = None
+		self.currentFrameData = None
+
 		self.resize(700, 550)
 		self.move(300, 300)
 		self.setWindowTitle('Qt Webcam Demo')
@@ -52,9 +56,17 @@ class MainWindow(QtGui.QMainWindow):
 
 
 	def ProcessFrame(self, im):
-		print "Frame update", im
-		pix = QtGui.QPixmap(im)
+		print "Frame update", type(im)
 		self.scene.clear()
+
+		print type("test")
+
+		im2 = QtGui.QImage(im, 640, 480, QtGui.QImage.Format_RGB888)
+		im2.save(QtCore.QString("test.jpeg"), "jpeg")
+		pix = QtGui.QPixmap(im2)
+		self.currentFrame = im2
+		self.currentFrameData = im
+		
 		self.scene.addPixmap(pix)
 
 
@@ -65,7 +77,7 @@ if __name__ == '__main__':
 	mainWindow = MainWindow()
 
 	camWorker = CamWorker()
-	QtCore.QObject.connect(camWorker, QtCore.SIGNAL("webcam_frame(QImage)"), mainWindow.ProcessFrame)
+	QtCore.QObject.connect(camWorker, QtCore.SIGNAL("webcam_frame"), mainWindow.ProcessFrame)
 	camWorker.start() 
 
 	sys.exit(app.exec_())
