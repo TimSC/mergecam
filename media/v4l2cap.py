@@ -7,6 +7,7 @@ from PIL import Image
 class V4L2(object):
 	def __init__(self):
 		self.video = None
+		self.size_x, self.size_y = None, None
 		self.pixelFmt = None
 
 	def __del__(self):
@@ -21,7 +22,10 @@ class V4L2(object):
 
 		# Suggest an image size to the device. The device may choose and
 		# return another size if it doesn't support the suggested one.
-		self.size_x, self.size_y = self.video.set_format(reqSize[0], reqSize[1], fmt)
+		self.video.set_format(reqSize[0], reqSize[1], fmt)
+
+		#Query current pixel format
+		self.size_x, self.size_y, self.pixelFmt = self.video.get_format()
 
 		#Store pixel format to use later in decoding
 		self.pixelFmt = fmt;
@@ -60,6 +64,8 @@ class V4L2(object):
 		except Exception as err:
 			return None
 
+		
+
 		#Decode frame
 		if self.pixelFmt == "MJPEG":
 			frame = list(frame)
@@ -71,10 +77,17 @@ class V4L2(object):
 			except:
 				print "MJPEG decoding failed"
 				return None
+			print "jpeg len", len(fixedJpeg.getvalue())
+
+			#Decode image
 			fixedJpeg.seek(0)
 			im = Image.open(fixedJpeg)
 			im = im.convert("RGB")
 			frame[0] = im.tostring()
+
+		else:
+			print "Cannot decode pixel format", self.pixelFmt
+
 
 		return frame
 

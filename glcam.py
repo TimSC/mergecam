@@ -14,13 +14,15 @@ class CamWorker(QtCore.QThread):
 		self.devs = []
 
     def run(self):
-		for devName in self.devList:
+		for devName in self.devList[1:2]:
 			v4l2 = v4l2cap.V4L2()
 			v4l2.Start(devName[0])
+			print "Started", devName[0], v4l2.size_x, v4l2.size_y, v4l2.pixelFmt
 			self.devs.append(v4l2)
 
 		while 1:
 			time.sleep(0.01)
+			print time.time()
 
 			#Poll cameras for updates
 			for devInfo, dev in zip(self.devList, self.devs):
