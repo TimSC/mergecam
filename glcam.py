@@ -14,7 +14,7 @@ class CamWorker(QtCore.QThread):
 		self.devs = []
 
     def run(self):
-		for devName in self.devList[1:2]:
+		for devName in self.devList[:]:
 			v4l2 = v4l2cap.V4L2()
 			v4l2.Start(devName[0])
 			print "Started", devName[0], v4l2.size_x, v4l2.size_y, v4l2.pixelFmt
@@ -27,6 +27,7 @@ class CamWorker(QtCore.QThread):
 			#Poll cameras for updates
 			for devInfo, dev in zip(self.devList, self.devs):
 				data = dev.GetFrame(0)
+				print "Times", dev.getFrameDuration, dev.huffTableDuration, dev.decodeJpegDuration
 				if data is None: continue
 				dataStruc = data
 				dataStruc.extend(devInfo)

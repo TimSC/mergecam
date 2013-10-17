@@ -9,6 +9,9 @@ class V4L2(object):
 		self.video = None
 		self.size_x, self.size_y = None, None
 		self.pixelFmt = None
+		self.getFrameDuration = 0.
+		self.huffTableDuration = 0.
+		self.decodeJpegDuration = 0.
 
 	def __del__(self):
 		if self.video is not None:
@@ -26,9 +29,6 @@ class V4L2(object):
 
 		#Query current pixel format
 		self.size_x, self.size_y, self.pixelFmt = self.video.get_format()
-
-		#Store pixel format to use later in decoding
-		self.pixelFmt = fmt;
 
 		#Set target frames per second
 		self.fps = self.video.set_fps(reqFps)
@@ -48,6 +48,7 @@ class V4L2(object):
 	def GetFrame(self, blocking=1):
 		assert self.video is not None
 
+		timeFunc = time.time()
 		timeout = 1.
 		if not blocking: timeout = 0.
 
@@ -64,31 +65,41 @@ class V4L2(object):
 		except Exception as err:
 			return None
 
-		
-
 		#Decode frame
 		if self.pixelFmt == "MJPEG":
 			frame = list(frame)
 			pixelData = frame[0]
+
 			parseJpeg = mjpeg.ParseJpeg()
 			fixedJpeg = cStringIO.StringIO()
+			timeHuffmanTable = time.time()
 			try:
 				parseJpeg.InsertHuffmanTable(cStringIO.StringIO(pixelData), fixedJpeg)
 			except:
 				print "MJPEG decoding failed"
 				return None
-			print "jpeg len", len(fixedJpeg.getvalue())
+			self.huffTableDuration += time.time() - timeHuffmanTable
 
+			#print "jpeg len", len(fixedJpeg.getvalue())
+			#Query current pixel format
+			#self.size_x, self.size_y, self.pixelFmt = self.video.get_format()
+			#print self.size_x, self.size_y, self.pixelFmt
+
+			timeDecodeJpeg = time.time()
 			#Decode image
-			fixedJpeg.seek(0)
-			im = Image.open(fixedJpeg)
-			im = im.convert("RGB")
-			frame[0] = im.tostring()
+			try:
+				fixedJpeg.seek(0)
+				im = Image.open(fixedJpeg)
+				im = im.convert("RGB")
+				frame[0] = im.tostring()
+			except:
+				pass
+			self.decodeJpegDuration += (time.time() - timeDecodeJpeg)
 
 		else:
 			print "Cannot decode pixel format", self.pixelFmt
 
-
+		self.getFrameDuration += (time.time() - timeFunc)
 		return frame
 
 
