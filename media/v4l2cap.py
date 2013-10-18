@@ -70,17 +70,20 @@ class V4L2(object):
 			frame = list(frame)
 			pixelData = frame[0]
 
+			parseJpeg = mjpeg.ParseJpeg()
 			timeHuffmanTable = time.time()
 			fixedJpeg = cStringIO.StringIO()
 			try:
 				#parseJpeg.InsertHuffmanTable(cStringIO.StringIO(pixelData), fixedJpeg)
 				fixedJpeg = v4l2capture.InsertHuffmanTable(str(pixelData))
-			except:
-				print "MJPEG decoding failed"
+
+				#print "jpeg len", len(fixedJpeg.getvalue())
+				#print "jpeg2 len", len(fixedJpeg2)
+			except Exception as err:
+				print "MJPEG decoding failed:", err
 				return None
 			self.huffTableDuration += time.time() - timeHuffmanTable
 
-			#print "jpeg len", len(fixedJpeg.getvalue())
 			#Query current pixel format
 			#self.size_x, self.size_y, self.pixelFmt = self.video.get_format()
 			#print self.size_x, self.size_y, self.pixelFmt
@@ -88,11 +91,12 @@ class V4L2(object):
 			timeDecodeJpeg = time.time()
 			#Decode image
 			try:
-				fixedJpeg.seek(0)
-				im = Image.open(fixedJpeg)
+				#fixedJpeg.seek(0)
+				im = Image.open(cStringIO.StringIO(fixedJpeg))
 				im = im.convert("RGB")
 				frame[0] = im.tostring()
-			except:
+			except Exception as err:
+				print "Failed to decode jpeg:", err
 				frame[0] = None
 			self.decodeJpegDuration += (time.time() - timeDecodeJpeg)
 
