@@ -71,11 +71,10 @@ class V4L2(object):
 			pixelData = frame[0]
 
 			timeHuffmanTable = time.time()
-			parseJpeg = mjpeg.ParseJpeg()
 			fixedJpeg = cStringIO.StringIO()
 			try:
-				parseJpeg.InsertHuffmanTable(cStringIO.StringIO(pixelData), fixedJpeg)
-				#fixedJpeg = pixelData
+				#parseJpeg.InsertHuffmanTable(cStringIO.StringIO(pixelData), fixedJpeg)
+				fixedJpeg = v4l2capture.InsertHuffmanTable(str(pixelData))
 			except:
 				print "MJPEG decoding failed"
 				return None
