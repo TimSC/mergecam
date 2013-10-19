@@ -12,6 +12,7 @@ class V4L2(object):
 		self.getFrameDuration = 0.
 		self.huffTableDuration = 0.
 		self.decodeJpegDuration = 0.
+		self.durationCount = 0
 
 	def __del__(self):
 		if self.video is not None:
@@ -104,6 +105,7 @@ class V4L2(object):
 			print "Cannot decode pixel format", self.pixelFmt
 
 		self.getFrameDuration += (time.time() - timeFunc)
+		self.durationCount += 1
 		return frame
 
 

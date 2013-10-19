@@ -27,7 +27,7 @@ class CamWorker(QtCore.QThread):
 			#Poll cameras for updates
 			for devInfo, dev in zip(self.devList, self.devs):
 				data = dev.GetFrame(0)
-				print "Times", dev.getFrameDuration, dev.huffTableDuration, dev.decodeJpegDuration
+				print "Times", dev.getFrameDuration, dev.huffTableDuration, dev.decodeJpegDuration, dev.durationCount
 				if data is None: continue
 				dataStruc = data
 				dataStruc.extend(devInfo)
