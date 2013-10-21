@@ -41,7 +41,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.timer.start(10)
 
 	def ProcessFrame(self, frame, meta, devName):
-		print "Frame update", len(frame), meta
+		print "Frame update", devName, len(frame), meta
 
 		camId = devName
 		if camId in self.currentFrames:
@@ -49,6 +49,9 @@ class MainWindow(QtGui.QMainWindow):
 			del self.currentFrames[camId]
 
 		#self.scene.clear()
+		if meta['format'] != "RGB24": 
+			print "Cannot display format", meta['format']
+			return
 
 		im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
 		pix = QtGui.QPixmap(im2)
