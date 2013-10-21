@@ -31,7 +31,8 @@ class MainWindow(QtGui.QMainWindow):
 		for dev in self.devNames[:]:
 			fina = "/dev/"+dev
 			self.devManager.open(fina)
-			#self.devManager.set_format(fina, 640, 480, "YUV420");
+			#self.devManager.set_format(fina, 640, 480, "YUYV");
+			self.devManager.set_format(fina, 800, 600, "MJPEG");
 			self.devManager.start(fina)
 
 		# Create idle timer
@@ -39,9 +40,9 @@ class MainWindow(QtGui.QMainWindow):
 		self.timer.timeout.connect(self.IdleEvent)
 		self.timer.start(10)
 
-	def ProcessFrame(self, im, devName):
-		print "Frame update", len(im)
-		#camId = im[4]
+	def ProcessFrame(self, frame, meta, devName):
+		print "Frame update", len(frame), meta
+
 		camId = devName
 		if camId in self.currentFrames:
 			self.scene.removeItem(self.currentFrames[camId])
@@ -49,7 +50,7 @@ class MainWindow(QtGui.QMainWindow):
 
 		#self.scene.clear()
 
-		im2 = QtGui.QImage(im, 640, 480, QtGui.QImage.Format_RGB888)
+		im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
 		pix = QtGui.QPixmap(im2)
 		
 		#Calc an index for camera
@@ -60,17 +61,17 @@ class MainWindow(QtGui.QMainWindow):
 		ind = camKeys.index(camId)
 		x = ind / 2
 		y = ind % 2
-		gpm.setPos(x * 640, y * 480)
+		gpm.setPos(x * meta['width'], y * meta['height'])
 		
 		self.scene.addItem(gpm)
 
 	def IdleEvent(self):
 		for devName in self.devNames[:]:
 			fina = "/dev/"+devName
-			fr = self.devManager.get_frame(fina)
-			if fr is not None:
-				#print len(fr)
-				self.ProcessFrame(fr, devName)
+			data = self.devManager.get_frame(fina)
+			if data is not None:
+				print len(data[0])
+				self.ProcessFrame(data[0], data[1], devName)
 
 if __name__ == '__main__':
 
