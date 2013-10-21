@@ -69,7 +69,7 @@ class MainWindow(QtGui.QMainWindow):
 			fina = "/dev/"+devName
 			fr = self.devManager.get_frame(fina)
 			if fr is not None:
-				print len(fr)
+				#print len(fr)
 				self.ProcessFrame(fr, devName)
 
 if __name__ == '__main__':
