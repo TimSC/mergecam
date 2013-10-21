@@ -31,7 +31,7 @@ class MainWindow(QtGui.QMainWindow):
 		for dev in self.devNames[:]:
 			fina = "/dev/"+dev
 			self.devManager.open(fina)
-			self.devManager.set_format(fina, 640, 480, "MJPEG");
+			#self.devManager.set_format(fina, 640, 480, "YUV420");
 			self.devManager.start(fina)
 
 		# Create idle timer
