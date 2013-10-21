@@ -27,21 +27,21 @@ class MainWindow(QtGui.QMainWindow):
 		self.show()
 
 		self.devManager = v4l2capture.Device_manager()
-		self.devManager.open()
-		self.devManager.set_format("/dev/video0", 640, 480, "MJPEG");
-		self.devManager.start()
-		
-
+		self.devNames = [x for x in os.listdir("/dev") if x.startswith("video")]
+		for dev in self.devNames:
+			self.devManager.open(dev)
+			self.devManager.set_format(dev, 640, 480, "MJPEG");
+			self.devManager.start(dev)
 
 		# Create idle timer
 		self.timer = QtCore.QTimer()
 		self.timer.timeout.connect(self.IdleEvent)
 		self.timer.start(10)
 
-	def ProcessFrame(self, im):
+	def ProcessFrame(self, im, devName):
 		print "Frame update", len(im)
 		#camId = im[4]
-		camId = 0
+		camId = devName
 		if camId in self.currentFrames:
 			self.scene.removeItem(self.currentFrames[camId])
 			del self.currentFrames[camId]
@@ -64,10 +64,11 @@ class MainWindow(QtGui.QMainWindow):
 		self.scene.addItem(gpm)
 
 	def IdleEvent(self):
-		fr = self.devManager.get_frame()
-		if fr is not None:
-			print len(fr)
-			self.ProcessFrame(fr)
+		for devName in self.devNames:
+			fr = self.devManager.get_frame(devName)
+			if fr is not None:
+				print len(fr)
+				self.ProcessFrame(fr, devName)
 
 if __name__ == '__main__':
 
