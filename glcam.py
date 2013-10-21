@@ -2,7 +2,7 @@
 Copyright (c) 2013, Tim Sheerman-Chase
 All rights reserved.
 '''
-import sys, time
+import sys, time, os
 from PyQt4 import QtGui, QtCore
 import v4l2capture
 
@@ -28,10 +28,11 @@ class MainWindow(QtGui.QMainWindow):
 
 		self.devManager = v4l2capture.Device_manager()
 		self.devNames = [x for x in os.listdir("/dev") if x.startswith("video")]
-		for dev in self.devNames:
-			self.devManager.open(dev)
-			self.devManager.set_format(dev, 640, 480, "MJPEG");
-			self.devManager.start(dev)
+		for dev in self.devNames[:]:
+			fina = "/dev/"+dev
+			self.devManager.open(fina)
+			self.devManager.set_format(fina, 640, 480, "MJPEG");
+			self.devManager.start(fina)
 
 		# Create idle timer
 		self.timer = QtCore.QTimer()
@@ -64,8 +65,9 @@ class MainWindow(QtGui.QMainWindow):
 		self.scene.addItem(gpm)
 
 	def IdleEvent(self):
-		for devName in self.devNames:
-			fr = self.devManager.get_frame(devName)
+		for devName in self.devNames[:]:
+			fina = "/dev/"+devName
+			fr = self.devManager.get_frame(fina)
 			if fr is not None:
 				print len(fr)
 				self.ProcessFrame(fr, devName)
