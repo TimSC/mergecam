@@ -27,12 +27,12 @@ class MainWindow(QtGui.QMainWindow):
 		self.show()
 
 		self.devManager = v4l2capture.Device_manager()
-		self.devNames = [x for x in os.listdir("/dev") if x.startswith("video")]
-		for dev in self.devNames[:]:
-			fina = "/dev/"+dev
+		self.devNames = self.devManager.list_devices()
+		for fina in self.devNames[:]:
 			self.devManager.open(fina)
 			#self.devManager.set_format(fina, 640, 480, "YUYV");
-			self.devManager.set_format(fina, 800, 600, "MJPEG");
+			#self.devManager.set_format(fina, 800, 600, "MJPEG");
+			self.devManager.set_format(fina, 320, 240, "MJPEG");
 			self.devManager.start(fina)
 
 		# Create idle timer
@@ -69,12 +69,11 @@ class MainWindow(QtGui.QMainWindow):
 		self.scene.addItem(gpm)
 
 	def IdleEvent(self):
-		for devName in self.devNames[:]:
-			fina = "/dev/"+devName
+		for fina in self.devNames[:]:
 			data = self.devManager.get_frame(fina)
 			if data is not None:
 				print len(data[0])
-				self.ProcessFrame(data[0], data[1], devName)
+				self.ProcessFrame(data[0], data[1], fina)
 
 if __name__ == '__main__':
 
