@@ -32,8 +32,11 @@ class MainWindow(QtGui.QMainWindow):
 			self.devManager.open(fina)
 			#self.devManager.set_format(fina, 640, 480, "YUYV");
 			#self.devManager.set_format(fina, 800, 600, "MJPEG");
-			self.devManager.set_format(fina, 320, 240, "MJPEG");
+			self.devManager.set_format(fina, 640, 480, "MJPEG");
 			self.devManager.start(fina)
+
+		self.vidOut = v4l2capture.Video_out_manager()
+		self.vidOut.open("/dev/video4", "YUYV", 800, 600)
 
 		# Create idle timer
 		self.timer = QtCore.QTimer()
@@ -41,7 +44,12 @@ class MainWindow(QtGui.QMainWindow):
 		self.timer.start(10)
 
 	def ProcessFrame(self, frame, meta, devName):
-		print "Frame update", devName, len(frame), meta
+
+		try:
+			if devName == "/dev/video0":
+				self.vidOut.send_frame("/dev/video4", str(frame), str(meta['format']), int(meta['width']), int(meta['height']))
+		except err:
+			print err
 
 		camId = devName
 		if camId in self.currentFrames:
