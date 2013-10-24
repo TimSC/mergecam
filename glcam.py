@@ -47,8 +47,15 @@ class MainWindow(QtGui.QMainWindow):
 
 		try:
 			if devName == "/dev/video0":
-				self.vidOut.send_frame("/dev/video4", str(frame), str(meta['format']), int(meta['width']), int(meta['height']))
-		except err:
+				image = QtGui.QImage(800, 600, QtGui.QImage.Format_RGB888)
+				painter = QtGui.QPainter(image)
+				painter.setRenderHint(QtGui.QPainter.Antialiasing)
+				self.scene.render(painter)
+				del painter
+				raw = image.bits().asstring(image.numBytes())
+				
+				self.vidOut.send_frame("/dev/video4", str(raw), "RGB24", 800, 600)
+		except Exception as err:
 			print err
 
 		camId = devName
