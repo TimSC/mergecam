@@ -18,13 +18,26 @@ class MainWindow(QtGui.QMainWindow):
 		self.scene = QtGui.QGraphicsScene(self)
 		self.view  = QtGui.QGraphicsView(self.scene)
 
-		self.vbox = QtGui.QVBoxLayout()
-		self.vbox.addWidget(self.view)
+		self.mainLayout = QtGui.QHBoxLayout()
+
+		self.sourceList = QtGui.QListWidget()
+		self.mainLayout.addWidget(self.sourceList)
+		
+
+		self.mainLayout.addWidget(self.view, 1)
+
+		
 
 		centralWidget = QtGui.QWidget()
-		centralWidget.setLayout(self.vbox)
+		centralWidget.setLayout(self.mainLayout)
 		self.setCentralWidget(centralWidget)
 		self.show()
+
+		self.vidOut = v4l2capture.Video_out_manager()
+		#self.vidOut.open("/dev/video4", "YUYV", 640, 480)
+		#self.vidOut.open("/dev/video4", "UYVY", 640*2, 480*2)
+
+		time.sleep(1.)
 
 		self.devManager = v4l2capture.Device_manager()
 		self.devNames = self.devManager.list_devices()
@@ -35,13 +48,18 @@ class MainWindow(QtGui.QMainWindow):
 			self.devManager.set_format(fina, 640, 480, "MJPEG");
 			self.devManager.start(fina)
 
-		self.vidOut = v4l2capture.Video_out_manager()
-		self.vidOut.open("/dev/video4", "YUYV", 800, 600)
+		self.UpdateSourceList()
 
 		# Create idle timer
 		self.timer = QtCore.QTimer()
 		self.timer.timeout.connect(self.IdleEvent)
 		self.timer.start(10)
+
+	def UpdateSourceList(self):
+		self.sourceList.clear()
+		self.devNames = self.devManager.list_devices()
+		for fina in self.devNames:
+			self.sourceList.addItem(fina)
 
 	def ProcessFrame(self, frame, meta, devName):
 
