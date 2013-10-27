@@ -6,20 +6,25 @@ import sys, time, os
 from PyQt4 import QtGui, QtCore
 import v4l2capture
 
-class SourceWidget(QtGui.QVBoxLayout):
+class SourceWidget(QtGui.QWidget):
 	def __init__(self, srcId):
-		QtGui.QVBoxLayout.__init__(self)
+		QtGui.QWidget.__init__(self)
+
+		self.widgetLayout = QtGui.QVBoxLayout(self)
+
 		self.srcId = srcId
 
 		label = QtGui.QLabel(srcId)
-		self.addWidget(label)
+		self.widgetLayout.addWidget(label)
 
 		img = QtGui.QImage(300, 200, QtGui.QImage.Format_RGB888)
 		self.pic = QtGui.QLabel()
 		self.pic.setGeometry(10, 10, 300, 200)
 		self.pic.setMinimumSize(300, 200)
 		self.pic.setPixmap(QtGui.QPixmap.fromImage(img))
-		self.addWidget(self.pic)
+		self.widgetLayout.addWidget(self.pic)
+
+		self.setMinimumSize(320,200)
 
 	def UpdateFrame(self, frame, meta):
 		img = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
@@ -43,11 +48,27 @@ class MainWindow(QtGui.QMainWindow):
 		self.mainLayout = QtGui.QHBoxLayout()
 
 		#Add sources list
-		s = QtGui.QScrollArea()
-		s.setMinimumWidth(320)
-		w = QtGui.QWidget(s)
-		self.sourceList = QtGui.QVBoxLayout(w)
-		self.mainLayout.addWidget(s)
+		if 0:
+			s = QtGui.QScrollArea()
+			#s.setMinimumWidth(320)
+			w = QtGui.QWidget(s)
+			self.sourceList = QtGui.QVBoxLayout(w)
+			self.mainLayout.addWidget(s)
+
+		if 1:
+			s = QtGui.QScrollArea()
+
+			frame = QtGui.QFrame();
+
+			s.setMinimumWidth(320)
+			self.sourceList = QtGui.QVBoxLayout()
+
+			frame.setLayout(self.sourceList)
+			frame.setMinimumWidth(300)
+			frame.setMinimumHeight(800)
+			s.setWidget(frame)
+			self.mainLayout.addWidget(s)
+
 
 		#And main view area
 		self.mainLayout.addWidget(self.view, 1)
@@ -88,7 +109,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.devNames = self.devManager.list_devices()
 		for fina in self.devNames:
 			widget = SourceWidget(fina)
-			self.sourceList.addLayout(widget)
+			self.sourceList.addWidget(widget)
 			self.deviceToWidgetDict[fina] = widget
 
 	def ProcessFrame(self, frame, meta, devName):
