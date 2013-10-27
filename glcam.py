@@ -68,7 +68,7 @@ class MainWindow(QtGui.QMainWindow):
 
 			frame.setLayout(self.sourceList)
 			frame.setMinimumWidth(300)
-			frame.setMinimumHeight(600)
+			frame.setMinimumHeight(800)
 			frame.setMaximumHeight(4000)
 			frame.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
 
