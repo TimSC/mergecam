@@ -28,6 +28,10 @@ class SourceWidget(QtGui.QFrame):
 		self.toolbar.addWidget(self.onButton, 0)
 		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedOn)
 
+		self.useButton = QtGui.QPushButton("Use")
+		self.toolbar.addWidget(self.useButton, 0)
+		QtCore.QObject.connect(self.useButton, QtCore.SIGNAL('clicked()'), self.ClickedUse)
+
 		#Create video preview
 		img = QtGui.QImage(300, 200, QtGui.QImage.Format_RGB888)
 		self.pic = QtGui.QLabel()
@@ -77,12 +81,19 @@ class SourceWidget(QtGui.QFrame):
 			self.devManager.start(self.srcId)
 		print self.cameraOn
 
+	def ClickedUse(self):
+		if not self.cameraOn:
+			self.ClickedOn()
+
+		self.emit(QtCore.SIGNAL('use_source_clicked'), self.srcId)
+
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self):
 		super(MainWindow, self).__init__() 
 		self.currentFrames = {}
 		self.deviceToWidgetDict = {}
+		self.currentSrcId = None
 
 		self.vidOut = v4l2capture.Video_out_manager()
 		self.devManager = v4l2capture.Device_manager()
@@ -155,13 +166,27 @@ class MainWindow(QtGui.QMainWindow):
 		self.devNames = self.devManager.list_devices()
 		for fina in self.devNames[:]:
 
+			if self.currentSrcId is None:
+				self.currentSrcId = fina
+
 			widget = SourceWidget(fina, self.devManager)
 			QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
+			QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
 			self.sourceList.addWidget(widget)
 			self.deviceToWidgetDict[fina] = widget
 
 	def ProcessFrame(self, frame, meta, devName):
 
+		if devName == self.currentSrcId:
+			self.scene.clear()
+			im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
+			pix = QtGui.QPixmap(im2)
+		
+			#Calc an index for camera
+			gpm = QtGui.QGraphicsPixmapItem(pix)
+			self.scene.addItem(gpm)
+
+	def OldFunc(self):
 		try:
 			if devName == "/dev/video0":
 				image = QtGui.QImage(800, 600, QtGui.QImage.Format_RGB888)
@@ -209,6 +234,10 @@ class MainWindow(QtGui.QMainWindow):
 		for fina in self.deviceToWidgetDict:
 			camWidget = self.deviceToWidgetDict[fina]
 			camWidget.Update()
+
+	def ChangeVideoSource(self, srcId):
+		print "ChangeVideoSource", srcId
+		self.currentSrcId = srcId
 
 if __name__ == '__main__':
 
