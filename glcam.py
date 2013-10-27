@@ -7,13 +7,19 @@ from PyQt4 import QtGui, QtCore
 import v4l2capture
 
 class SourceWidget(QtGui.QVBoxLayout):
-	def __init__(self, txt):
+	def __init__(self, srcId):
 		QtGui.QVBoxLayout.__init__(self)
-		self.txt = txt
+		self.srcId = srcId
 
-		label = QtGui.QLabel(txt)
+		label = QtGui.QLabel(srcId)
 		self.addWidget(label)
 
+		img = QtGui.QImage(300, 200, QtGui.QImage.Format_RGB32)
+		pic = QtGui.QLabel()
+		pic.setGeometry(10, 10, 300, 200)
+		pic.setMinimumSize(300, 200)
+		pic.setPixmap(QtGui.QPixmap.fromImage(img))
+		self.addWidget(pic)
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self):
@@ -31,6 +37,7 @@ class MainWindow(QtGui.QMainWindow):
 
 		#Add sources list
 		s = QtGui.QScrollArea()
+		s.setMinimumWidth(320)
 		w = QtGui.QWidget(s)
 		self.sourceList = QtGui.QVBoxLayout(w)
 		self.mainLayout.addWidget(s)
