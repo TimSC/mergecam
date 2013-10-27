@@ -14,10 +14,20 @@ class SourceWidget(QtGui.QFrame):
 		self.setLayout(self.widgetLayout)
 
 		self.srcId = srcId
+		self.cameraOn = True
+
+		#Create toolbar
+		self.toolbar = QtGui.QHBoxLayout()
+		self.widgetLayout.addLayout(self.toolbar)
 
 		label = QtGui.QLabel(srcId)
-		self.widgetLayout.addWidget(label, 0)
+		self.toolbar.addWidget(label, 0)
 
+		self.onButton = QtGui.QPushButton("On")
+		self.toolbar.addWidget(self.onButton, 0)
+		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedOn)
+
+		#Create video preview
 		img = QtGui.QImage(300, 200, QtGui.QImage.Format_RGB888)
 		self.pic = QtGui.QLabel()
 		self.pic.setPixmap(QtGui.QPixmap.fromImage(img))
@@ -33,6 +43,14 @@ class SourceWidget(QtGui.QFrame):
 		imgs = img.scaled(300, 200)
 		px = QtGui.QPixmap.fromImage(imgs)
 		self.pic.setPixmap(px)
+
+	def ClickedOn(self):
+		if self.cameraOn:
+			self.cameraOn = False
+		else:
+			self.cameraOn = True
+		print self.cameraOn
+
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self):
