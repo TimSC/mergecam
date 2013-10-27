@@ -6,27 +6,30 @@ import sys, time, os
 from PyQt4 import QtGui, QtCore
 import v4l2capture
 
-class SourceWidget(QtGui.QWidget):
+class SourceWidget(QtGui.QFrame):
 	def __init__(self, srcId):
-		QtGui.QWidget.__init__(self)
+		QtGui.QFrame.__init__(self)
 
 		self.widgetLayout = QtGui.QVBoxLayout(self)
 
 		self.srcId = srcId
 
 		label = QtGui.QLabel(srcId)
-		self.widgetLayout.addWidget(label)
+		self.widgetLayout.addWidget(label, 0)
 
 		img = QtGui.QImage(300, 200, QtGui.QImage.Format_RGB888)
 		self.pic = QtGui.QLabel()
 		self.pic.setGeometry(10, 10, 300, 200)
 		self.pic.setMinimumSize(300, 200)
 		self.pic.setPixmap(QtGui.QPixmap.fromImage(img))
-		self.widgetLayout.addWidget(self.pic)
+		self.widgetLayout.addWidget(self.pic, 0)
 
-		self.setMinimumSize(320,200)
+		self.setMaximumSize(300,300)
+		self.setFrameStyle(QtGui.QFrame.Box)
 
 	def UpdateFrame(self, frame, meta):
+		if meta['format'] != "RGB24": return
+
 		img = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
 		imgs = img.scaled(300, 200)
 		px = QtGui.QPixmap.fromImage(imgs)
@@ -65,8 +68,15 @@ class MainWindow(QtGui.QMainWindow):
 
 			frame.setLayout(self.sourceList)
 			frame.setMinimumWidth(300)
-			frame.setMinimumHeight(800)
+			frame.setMinimumHeight(600)
+			frame.setMaximumHeight(4000)
+			frame.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+
 			s.setWidget(frame)
+			s.setMinimumHeight(600)
+			s.setMaximumHeight(4000)
+			s.setMinimumWidth(300)
+
 			self.mainLayout.addWidget(s)
 
 
@@ -107,9 +117,10 @@ class MainWindow(QtGui.QMainWindow):
 	def UpdateSourceList(self):
 		
 		self.devNames = self.devManager.list_devices()
-		for fina in self.devNames:
+		for fina in self.devNames[:]:
 			widget = SourceWidget(fina)
-			self.sourceList.addWidget(widget)
+			widget.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+			self.sourceList.addWidget(widget, 0)
 			self.deviceToWidgetDict[fina] = widget
 
 	def ProcessFrame(self, frame, meta, devName):
