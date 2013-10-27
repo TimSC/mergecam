@@ -7,7 +7,7 @@ from PyQt4 import QtGui, QtCore
 import v4l2capture
 
 class SourceWidget(QtGui.QFrame):
-	def __init__(self, srcId):
+	def __init__(self, srcId, devManager):
 		QtGui.QFrame.__init__(self)
 
 		self.widgetLayout = QtGui.QVBoxLayout()
@@ -15,6 +15,7 @@ class SourceWidget(QtGui.QFrame):
 
 		self.srcId = srcId
 		self.cameraOn = True
+		self.devManager = devManager
 
 		#Create toolbar
 		self.toolbar = QtGui.QHBoxLayout()
@@ -36,7 +37,21 @@ class SourceWidget(QtGui.QFrame):
 		self.setFrameStyle(QtGui.QFrame.Box)
 		self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
 
-	def UpdateFrame(self, frame, meta):
+		#Start video
+		self.devManager.open(self.srcId)
+		self.devManager.set_format(self.srcId, 640, 480, "MJPEG");
+		self.devManager.start(self.srcId)
+	
+	def Update(self):
+		if self.cameraOn:
+			data = self.devManager.get_frame(self.srcId)
+			if data is not None:
+				print len(data[0])
+				#self.ProcessFrame(data[0], data[1], fina)
+
+				self.UpdatePreview(data[0], data[1])
+
+	def UpdatePreview(self, frame, meta):
 		if meta['format'] != "RGB24": return
 
 		img = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
@@ -44,11 +59,22 @@ class SourceWidget(QtGui.QFrame):
 		px = QtGui.QPixmap.fromImage(imgs)
 		self.pic.setPixmap(px)
 
+	def ClearPreview(self):
+		img = QtGui.QImage(300, 200, QtGui.QImage.Format_RGB888)
+		img.fill(QtGui.QColor(0, 0, 0))
+		px = QtGui.QPixmap.fromImage(img)
+		self.pic.setPixmap(px)
+		
 	def ClickedOn(self):
 		if self.cameraOn:
 			self.cameraOn = False
+			self.devManager.stop(self.srcId)
+			self.devManager.close(self.srcId)
+			self.ClearPreview()
 		else:
 			self.cameraOn = True
+			self.devManager.open(self.srcId)
+			self.devManager.start(self.srcId)
 		print self.cameraOn
 
 
@@ -109,13 +135,13 @@ class MainWindow(QtGui.QMainWindow):
 
 		time.sleep(1.)
 
-		self.devNames = self.devManager.list_devices()
-		for fina in self.devNames[:]:
-			self.devManager.open(fina)
+		#self.devNames = self.devManager.list_devices()
+		#for fina in self.devNames[:]:
+		#	self.devManager.open(fina)
 			#self.devManager.set_format(fina, 640, 480, "YUYV");
 			#self.devManager.set_format(fina, 800, 600, "MJPEG");
-			self.devManager.set_format(fina, 640, 480, "MJPEG");
-			self.devManager.start(fina)
+		#	self.devManager.set_format(fina, 640, 480, "MJPEG");
+		#	self.devManager.start(fina)
 
 		# Create idle timer
 		self.timer = QtCore.QTimer()
@@ -129,7 +155,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.devNames = self.devManager.list_devices()
 		for fina in self.devNames[:]:
 
-			widget = SourceWidget(fina)
+			widget = SourceWidget(fina, self.devManager)
 			self.sourceList.addWidget(widget)
 			self.deviceToWidgetDict[fina] = widget
 
@@ -149,8 +175,8 @@ class MainWindow(QtGui.QMainWindow):
 		except Exception as err:
 			print err
 
-		if devName in self.deviceToWidgetDict:
-			self.deviceToWidgetDict[devName].UpdateFrame(frame, meta)
+		#if devName in self.deviceToWidgetDict:
+		#	self.deviceToWidgetDict[devName].UpdateFrame(frame, meta)
 		
 
 		camId = devName
@@ -179,11 +205,9 @@ class MainWindow(QtGui.QMainWindow):
 		self.scene.addItem(gpm)
 
 	def IdleEvent(self):
-		for fina in self.devNames[:]:
-			data = self.devManager.get_frame(fina)
-			if data is not None:
-				print len(data[0])
-				self.ProcessFrame(data[0], data[1], fina)
+		for fina in self.deviceToWidgetDict:
+			camWidget = self.deviceToWidgetDict[fina]
+			camWidget.Update()
 
 if __name__ == '__main__':
 
