@@ -14,17 +14,24 @@ class SourceWidget(QtGui.QVBoxLayout):
 		label = QtGui.QLabel(srcId)
 		self.addWidget(label)
 
-		img = QtGui.QImage(300, 200, QtGui.QImage.Format_RGB32)
-		pic = QtGui.QLabel()
-		pic.setGeometry(10, 10, 300, 200)
-		pic.setMinimumSize(300, 200)
-		pic.setPixmap(QtGui.QPixmap.fromImage(img))
-		self.addWidget(pic)
+		img = QtGui.QImage(300, 200, QtGui.QImage.Format_RGB888)
+		self.pic = QtGui.QLabel()
+		self.pic.setGeometry(10, 10, 300, 200)
+		self.pic.setMinimumSize(300, 200)
+		self.pic.setPixmap(QtGui.QPixmap.fromImage(img))
+		self.addWidget(self.pic)
+
+	def UpdateFrame(self, frame, meta):
+		img = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
+		imgs = img.scaled(300, 200)
+		px = QtGui.QPixmap.fromImage(imgs)
+		self.pic.setPixmap(px)
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self):
 		super(MainWindow, self).__init__() 
 		self.currentFrames = {}
+		self.deviceToWidgetDict = {}
 
 		self.resize(700, 550)
 		self.move(300, 300)
@@ -80,7 +87,9 @@ class MainWindow(QtGui.QMainWindow):
 		
 		self.devNames = self.devManager.list_devices()
 		for fina in self.devNames:
-			self.sourceList.addLayout(SourceWidget(fina))
+			widget = SourceWidget(fina)
+			self.sourceList.addLayout(widget)
+			self.deviceToWidgetDict[fina] = widget
 
 	def ProcessFrame(self, frame, meta, devName):
 
@@ -94,8 +103,13 @@ class MainWindow(QtGui.QMainWindow):
 				raw = image.bits().asstring(image.numBytes())
 				
 				self.vidOut.send_frame("/dev/video4", str(raw), "RGB24", 800, 600)
+
 		except Exception as err:
 			print err
+
+		if devName in self.deviceToWidgetDict:
+			self.deviceToWidgetDict[devName].UpdateFrame(frame, meta)
+		
 
 		camId = devName
 		if camId in self.currentFrames:
