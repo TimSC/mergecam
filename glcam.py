@@ -10,7 +10,8 @@ class SourceWidget(QtGui.QFrame):
 	def __init__(self, srcId):
 		QtGui.QFrame.__init__(self)
 
-		self.widgetLayout = QtGui.QVBoxLayout(self)
+		self.widgetLayout = QtGui.QVBoxLayout()
+		self.setLayout(self.widgetLayout)
 
 		self.srcId = srcId
 
@@ -20,12 +21,11 @@ class SourceWidget(QtGui.QFrame):
 		img = QtGui.QImage(300, 200, QtGui.QImage.Format_RGB888)
 		self.pic = QtGui.QLabel()
 		self.pic.setGeometry(10, 10, 300, 200)
-		self.pic.setMinimumSize(300, 200)
 		self.pic.setPixmap(QtGui.QPixmap.fromImage(img))
 		self.widgetLayout.addWidget(self.pic, 0)
 
-		self.setMaximumSize(300,300)
 		self.setFrameStyle(QtGui.QFrame.Box)
+		self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
 
 	def UpdateFrame(self, frame, meta):
 		if meta['format'] != "RGB24": return
@@ -40,6 +40,9 @@ class MainWindow(QtGui.QMainWindow):
 		super(MainWindow, self).__init__() 
 		self.currentFrames = {}
 		self.deviceToWidgetDict = {}
+
+		self.vidOut = v4l2capture.Video_out_manager()
+		self.devManager = v4l2capture.Device_manager()
 
 		self.resize(700, 550)
 		self.move(300, 300)
@@ -60,22 +63,21 @@ class MainWindow(QtGui.QMainWindow):
 
 		if 1:
 			s = QtGui.QScrollArea()
+			s.setMinimumWidth(320)
 
 			frame = QtGui.QFrame();
+			frame.setFrameStyle(QtGui.QFrame.Box)
 
-			s.setMinimumWidth(320)
 			self.sourceList = QtGui.QVBoxLayout()
-
 			frame.setLayout(self.sourceList)
-			frame.setMinimumWidth(300)
-			frame.setMinimumHeight(800)
-			frame.setMaximumHeight(4000)
-			frame.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+			#frame.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+
+			self.UpdateSourceList()
 
 			s.setWidget(frame)
-			s.setMinimumHeight(600)
-			s.setMaximumHeight(4000)
-			s.setMinimumWidth(300)
+			#s.setMinimumHeight(600)
+			#s.setMaximumHeight(4000)
+			#s.setMinimumWidth(300)
 
 			self.mainLayout.addWidget(s)
 
@@ -89,14 +91,12 @@ class MainWindow(QtGui.QMainWindow):
 		centralWidget.setLayout(self.mainLayout)
 		self.setCentralWidget(centralWidget)
 		
-
-		self.vidOut = v4l2capture.Video_out_manager()
 		#self.vidOut.open("/dev/video4", "YUYV", 640, 480)
 		#self.vidOut.open("/dev/video4", "UYVY", 640*2, 480*2)
 
 		time.sleep(1.)
 
-		self.devManager = v4l2capture.Device_manager()
+		
 		self.devNames = self.devManager.list_devices()
 		for fina in self.devNames[:]:
 			self.devManager.open(fina)
@@ -104,8 +104,6 @@ class MainWindow(QtGui.QMainWindow):
 			#self.devManager.set_format(fina, 800, 600, "MJPEG");
 			self.devManager.set_format(fina, 640, 480, "MJPEG");
 			self.devManager.start(fina)
-
-		self.UpdateSourceList()
 
 		# Create idle timer
 		self.timer = QtCore.QTimer()
@@ -118,9 +116,9 @@ class MainWindow(QtGui.QMainWindow):
 		
 		self.devNames = self.devManager.list_devices()
 		for fina in self.devNames[:]:
+
 			widget = SourceWidget(fina)
-			widget.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
-			self.sourceList.addWidget(widget, 0)
+			self.sourceList.addWidget(widget)
 			self.deviceToWidgetDict[fina] = widget
 
 	def ProcessFrame(self, frame, meta, devName):
