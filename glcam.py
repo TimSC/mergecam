@@ -26,6 +26,7 @@ class SourceWidget(QtGui.QFrame):
 
 		self.onButton = QtGui.QPushButton("On")
 		self.toolbar.addWidget(self.onButton, 0)
+		self.onButton.setCheckable(True)
 		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedOn)
 
 		self.useButton = QtGui.QPushButton("Use")
@@ -42,11 +43,10 @@ class SourceWidget(QtGui.QFrame):
 		self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
 
 		#Start video
-		self.devManager.open(self.srcId)
-		self.devManager.set_format(self.srcId, 640, 480, "MJPEG");
-		self.devManager.start(self.srcId)
+		self.ClickedOn()
 	
 	def Update(self):
+
 		if self.cameraOn:
 			data = self.devManager.get_frame(self.srcId)
 
@@ -70,16 +70,19 @@ class SourceWidget(QtGui.QFrame):
 		self.pic.setPixmap(px)
 		
 	def ClickedOn(self):
+
 		if self.cameraOn:
 			self.cameraOn = False
 			self.devManager.stop(self.srcId)
 			self.devManager.close(self.srcId)
 			self.ClearPreview()
+			self.onButton.down = False
 		else:
 			self.cameraOn = True
 			self.devManager.open(self.srcId)
+			self.devManager.set_format(self.srcId, 640, 480, "MJPEG")
 			self.devManager.start(self.srcId)
-		print self.cameraOn
+			self.onButton.down = True
 
 	def ClickedUse(self):
 		if not self.cameraOn:
