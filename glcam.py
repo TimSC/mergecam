@@ -20,7 +20,6 @@ class SourceWidget(QtGui.QFrame):
 
 		img = QtGui.QImage(300, 200, QtGui.QImage.Format_RGB888)
 		self.pic = QtGui.QLabel()
-		self.pic.setGeometry(10, 10, 300, 200)
 		self.pic.setPixmap(QtGui.QPixmap.fromImage(img))
 		self.widgetLayout.addWidget(self.pic, 0)
 
@@ -63,29 +62,25 @@ class MainWindow(QtGui.QMainWindow):
 
 		if 1:
 			s = QtGui.QScrollArea()
-			s.setMinimumWidth(320)
+			s.setMinimumWidth(340)
 
 			frame = QtGui.QFrame();
-			frame.setFrameStyle(QtGui.QFrame.Box)
+			#frame.setFrameStyle(QtGui.QFrame.Box)
+			frame.setContentsMargins(0, 0, 0, 0)
 
 			self.sourceList = QtGui.QVBoxLayout()
+			self.sourceList.setContentsMargins(0, 0, 0, 0)
 			frame.setLayout(self.sourceList)
-			#frame.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+
 
 			self.UpdateSourceList()
 
 			s.setWidget(frame)
-			#s.setMinimumHeight(600)
-			#s.setMaximumHeight(4000)
-			#s.setMinimumWidth(300)
-
 			self.mainLayout.addWidget(s)
 
 
 		#And main view area
 		self.mainLayout.addWidget(self.view, 1)
-
-		
 
 		centralWidget = QtGui.QWidget()
 		centralWidget.setLayout(self.mainLayout)
@@ -96,7 +91,6 @@ class MainWindow(QtGui.QMainWindow):
 
 		time.sleep(1.)
 
-		
 		self.devNames = self.devManager.list_devices()
 		for fina in self.devNames[:]:
 			self.devManager.open(fina)
