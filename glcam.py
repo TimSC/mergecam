@@ -45,10 +45,10 @@ class SourceWidget(QtGui.QFrame):
 	def Update(self):
 		if self.cameraOn:
 			data = self.devManager.get_frame(self.srcId)
-			if data is not None:
-				print len(data[0])
-				#self.ProcessFrame(data[0], data[1], fina)
 
+			if data is not None:
+				#print len(data[0])
+				self.emit(QtCore.SIGNAL('webcam_frame'), data[0], data[1], self.srcId)
 				self.UpdatePreview(data[0], data[1])
 
 	def UpdatePreview(self, frame, meta):
@@ -156,6 +156,7 @@ class MainWindow(QtGui.QMainWindow):
 		for fina in self.devNames[:]:
 
 			widget = SourceWidget(fina, self.devManager)
+			QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
 			self.sourceList.addWidget(widget)
 			self.deviceToWidgetDict[fina] = widget
 
