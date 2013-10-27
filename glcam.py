@@ -6,6 +6,15 @@ import sys, time, os
 from PyQt4 import QtGui, QtCore
 import v4l2capture
 
+class SourceWidget(QtGui.QVBoxLayout):
+	def __init__(self, txt):
+		QtGui.QVBoxLayout.__init__(self)
+		self.txt = txt
+
+		label = QtGui.QLabel(txt)
+		self.addWidget(label)
+
+
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self):
 		super(MainWindow, self).__init__() 
@@ -20,10 +29,13 @@ class MainWindow(QtGui.QMainWindow):
 
 		self.mainLayout = QtGui.QHBoxLayout()
 
-		self.sourceList = QtGui.QListWidget()
-		self.mainLayout.addWidget(self.sourceList)
-		
+		#Add sources list
+		s = QtGui.QScrollArea()
+		w = QtGui.QWidget(s)
+		self.sourceList = QtGui.QVBoxLayout(w)
+		self.mainLayout.addWidget(s)
 
+		#And main view area
 		self.mainLayout.addWidget(self.view, 1)
 
 		
@@ -31,7 +43,7 @@ class MainWindow(QtGui.QMainWindow):
 		centralWidget = QtGui.QWidget()
 		centralWidget.setLayout(self.mainLayout)
 		self.setCentralWidget(centralWidget)
-		self.show()
+		
 
 		self.vidOut = v4l2capture.Video_out_manager()
 		#self.vidOut.open("/dev/video4", "YUYV", 640, 480)
@@ -55,11 +67,13 @@ class MainWindow(QtGui.QMainWindow):
 		self.timer.timeout.connect(self.IdleEvent)
 		self.timer.start(10)
 
+		self.show()
+
 	def UpdateSourceList(self):
-		self.sourceList.clear()
+		
 		self.devNames = self.devManager.list_devices()
 		for fina in self.devNames:
-			self.sourceList.addItem(fina)
+			self.sourceList.addLayout(SourceWidget(fina))
 
 	def ProcessFrame(self, frame, meta, devName):
 
