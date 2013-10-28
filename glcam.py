@@ -141,12 +141,22 @@ class VideoOutWidget(QtGui.QFrame):
 
 		self.onButton.setChecked(self.devOn)
 
+	def SendFrame(self, pixmap, meta):
+		if not self.devOn: return
+
+		pixmap2 = pixmap.scaled(640, 480)
+		img = pixmap2.toImage()
+		img2 = img.convertToFormat(QtGui.QImage.Format_RGB888)
+		raw = img2.bits().asstring(img2.numBytes())
+		self.videoOutManager.send_frame(self.devId, str(raw), "RGB24", 
+			img2.width(), img2.height())
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self):
 		super(MainWindow, self).__init__() 
 		self.currentFrames = {}
-		self.deviceToWidgetDict = {}
+		self.inputDeviceToWidgetDict = {}
+		self.outputDeviceToWidgetDict = {}
 		self.currentSrcId = None
 
 		self.vidOut = v4l2capture.Video_out_manager()
@@ -227,12 +237,13 @@ class MainWindow(QtGui.QMainWindow):
 			QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
 			QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
 			self.sourceList.addWidget(widget)
-			self.deviceToWidgetDict[fina] = widget
+			self.inputDeviceToWidgetDict[fina] = widget
 
 		for fina in self.vidOut.list_devices():
 			
 			widget = VideoOutWidget(fina, self.vidOut)
 			self.sourceList.addWidget(widget)
+			self.outputDeviceToWidgetDict[fina] = widget
 
 	def ProcessFrame(self, frame, meta, devName):
 
@@ -241,9 +252,13 @@ class MainWindow(QtGui.QMainWindow):
 			im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
 			pix = QtGui.QPixmap(im2)
 		
-			#Calc an index for camera
 			gpm = QtGui.QGraphicsPixmapItem(pix)
 			self.scene.addItem(gpm)
+
+			#Send frame to output device
+			for outDevName in self.outputDeviceToWidgetDict:
+				outWidget = self.outputDeviceToWidgetDict[outDevName]
+				outWidget.SendFrame(pix, meta)
 
 	def OldFunc(self):
 		try:
@@ -259,11 +274,7 @@ class MainWindow(QtGui.QMainWindow):
 
 		except Exception as err:
 			print err
-
-		#if devName in self.deviceToWidgetDict:
-		#	self.deviceToWidgetDict[devName].UpdateFrame(frame, meta)
 		
-
 		camId = devName
 		if camId in self.currentFrames:
 			self.scene.removeItem(self.currentFrames[camId])
@@ -290,8 +301,8 @@ class MainWindow(QtGui.QMainWindow):
 		self.scene.addItem(gpm)
 
 	def IdleEvent(self):
-		for fina in self.deviceToWidgetDict:
-			camWidget = self.deviceToWidgetDict[fina]
+		for fina in self.inputDeviceToWidgetDict:
+			camWidget = self.inputDeviceToWidgetDict[fina]
 			camWidget.Update()
 
 	def ChangeVideoSource(self, srcId):
