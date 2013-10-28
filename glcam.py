@@ -96,6 +96,7 @@ class VideoOutWidget(QtGui.QFrame):
 		QtGui.QFrame.__init__(self)
 		self.devId = devId
 		self.devOn = False
+		self.videoOutManager = videoOutManager
 
 		self.widgetLayout = QtGui.QVBoxLayout()
 		self.setLayout(self.widgetLayout)
@@ -117,13 +118,12 @@ class VideoOutWidget(QtGui.QFrame):
 
 	def ClickedOn(self):
 
-		if self.cameraOn:
+		if self.devOn:
 			self.devOn = False
-			self.ClearPreview()
-			self.onButton.down = False
+			self.videoOutManager.close(self.devId)
 		else:
 			self.devOn = True
-			self.onButton.down = True
+			self.videoOutManager.open(self.devId, "YUYV", 640, 480)
 
 		self.onButton.setChecked(self.devOn)
 
