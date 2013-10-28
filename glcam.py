@@ -90,6 +90,27 @@ class SourceWidget(QtGui.QFrame):
 
 		self.emit(QtCore.SIGNAL('use_source_clicked'), self.srcId)
 
+class VideoOutWidget(QtGui.QFrame):
+	def __init__(self, devId, videoOutManager):
+		QtGui.QFrame.__init__(self)
+		self.devId = devId
+
+		self.widgetLayout = QtGui.QVBoxLayout()
+		self.setLayout(self.widgetLayout)
+
+		#Create toolbar
+		self.toolbar = QtGui.QHBoxLayout()
+		self.widgetLayout.addLayout(self.toolbar)
+
+		label = QtGui.QLabel(devId)
+		self.toolbar.addWidget(label, 0)
+
+		self.setFrameStyle(QtGui.QFrame.Box)
+		self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
+
+
+
+
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self):
@@ -177,6 +198,11 @@ class MainWindow(QtGui.QMainWindow):
 			QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
 			self.sourceList.addWidget(widget)
 			self.deviceToWidgetDict[fina] = widget
+
+		for fina in self.vidOut.list_devices():
+			
+			widget = VideoOutWidget(fina, self.vidOut)
+			self.sourceList.addWidget(widget)
 
 	def ProcessFrame(self, frame, meta, devName):
 
