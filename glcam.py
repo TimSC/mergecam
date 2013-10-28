@@ -125,6 +125,7 @@ class VideoOutWidget(QtGui.QFrame):
 			self.devOn = True
 			self.onButton.down = True
 
+		self.onButton.setChecked(self.devOn)
 
 
 class MainWindow(QtGui.QMainWindow):
