@@ -14,7 +14,7 @@ class SourceWidget(QtGui.QFrame):
 		self.setLayout(self.widgetLayout)
 
 		self.srcId = srcId
-		self.cameraOn = True
+		self.cameraOn = False
 		self.devManager = devManager
 
 		#Create toolbar
@@ -76,13 +76,14 @@ class SourceWidget(QtGui.QFrame):
 			self.devManager.stop(self.srcId)
 			self.devManager.close(self.srcId)
 			self.ClearPreview()
-			self.onButton.down = False
+			self.onButton.setChecked(0)
 		else:
 			self.cameraOn = True
 			self.devManager.open(self.srcId)
 			self.devManager.set_format(self.srcId, 640, 480, "MJPEG")
 			self.devManager.start(self.srcId)
-			self.onButton.down = True
+		
+		self.onButton.setChecked(self.cameraOn)
 
 	def ClickedUse(self):
 		if not self.cameraOn:
@@ -94,6 +95,7 @@ class VideoOutWidget(QtGui.QFrame):
 	def __init__(self, devId, videoOutManager):
 		QtGui.QFrame.__init__(self)
 		self.devId = devId
+		self.devOn = False
 
 		self.widgetLayout = QtGui.QVBoxLayout()
 		self.setLayout(self.widgetLayout)
@@ -105,10 +107,23 @@ class VideoOutWidget(QtGui.QFrame):
 		label = QtGui.QLabel(devId)
 		self.toolbar.addWidget(label, 0)
 
+		self.onButton = QtGui.QPushButton("On")
+		self.toolbar.addWidget(self.onButton, 0)
+		self.onButton.setCheckable(True)
+		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedOn)
+
 		self.setFrameStyle(QtGui.QFrame.Box)
 		self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
 
+	def ClickedOn(self):
 
+		if self.cameraOn:
+			self.devOn = False
+			self.ClearPreview()
+			self.onButton.down = False
+		else:
+			self.devOn = True
+			self.onButton.down = True
 
 
 
