@@ -21,8 +21,11 @@ class SourceWidget(QtGui.QFrame):
 		self.toolbar = QtGui.QHBoxLayout()
 		self.widgetLayout.addLayout(self.toolbar)
 
+		self.checkbox = QtGui.QCheckBox()
+		self.toolbar.addWidget(self.checkbox, 0)
+
 		label = QtGui.QLabel(devId)
-		self.toolbar.addWidget(label, 0)
+		self.toolbar.addWidget(label, 1)
 
 		self.onButton = QtGui.QPushButton("On")
 		self.toolbar.addWidget(self.onButton, 0)
@@ -104,8 +107,11 @@ class VideoOutWidget(QtGui.QFrame):
 		self.toolbar = QtGui.QHBoxLayout()
 		self.widgetLayout.addLayout(self.toolbar)
 
+		self.checkbox = QtGui.QCheckBox()
+		self.toolbar.addWidget(self.checkbox, 0)
+
 		label = QtGui.QLabel(devId)
-		self.toolbar.addWidget(label, 0)
+		self.toolbar.addWidget(label, 1)
 
 		self.onButton = QtGui.QPushButton("On")
 		self.toolbar.addWidget(self.onButton, 0)
@@ -179,8 +185,11 @@ class GridStackWidget(QtGui.QFrame):
 		self.toolbar = QtGui.QHBoxLayout()
 		self.widgetLayout.addLayout(self.toolbar)
 
+		self.checkbox = QtGui.QCheckBox()
+		self.toolbar.addWidget(self.checkbox, 0)
+
 		label = QtGui.QLabel("Stack Videos")
-		self.toolbar.addWidget(label, 0)
+		self.toolbar.addWidget(label, 1)
 
 		self.onButton = QtGui.QPushButton("On")
 		self.toolbar.addWidget(self.onButton, 0)
