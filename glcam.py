@@ -269,32 +269,32 @@ class MainWindow(QtGui.QMainWindow):
 
 		self.mainLayout = QtGui.QHBoxLayout()
 
+		#Sources column
+		self.sourcesColumn = QtGui.QVBoxLayout()
+
 		#Add sources list
-		if 0:
-			s = QtGui.QScrollArea()
-			#s.setMinimumWidth(320)
-			w = QtGui.QWidget(s)
-			self.sourceList = QtGui.QVBoxLayout(w)
-			self.mainLayout.addWidget(s)
+		s = QtGui.QScrollArea()
+		s.setMinimumWidth(340)
 
-		if 1:
-			s = QtGui.QScrollArea()
-			s.setMinimumWidth(340)
+		frame = QtGui.QFrame();
+		#frame.setFrameStyle(QtGui.QFrame.Box)
+		frame.setContentsMargins(0, 0, 0, 0)
 
-			frame = QtGui.QFrame();
-			#frame.setFrameStyle(QtGui.QFrame.Box)
-			frame.setContentsMargins(0, 0, 0, 0)
+		self.sourceList = QtGui.QVBoxLayout()
+		self.sourceList.setContentsMargins(0, 0, 0, 0)
+		frame.setLayout(self.sourceList)
 
-			self.sourceList = QtGui.QVBoxLayout()
-			self.sourceList.setContentsMargins(0, 0, 0, 0)
-			frame.setLayout(self.sourceList)
+		self.UpdateSourceList()
+		s.setWidget(frame)
 
+		self.sourcesColumn.addWidget(s, 1)
 
-			self.UpdateSourceList()
+		#Source add buttons
+		self.addStackButton = QtGui.QPushButton("Add Stack")
+		self.sourcesColumn.addWidget(self.addStackButton, 0)
+		QtCore.QObject.connect(self.addStackButton, QtCore.SIGNAL("clicked()"), self.AddStackPressed)
 
-			s.setWidget(frame)
-			self.mainLayout.addWidget(s)
-
+		self.mainLayout.addLayout(self.sourcesColumn)
 
 		#And main view area
 		self.mainLayout.addWidget(self.view, 1)
@@ -423,6 +423,9 @@ class MainWindow(QtGui.QMainWindow):
 	def ChangeVideoSource(self, srcId):
 		print "ChangeVideoSource", srcId
 		self.currentSrcId = srcId
+
+	def AddStackPressed(self):
+		print "AddStackPressed"
 
 if __name__ == '__main__':
 
