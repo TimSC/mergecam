@@ -93,6 +93,9 @@ class SourceWidget(QtGui.QFrame):
 
 		self.emit(QtCore.SIGNAL('use_source_clicked'), self.devId)
 
+	def IsChecked(self):
+		return self.checkbox.isChecked()
+
 class VideoOutWidget(QtGui.QFrame):
 	def __init__(self, devId, videoOutManager):
 		QtGui.QFrame.__init__(self)
@@ -166,6 +169,10 @@ class VideoOutWidget(QtGui.QFrame):
 				#print len(data[0])
 				self.emit(QtCore.SIGNAL('webcam_frame'), data[0], data[1], self.devId)
 				self.UpdatePreview(data[0], data[1])
+
+	def IsChecked(self):
+		return self.checkbox.isChecked()
+
 
 
 class GridStackWidget(QtGui.QFrame):
@@ -246,6 +253,9 @@ class GridStackWidget(QtGui.QFrame):
 			self.ClickedOn()
 
 		self.emit(QtCore.SIGNAL('use_source_clicked'), self.devId)
+
+	def IsChecked(self):
+		return self.checkbox.isChecked()
 
 		
 class MainWindow(QtGui.QMainWindow):
@@ -337,11 +347,12 @@ class MainWindow(QtGui.QMainWindow):
 			self.sourceList.addWidget(widget)
 			self.inputDeviceToWidgetDict[fina] = widget
 
-		widget = GridStackWidget(self.devNames)
-		QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
-		QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
-		self.sourceList.addWidget(widget)
-		self.processingWidgets[widget.devId] = widget
+		if 0:
+			widget = GridStackWidget(self.devNames)
+			QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
+			QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
+			self.sourceList.addWidget(widget)
+			self.processingWidgets[widget.devId] = widget
 
 		for fina in self.vidOut.list_devices():
 			
@@ -371,46 +382,6 @@ class MainWindow(QtGui.QMainWindow):
 				outWidget = self.outputDeviceToWidgetDict[outDevName]
 				outWidget.SendFrame(frame, meta, devName)
 
-	def OldFunc(self):
-		try:
-			if devName == "/dev/video0":
-				image = QtGui.QImage(800, 600, QtGui.QImage.Format_RGB888)
-				painter = QtGui.QPainter(image)
-				painter.setRenderHint(QtGui.QPainter.Antialiasing)
-				self.scene.render(painter)
-				del painter
-				raw = image.bits().asstring(image.numBytes())
-				
-				self.vidOut.send_frame("/dev/video4", str(raw), "RGB24", 800, 600)
-
-		except Exception as err:
-			print err
-		
-		camId = devName
-		if camId in self.currentFrames:
-			self.scene.removeItem(self.currentFrames[camId])
-			del self.currentFrames[camId]
-
-		#self.scene.clear()
-		if meta['format'] != "RGB24": 
-			print "Cannot display format", meta['format']
-			return
-
-		im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
-		pix = QtGui.QPixmap(im2)
-		
-		#Calc an index for camera
-		gpm = QtGui.QGraphicsPixmapItem(pix)
-		self.currentFrames[camId] = gpm
-		camKeys = self.currentFrames.keys()
-		camKeys.sort()
-		ind = camKeys.index(camId)
-		x = ind / 2
-		y = ind % 2
-		gpm.setPos(x * meta['width'], y * meta['height'])
-		
-		self.scene.addItem(gpm)
-
 	def IdleEvent(self):
 		for fina in self.inputDeviceToWidgetDict:
 			camWidget = self.inputDeviceToWidgetDict[fina]
@@ -425,7 +396,21 @@ class MainWindow(QtGui.QMainWindow):
 		self.currentSrcId = srcId
 
 	def AddStackPressed(self):
-		print "AddStackPressed"
+
+		#Get list of devices that are selected
+		selectedDevs = []
+		for devId in self.inputDeviceToWidgetDict:
+			dev = self.inputDeviceToWidgetDict[devId]
+			if dev.IsChecked():
+				selectedDevs.append(devId)
+
+		#Create a processing widget
+		widget = GridStackWidget(selectedDevs)
+		QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
+		QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
+		self.sourceList.addWidget(widget)
+		self.processingWidgets[widget.devId] = widget
+
 
 if __name__ == '__main__':
 
