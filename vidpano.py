@@ -9,7 +9,10 @@ class PanoWidget(QtGui.QFrame):
 		self.devId = uuid.uuid4()
 		self.devInputs = devInputs
 		self.canvas = QtGui.QImage(640*2, 480*2, QtGui.QImage.Format_RGB888)
-		self.framesRcvSinceOutput = set()
+		self.currentFrame = {}
+		self.currentMeta = {}
+		self.calibrationFrames = []
+		self.calibrationMeta = []
 		self.outBuffer = []
 
 		self.widgetLayout = QtGui.QVBoxLayout()
@@ -32,11 +35,10 @@ class PanoWidget(QtGui.QFrame):
 
 		self.onButton = QtGui.QPushButton("Store Calibration Frames")
 		self.calibrateControls.addWidget(self.onButton, 0)
-		self.onButton.setCheckable(True)
 		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedStoreCalibration)
 
-		label = QtGui.QLabel("0")
-		self.calibrateControls.addWidget(label, 1)
+		self.calibrationCount = QtGui.QLabel("0")
+		self.calibrateControls.addWidget(self.calibrationCount, 1)
 
 		#Create view controls
 
@@ -68,32 +70,57 @@ class PanoWidget(QtGui.QFrame):
 
 		if not self.devOn:
 			self.ClickedOn()
-		print "Store calibration frames"
+
+		#Check frames from each camera are stored
+		framesReady = True
+		for devIn in self.devInputs:
+			if devIn not in self.currentFrame:
+				framesReady = False
+		if not framesReady:
+			return
+		
+		#Store frame set for calibration use
+		frameSet = []
+		metaSet = []
+		for devId in self.currentFrame:
+			frameSet.append(self.currentFrame[devId])
+			metaSet.append(self.currentMeta[devId])
+
+		self.calibrationFrames.append(frameSet)
+		self.calibrationMeta.append(metaSet)
+
+		#Update GUI
+		self.calibrationCount.setText(str(len(self.calibrationFrames)))
+
 
 	def SendFrame(self, frame, meta, devName):
 
+		self.currentFrame[devName] = frame
+		self.currentMeta[devName] = meta
+
 		if not self.devOn: return
-		if devName not in self.devInputs: return
 
-		devIndex = self.devInputs.index(devName)
-		x = devIndex / 2
-		y = devIndex % 2
+		if 0:
+			if devName not in self.devInputs: return
+			devIndex = self.devInputs.index(devName)
+			x = devIndex / 2
+			y = devIndex % 2
 
-		img = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
+			img = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
 		
-		painter = QtGui.QPainter(self.canvas)
-		painter.setRenderHint(QtGui.QPainter.Antialiasing)
-		painter.drawImage(640 * x, 480 * y, img)
-		del painter
+			painter = QtGui.QPainter(self.canvas)
+			painter.setRenderHint(QtGui.QPainter.Antialiasing)
+			painter.drawImage(640 * x, 480 * y, img)
+			del painter
 
-		if devName in self.framesRcvSinceOutput:
-			#We have received this frame again; it is time to write output
-			raw = self.canvas.bits().asstring(self.canvas.numBytes())
-			metaOut = {'width': self.canvas.width(), 'height': self.canvas.height(), 'format': 'RGB24'}
-			self.outBuffer.append([raw, metaOut])
-			self.framesRcvSinceOutput = set()
+			if devName in self.framesRcvSinceOutput:
+				#We have received this frame again; it is time to write output
+				raw = self.canvas.bits().asstring(self.canvas.numBytes())
+				metaOut = {'width': self.canvas.width(), 'height': self.canvas.height(), 'format': 'RGB24'}
+				self.outBuffer.append([raw, metaOut])
+				self.framesRcvSinceOutput = set()
 
-		self.framesRcvSinceOutput.add(devName)
+			self.framesRcvSinceOutput.add(devName)
 
 	def Update(self):
 		for result in self.outBuffer:
