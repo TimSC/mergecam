@@ -51,6 +51,76 @@ def GetKeypointsAndDescriptors(im1):
 	(keypoints1, descriptors1) = descriptor.compute(grey1, keypoints1)
 	return (keypoints1, descriptors1)
 
+def CalcHomographyForImagePair(keypoints1, descriptors1, keypoints2, descriptors2):
+	
+	#Find corresponding points using FLANN
+	FLANN_INDEX_LSH = 6
+	flann_params = dict(algorithm = FLANN_INDEX_LSH,
+	                   table_number = 6, # 12
+	                   key_size = 12,     # 20
+	                   multi_probe_level = 1) #2
+
+	matcher = cv2.FlannBasedMatcher(flann_params, {})
+	mat = matcher.match(descriptors1, descriptors2)
+
+	#for dmat in mat:
+	#	print dmat.distance, dmat.imgIdx, dmat.queryIdx, dmat.trainIdx
+		
+	ptsPos1 = [a.pt for a in keypoints1]
+	ptsPos2 = [a.pt for a in keypoints2]
+
+	if 0:
+		for pt in ptsPos1:
+			ptr = map(int,map(round,pt))
+			col = (255,0,0)
+			print ptr
+			cv2.circle(im1,tuple(ptr),2,col,-1)
+		cv2.imshow('im1',im1)
+		cv2.waitKey(0)
+		cv2.destroyAllWindows()
+
+	if 0:
+		pts = np.array(ptsPos1)
+		plt.plot(pts[:,0], -pts[:,1], '.')
+		plt.show()
+
+	#Transform keypoints from rectilinear to polar space
+	#pts = TransformKeyPoints(ptsPos1, 49.0, 35.4, im1.shape[1], im1.shape[0])
+
+	if 0:
+		pts = np.array(pts)
+		plt.plot(pts[:,1], -pts[:,0], '.')
+		plt.show()
+
+	#VisualiseMatches(im1, im2, keypoints1, keypoints2, mat)
+
+	#Generate list of corresponding points
+	corresp1, corresp2 = [], []
+	for dmat in mat:
+		corresp1.append(keypoints1[dmat.queryIdx].pt)
+		corresp2.append(keypoints2[dmat.trainIdx].pt)
+	corresp1 = np.array(corresp1)
+	corresp2 = np.array(corresp2)
+
+	#Determine homography using ransac
+	H = cv2.findHomography(corresp1, corresp2, cv2.RANSAC, ransacReprojThreshold=20.)
+	#VisualiseMatches(im1, im2, keypoints1, keypoints2, mat, H[1])
+	mask = np.array(H[1], dtype=np.bool)[:,0]
+	corresp1Inliers = corresp1[mask]
+	corresp2Inliers = corresp2[mask]
+
+	return H[0], mask.mean(), corresp1Inliers, corresp2Inliers
+
+def HomographyQualityScore(hom):
+	cost = [abs(hom[0,0]- 1.)]
+	cost.append(abs(hom[1,1]- 1.))
+	cost.append(abs(hom[1,0]))
+	cost.append(abs(hom[0,1]))
+	costsum = np.array(cost).sum()
+	if costsum == 0.:
+		return 1000.
+	return 1./costsum
+
 
 ### Controlling widget
 
@@ -149,15 +219,60 @@ class PanoWidget(QtGui.QFrame):
 		self.calibrationCount.setText(str(len(self.calibrationFrames)))
 
 	def ClickedCalibrate(self):
+		self.keypDescs = []
+
+		#Extract interest points
 		for photoSet, metaSet in zip(self.calibrationFrames, self.calibrationMeta):
+			keypDescsSet = []
+
 			for frame, meta in zip(photoSet, metaSet):
 				assert meta['format'] == "RGB24"
 				arr = np.array(frame, dtype=np.uint8)
 				source = arr.reshape((meta['height'], meta['width'], 3))
 
-				bitmap = cv.CreateImageHeader((source.shape[1], source.shape[0]), cv.IPL_DEPTH_8U, 3)
-				cv.SetData(bitmap, source.tostring(), source.dtype.itemsize * 3 * source.shape[1])
-				cv.SaveImage("test.png", bitmap)
+				#bitmap = cv.CreateImageHeader((source.shape[1], source.shape[0]), cv.IPL_DEPTH_8U, 3)
+				#cv.SetData(bitmap, source.tostring(), source.dtype.itemsize * 3 * source.shape[1])
+
+				keyp, desc = GetKeypointsAndDescriptors(source)
+				keypDescsSet.append((keyp, desc))
+
+			self.keypDescs.append(keypDescsSet)
+
+		#Calc homography between pairs
+		self.framePairs = []
+		for photoSet, metaSet, keypDescsSet in zip(self.calibrationFrames, self.calibrationMeta, self.keypDescs):
+
+			pairsSet = []
+			
+			for i, (frame1, meta1, (keyp1, desc1)) in enumerate(zip(photoSet, metaSet, keypDescsSet)):
+
+				arr1 = np.array(frame1, dtype=np.uint8)
+				im1 = arr1.reshape((meta1['height'], meta1['width'], 3))
+
+				for i2, (frame2, meta2, (keyp2, desc2)) in enumerate(zip(photoSet, metaSet, keypDescsSet)):
+					if i <= i2: continue
+					print "Compare pair", i, i2
+
+					arr2 = np.array(frame2, dtype=np.uint8)
+					im2 = arr2.reshape((meta2['height'], meta2['width'], 3))
+
+					if len(keyp1) == 0 or len(keyp2) == 0:
+						print "Warning: No keypoints in frame"
+						continue
+
+					H, frac, inliers1, inliers2 = CalcHomographyForImagePair(keyp1, desc1, keyp2, desc2)
+					homqual = HomographyQualityScore(H)
+					#print "Homography", H
+					print "Fraction used", frac
+					print "Quality", homqual
+					#print inliers1
+					#print inliers2
+
+					pairsSet.append((frac*homqual, i, i2, inliers1, inliers2, im1.shape, im2.shape, H))
+
+			self.framePairs.append(pairsSet)
+
+
 
 	def SendFrame(self, frame, meta, devName):
 
