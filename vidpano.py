@@ -288,6 +288,10 @@ class PanoWidget(QtGui.QFrame):
 		self.calibrationFrames = []
 		self.calibrationMeta = []
 		self.outBuffer = []
+		self.framesRcvSinceOutput = set()
+		self.framePairs = None
+		self.cameraArrangement = None
+
 
 		self.widgetLayout = QtGui.QVBoxLayout()
 		self.setLayout(self.widgetLayout)
@@ -457,38 +461,31 @@ class PanoWidget(QtGui.QFrame):
 				photo = self.cameraArrangement.addedPhotos[photoId]
 				print photoId, photo.cLat, photo.cLon
 
-			if 1:
+			if 0:
 				vis = visobj.Vis(self.calibrationFrames[0], self.calibrationMeta[0], self.framePairs[0], self.cameraArrangement)
 				vis.save("vis{0}.png".format(len(self.cameraArrangement.addedPhotos)))
 
 	def SendFrame(self, frame, meta, devName):
 
+		if devName not in self.devInputs: return
 		self.currentFrame[devName] = frame
 		self.currentMeta[devName] = meta
 
 		if not self.devOn: return
 
-		if 0:
-			if devName not in self.devInputs: return
-			devIndex = self.devInputs.index(devName)
-			x = devIndex / 2
-			y = devIndex % 2
+		if devName in self.framesRcvSinceOutput:
+			#We have received this frame again; it is time to write output
 
-			img = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
-		
-			painter = QtGui.QPainter(self.canvas)
-			painter.setRenderHint(QtGui.QPainter.Antialiasing)
-			painter.drawImage(640 * x, 480 * y, img)
-			del painter
+			if self.cameraArrangement is not None:
+				visobj = visualise.VisualiseArrangement()
+				vis = visobj.Vis(self.currentFrame.values(), self.currentMeta.values(), self.framePairs[0], self.cameraArrangement)
+				#vis.save("vis{0}.png".format(len(self.cameraArrangement.addedPhotos)))
 
-			if devName in self.framesRcvSinceOutput:
-				#We have received this frame again; it is time to write output
-				raw = self.canvas.bits().asstring(self.canvas.numBytes())
-				metaOut = {'width': self.canvas.width(), 'height': self.canvas.height(), 'format': 'RGB24'}
-				self.outBuffer.append([raw, metaOut])
-				self.framesRcvSinceOutput = set()
+				metaOut = {'width': vis.size[0], 'height': vis.size[1], 'format': 'RGB24'}
+				self.outBuffer.append([vis.tostring(), metaOut])
+			self.framesRcvSinceOutput = set()
 
-			self.framesRcvSinceOutput.add(devName)
+		self.framesRcvSinceOutput.add(devName)
 
 	def Update(self):
 		for result in self.outBuffer:
