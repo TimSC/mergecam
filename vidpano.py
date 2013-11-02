@@ -420,13 +420,15 @@ class PanoWidget(QtGui.QFrame):
 
 			self.framePairs.append(pairsSet)
 
+		assert len(self.framePairs) == 1
+
 		#Calibrate cameras
-		cameraArrangement = CameraArrangement(self.framePairs[0])
+		self.cameraArrangement = CameraArrangement(self.framePairs[0])
 		#visobj = visualise.VisualiseArrangement()
 		bestPair = 1	
 
-		while bestPair is not None:# and len(cameraArrangement.addedPhotos) < 5:
-			bestPair, newInd1, newInd2 = SelectPhotoToAdd(self.framePairs[0], cameraArrangement)
+		while bestPair is not None:# and len(self.cameraArrangement.addedPhotos) < 5:
+			bestPair, newInd1, newInd2 = SelectPhotoToAdd(self.framePairs[0], self.cameraArrangement)
 			print "SelectPhotoToAdd", bestPair, newInd1, newInd2
 			if bestPair is None: continue
 			print bestPair[:3], newInd1, newInd2
@@ -441,18 +443,18 @@ class PanoWidget(QtGui.QFrame):
 				photosToAdd.append(bestPair[2])
 				
 			for photoId in photosToAdd:
-				cameraArrangement.addedPhotos[photoId] = proj.RectilinearCam(120, 90)
+				self.cameraArrangement.addedPhotos[photoId] = proj.RectilinearCam(120, 90)
 	
 			if 1:		
-				cameraArrangement.OptimiseFit(photosToAdd, optRotation = True)
+				self.cameraArrangement.OptimiseFit(photosToAdd, optRotation = True)
 
-			for photoId in cameraArrangement.addedPhotos:
-				photo = cameraArrangement.addedPhotos[photoId]
+			for photoId in self.cameraArrangement.addedPhotos:
+				photo = self.cameraArrangement.addedPhotos[photoId]
 				print photoId, photo.cLat, photo.cLon
 
 			if 0:
-				vis = visobj.Vis(poolPhotos, poolPath, filteredImgPairs, cameraArrangement)
-				vis.save("vis{0}.png".format(len(cameraArrangement.addedPhotos)))
+				vis = visobj.Vis(poolPhotos, poolPath, filteredImgPairs, self.cameraArrangement)
+				vis.save("vis{0}.png".format(len(self.cameraArrangement.addedPhotos)))
 
 	def SendFrame(self, frame, meta, devName):
 
