@@ -4,6 +4,7 @@ import uuid
 import cv2, cv, proj, math
 import numpy as np
 import scipy.optimize as optimize
+import visualise
 
 ### Utility functions
 
@@ -424,7 +425,7 @@ class PanoWidget(QtGui.QFrame):
 
 		#Calibrate cameras
 		self.cameraArrangement = CameraArrangement(self.framePairs[0])
-		#visobj = visualise.VisualiseArrangement()
+		visobj = visualise.VisualiseArrangement()
 		bestPair = 1	
 
 		while bestPair is not None:# and len(self.cameraArrangement.addedPhotos) < 5:
@@ -452,8 +453,8 @@ class PanoWidget(QtGui.QFrame):
 				photo = self.cameraArrangement.addedPhotos[photoId]
 				print photoId, photo.cLat, photo.cLon
 
-			if 0:
-				vis = visobj.Vis(poolPhotos, poolPath, filteredImgPairs, self.cameraArrangement)
+			if 1:
+				vis = visobj.Vis(self.calibrationFrames[0], self.calibrationMeta[0], self.framePairs[0], self.cameraArrangement)
 				vis.save("vis{0}.png".format(len(self.cameraArrangement.addedPhotos)))
 
 	def SendFrame(self, frame, meta, devName):
