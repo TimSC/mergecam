@@ -5,7 +5,7 @@ All rights reserved.
 import sys, time, os
 from PyQt4 import QtGui, QtCore
 import v4l2capture
-import vidinput, vidoutput, vidstack
+import vidinput, vidoutput, vidstack, vidpano
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self):
@@ -49,9 +49,16 @@ class MainWindow(QtGui.QMainWindow):
 		self.sourcesColumn.addWidget(s, 1)
 
 		#Source add buttons
+		self.sourceAddButtons = QtGui.QHBoxLayout()
+		self.sourcesColumn.addLayout(self.sourceAddButtons, 0)
+
 		self.addStackButton = QtGui.QPushButton("Add Stack")
-		self.sourcesColumn.addWidget(self.addStackButton, 0)
 		QtCore.QObject.connect(self.addStackButton, QtCore.SIGNAL("clicked()"), self.AddStackPressed)
+		self.sourceAddButtons.addWidget(self.addStackButton)
+
+		self.addStackButton = QtGui.QPushButton("Panorama")
+		QtCore.QObject.connect(self.addStackButton, QtCore.SIGNAL("clicked()"), self.AddPanoramaPressed)
+		self.sourceAddButtons.addWidget(self.addStackButton)
 
 		self.mainLayout.addLayout(self.sourcesColumn)
 
@@ -155,6 +162,22 @@ class MainWindow(QtGui.QMainWindow):
 
 		#Create a processing widget
 		widget = vidstack.GridStackWidget(selectedDevs)
+		QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
+		QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
+		self.sourceList.addWidget(widget)
+		self.processingWidgets[widget.devId] = widget
+
+	def AddPanoramaPressed(self):
+
+		#Get list of devices that are selected
+		selectedDevs = []
+		for devId in self.inputDeviceToWidgetDict:
+			dev = self.inputDeviceToWidgetDict[devId]
+			if dev.IsChecked():
+				selectedDevs.append(devId)
+
+		#Create a processing widget
+		widget = vidpano.PanoWidget(selectedDevs)
 		QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
 		QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
 		self.sourceList.addWidget(widget)
