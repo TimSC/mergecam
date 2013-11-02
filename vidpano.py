@@ -181,6 +181,7 @@ class CameraArrangement(object):
 
 	def Eval(self, vals, separateTerms, initialValKey, photToOpt):
 
+		print "vals", vals
 		dists = []
 		countPairs = 0
 
@@ -236,8 +237,10 @@ class CameraArrangement(object):
 		#print countPairs
 
 		if separateTerms:
-			return np.power(dists, 1.)
+			print np.abs(dists).sum()
+			return np.abs(dists)
 		score = np.array(dists).mean() ** 1.
+
 		return score
 
 def SelectPhotoToAdd(imgPairs, cameraArrangement):
@@ -447,7 +450,7 @@ class PanoWidget(QtGui.QFrame):
 				self.cameraArrangement.addedPhotos[photoId] = proj.RectilinearCam(120, 90)
 	
 			if 1:		
-				self.cameraArrangement.OptimiseFit(photosToAdd, optRotation = True)
+				self.cameraArrangement.OptimiseFit(photosToAdd, optRotation = False)
 
 			for photoId in self.cameraArrangement.addedPhotos:
 				photo = self.cameraArrangement.addedPhotos[photoId]

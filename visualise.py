@@ -28,7 +28,7 @@ class VisualiseArrangement(object):
 			imPos = camParams.Proj(self.pixWorld)
 			#camImg = Image.open(poolPath+"/"+photoId)
 			assert meta['format'] == "RGB24"
-			camImg = Image.frombuffer("RGB", (meta['width'], meta['height']), str(frames[photoId]))
+			camImg = Image.frombuffer("RGB", (meta['width'], meta['height']), str(frames[photoId]), 'raw', "RGB", 0, 1)
 			camImgl = camImg.load()
 		
 			self.VisImageSingle(camParams, camImgl, iml, imPos)
