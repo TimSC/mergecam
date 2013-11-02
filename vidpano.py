@@ -25,13 +25,31 @@ class PanoWidget(QtGui.QFrame):
 		label = QtGui.QLabel("Panorama")
 		self.toolbar.addWidget(label, 1)
 
+		#Create calibration controls
+
+		self.calibrateControls = QtGui.QHBoxLayout()
+		self.widgetLayout.addLayout(self.calibrateControls)
+
+		self.onButton = QtGui.QPushButton("Store Calibration Frames")
+		self.calibrateControls.addWidget(self.onButton, 0)
+		self.onButton.setCheckable(True)
+		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedStoreCalibration)
+
+		label = QtGui.QLabel("0")
+		self.calibrateControls.addWidget(label, 1)
+
+		#Create view controls
+
+		self.viewControls = QtGui.QHBoxLayout()
+		self.widgetLayout.addLayout(self.viewControls)
+
 		self.onButton = QtGui.QPushButton("On")
-		self.toolbar.addWidget(self.onButton, 0)
+		self.viewControls.addWidget(self.onButton, 0)
 		self.onButton.setCheckable(True)
 		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedOn)
 
 		self.useButton = QtGui.QPushButton("Use")
-		self.toolbar.addWidget(self.useButton, 0)
+		self.viewControls.addWidget(self.useButton, 0)
 		QtCore.QObject.connect(self.useButton, QtCore.SIGNAL('clicked()'), self.ClickedUse)
 
 		self.setFrameStyle(QtGui.QFrame.Box)
@@ -45,6 +63,12 @@ class PanoWidget(QtGui.QFrame):
 			self.devOn = True
 		print self.devOn
 		self.onButton.setChecked(self.devOn)
+
+	def ClickedStoreCalibration(self):
+
+		if not self.devOn:
+			self.ClickedOn()
+		print "Store calibration frames"
 
 	def SendFrame(self, frame, meta, devName):
 
