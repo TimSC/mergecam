@@ -2,262 +2,11 @@
 Copyright (c) 2013, Tim Sheerman-Chase
 All rights reserved.
 '''
-import sys, time, os, uuid
+import sys, time, os
 from PyQt4 import QtGui, QtCore
 import v4l2capture
+import vidinput, vidoutput, vidstack
 
-class SourceWidget(QtGui.QFrame):
-	def __init__(self, devId, devManager):
-		QtGui.QFrame.__init__(self)
-
-		self.widgetLayout = QtGui.QVBoxLayout()
-		self.setLayout(self.widgetLayout)
-
-		self.devId = devId
-		self.cameraOn = False
-		self.devManager = devManager
-
-		#Create toolbar
-		self.toolbar = QtGui.QHBoxLayout()
-		self.widgetLayout.addLayout(self.toolbar)
-
-		self.checkbox = QtGui.QCheckBox()
-		self.toolbar.addWidget(self.checkbox, 0)
-
-		label = QtGui.QLabel(devId)
-		self.toolbar.addWidget(label, 1)
-
-		self.onButton = QtGui.QPushButton("On")
-		self.toolbar.addWidget(self.onButton, 0)
-		self.onButton.setCheckable(True)
-		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedOn)
-
-		self.useButton = QtGui.QPushButton("Use")
-		self.toolbar.addWidget(self.useButton, 0)
-		QtCore.QObject.connect(self.useButton, QtCore.SIGNAL('clicked()'), self.ClickedUse)
-
-		#Create video preview
-		img = QtGui.QImage(300, 200, QtGui.QImage.Format_RGB888)
-		self.pic = QtGui.QLabel()
-		self.pic.setPixmap(QtGui.QPixmap.fromImage(img))
-		self.widgetLayout.addWidget(self.pic, 0)
-
-		self.setFrameStyle(QtGui.QFrame.Box)
-		self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
-
-		#Start video
-		self.ClickedOn()
-	
-	def Update(self):
-
-		if self.cameraOn:
-			data = self.devManager.get_frame(self.devId)
-
-			if data is not None:
-				#print len(data[0])
-				self.emit(QtCore.SIGNAL('webcam_frame'), data[0], data[1], self.devId)
-				self.UpdatePreview(data[0], data[1])
-
-	def UpdatePreview(self, frame, meta):
-		if meta['format'] != "RGB24": return
-
-		img = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
-		imgs = img.scaled(300, 200)
-		px = QtGui.QPixmap.fromImage(imgs)
-		self.pic.setPixmap(px)
-
-	def ClearPreview(self):
-		img = QtGui.QImage(300, 200, QtGui.QImage.Format_RGB888)
-		img.fill(QtGui.QColor(0, 0, 0))
-		px = QtGui.QPixmap.fromImage(img)
-		self.pic.setPixmap(px)
-		
-	def ClickedOn(self):
-
-		if self.cameraOn:
-			self.cameraOn = False
-			self.devManager.stop(self.devId)
-			self.devManager.close(self.devId)
-			self.ClearPreview()
-		else:
-			self.cameraOn = True
-			self.devManager.open(self.devId)
-			self.devManager.set_format(self.devId, 640, 480, "MJPEG")
-			self.devManager.start(self.devId)
-		
-		self.onButton.setChecked(self.cameraOn)
-
-	def ClickedUse(self):
-		if not self.cameraOn:
-			self.ClickedOn()
-
-		self.emit(QtCore.SIGNAL('use_source_clicked'), self.devId)
-
-	def IsChecked(self):
-		return self.checkbox.isChecked()
-
-class VideoOutWidget(QtGui.QFrame):
-	def __init__(self, devId, videoOutManager):
-		QtGui.QFrame.__init__(self)
-		self.devId = devId
-		self.devOn = False
-		self.videoOutManager = videoOutManager
-
-		self.widgetLayout = QtGui.QVBoxLayout()
-		self.setLayout(self.widgetLayout)
-
-		#Create toolbar
-		self.toolbar = QtGui.QHBoxLayout()
-		self.widgetLayout.addLayout(self.toolbar)
-
-		self.checkbox = QtGui.QCheckBox()
-		self.toolbar.addWidget(self.checkbox, 0)
-
-		label = QtGui.QLabel(devId)
-		self.toolbar.addWidget(label, 1)
-
-		self.onButton = QtGui.QPushButton("On")
-		self.toolbar.addWidget(self.onButton, 0)
-		self.onButton.setCheckable(True)
-		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedOn)
-
-		self.setFrameStyle(QtGui.QFrame.Box)
-		self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
-
-		self.standbyGraphic = None
-
-	def ClickedOn(self):
-
-		if self.devOn:
-			self.devOn = False
-			self.videoOutManager.close(self.devId)
-		else:
-			self.devOn = True
-			self.videoOutManager.open(self.devId, "YUYV", 640, 480)
-
-			if self.standbyGraphic is None:
-				img = QtGui.QImage("standby_graphic.jpg")
-				img2 = QtGui.QPixmap.fromImage(img)
-				img3 = img2.scaled(640, 480)
-				img4 = img3.toImage()
-				self.standbyGraphic = img4.convertToFormat(QtGui.QImage.Format_RGB888)
-			
-			if self.standbyGraphic is not None:
-				raw = self.standbyGraphic.bits().asstring(self.standbyGraphic.numBytes())
-				self.videoOutManager.send_frame(self.devId, str(raw), "RGB24", 
-					self.standbyGraphic.width(), self.standbyGraphic.height())
-
-		self.onButton.setChecked(self.devOn)
-
-	def SendFrame(self, frame, meta, devName):
-		if not self.devOn: return
-		if meta['format'] != "RGB24": return
-
-		im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
-		pix = QtGui.QPixmap(im2)
-		pixmap2 = pix.scaled(640, 480)
-		img = pixmap2.toImage()
-		img2 = img.convertToFormat(QtGui.QImage.Format_RGB888)
-		raw = img2.bits().asstring(img2.numBytes())
-		self.videoOutManager.send_frame(self.devId, str(raw), "RGB24", 
-			img2.width(), img2.height())
-
-	def Update(self):
-
-		if self.cameraOn:
-			if 0:
-				#print len(data[0])
-				self.emit(QtCore.SIGNAL('webcam_frame'), data[0], data[1], self.devId)
-				self.UpdatePreview(data[0], data[1])
-
-	def IsChecked(self):
-		return self.checkbox.isChecked()
-
-
-
-class GridStackWidget(QtGui.QFrame):
-	def __init__(self, devInputs):
-		QtGui.QFrame.__init__(self)
-		self.devOn = False
-		self.devId = uuid.uuid4()
-		self.devInputs = devInputs
-		self.canvas = QtGui.QImage(640*2, 480*2, QtGui.QImage.Format_RGB888)
-		self.framesRcvSinceOutput = set()
-		self.outBuffer = []
-
-		self.widgetLayout = QtGui.QVBoxLayout()
-		self.setLayout(self.widgetLayout)
-
-		#Create toolbar
-		self.toolbar = QtGui.QHBoxLayout()
-		self.widgetLayout.addLayout(self.toolbar)
-
-		self.checkbox = QtGui.QCheckBox()
-		self.toolbar.addWidget(self.checkbox, 0)
-
-		label = QtGui.QLabel("Stack Videos")
-		self.toolbar.addWidget(label, 1)
-
-		self.onButton = QtGui.QPushButton("On")
-		self.toolbar.addWidget(self.onButton, 0)
-		self.onButton.setCheckable(True)
-		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedOn)
-
-		self.useButton = QtGui.QPushButton("Use")
-		self.toolbar.addWidget(self.useButton, 0)
-		QtCore.QObject.connect(self.useButton, QtCore.SIGNAL('clicked()'), self.ClickedUse)
-
-		self.setFrameStyle(QtGui.QFrame.Box)
-		self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
-
-	def ClickedOn(self):
-
-		if self.devOn:
-			self.devOn = False
-		else:
-			self.devOn = True
-		print self.devOn
-		self.onButton.setChecked(self.devOn)
-
-	def SendFrame(self, frame, meta, devName):
-		if not self.devOn: return
-		if devName not in self.devInputs: return
-
-		devIndex = self.devInputs.index(devName)
-		x = devIndex / 2
-		y = devIndex % 2
-
-		img = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
-		
-		painter = QtGui.QPainter(self.canvas)
-		painter.setRenderHint(QtGui.QPainter.Antialiasing)
-		painter.drawImage(640 * x, 480 * y, img)
-		del painter
-
-		if devName in self.framesRcvSinceOutput:
-			#We have received this frame again; it is time to write output
-			raw = self.canvas.bits().asstring(self.canvas.numBytes())
-			metaOut = {'width': self.canvas.width(), 'height': self.canvas.height(), 'format': 'RGB24'}
-			self.outBuffer.append([raw, metaOut])
-			self.framesRcvSinceOutput = set()
-
-		self.framesRcvSinceOutput.add(devName)
-
-	def Update(self):
-		for result in self.outBuffer:
-			self.emit(QtCore.SIGNAL('webcam_frame'), result[0], result[1], self.devId)
-		self.outBuffer = []
-
-	def ClickedUse(self):
-		if not self.devOn:
-			self.ClickedOn()
-
-		self.emit(QtCore.SIGNAL('use_source_clicked'), self.devId)
-
-	def IsChecked(self):
-		return self.checkbox.isChecked()
-
-		
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self):
 		super(MainWindow, self).__init__() 
@@ -341,14 +90,14 @@ class MainWindow(QtGui.QMainWindow):
 			if self.currentSrcId is None:
 				self.currentSrcId = fina
 
-			widget = SourceWidget(fina, self.devManager)
+			widget = vidinput.SourceWidget(fina, self.devManager)
 			QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
 			QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
 			self.sourceList.addWidget(widget)
 			self.inputDeviceToWidgetDict[fina] = widget
 
 		if 0:
-			widget = GridStackWidget(self.devNames)
+			widget = vidstack.GridStackWidget(self.devNames)
 			QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
 			QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
 			self.sourceList.addWidget(widget)
@@ -356,7 +105,7 @@ class MainWindow(QtGui.QMainWindow):
 
 		for fina in self.vidOut.list_devices():
 			
-			widget = VideoOutWidget(fina, self.vidOut)
+			widget = vidoutput.VideoOutWidget(fina, self.vidOut)
 			self.sourceList.addWidget(widget)
 			self.outputDeviceToWidgetDict[fina] = widget
 
@@ -405,7 +154,7 @@ class MainWindow(QtGui.QMainWindow):
 				selectedDevs.append(devId)
 
 		#Create a processing widget
-		widget = GridStackWidget(selectedDevs)
+		widget = vidstack.GridStackWidget(selectedDevs)
 		QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
 		QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
 		self.sourceList.addWidget(widget)
