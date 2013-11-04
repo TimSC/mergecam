@@ -17,12 +17,12 @@
 #include <stdexcept>
 #include <pthread.h>
 
-class Test_cl{
+class PanoView_cl{
 public:
 	PyObject_HEAD
 	int val;
 };
-typedef Test_cl Test;
+typedef PanoView_cl PanoView;
 
 static PyObject *TestFunc(PyObject *self, PyObject *args)
 {
@@ -31,39 +31,39 @@ static PyObject *TestFunc(PyObject *self, PyObject *args)
 
 // **********************************************************************
 
-static void Test_dealloc(Test *self)
+static void PanoView_dealloc(PanoView *self)
 {
 
 	self->ob_type->tp_free((PyObject *)self);
 }
 
-static int Test_init(Test *self, PyObject *args,
+static int PanoView_init(PanoView *self, PyObject *args,
 		PyObject *kwargs)
 {
 	return 0;
 }
 
-static PyObject *Test_Test(Test *self, PyObject *args)
+static PyObject *PanoView_Test(PanoView *self, PyObject *args)
 {
 	Py_RETURN_NONE;
 }
 
 // *********************************************************************
 
-static PyMethodDef Test_methods[] = {
-	{"test", (PyCFunction)Test_Test, METH_VARARGS,
+static PyMethodDef PanoView_methods[] = {
+	{"test", (PyCFunction)PanoView_Test, METH_VARARGS,
 			 "test()\n\n"
 			 "Test func"},
 	{NULL}
 };
 
-static PyTypeObject Test_type = {
+static PyTypeObject PanoView_type = {
 	PyObject_HEAD_INIT(NULL)
-			0, "v4l2capture.Test", sizeof(Test), 0,
-			(destructor)Test_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, Py_TPFLAGS_DEFAULT, "Test()\n\n", 0, 0, 0,
-			0, 0, 0, Test_methods, 0, 0, 0, 0, 0, 0, 0,
-			(initproc)Test_init
+			0, "pano.PanoView", sizeof(PanoView), 0,
+			(destructor)PanoView_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, Py_TPFLAGS_DEFAULT, "PanoView()\n\n", 0, 0, 0,
+			0, 0, 0, PanoView_methods, 0, 0, 0, 0, 0, 0, 0,
+			(initproc)PanoView_init
 };
 
 // *********************************************************************
@@ -75,9 +75,9 @@ static PyMethodDef module_methods[] = {
 
 PyMODINIT_FUNC initpano(void)
 {
-	Test_type.tp_new = PyType_GenericNew;
+	PanoView_type.tp_new = PyType_GenericNew;
 
-	if(PyType_Ready(&Test_type) < 0)
+	if(PyType_Ready(&PanoView_type) < 0)
 		{
 			return;
 		}
@@ -90,7 +90,7 @@ PyMODINIT_FUNC initpano(void)
 			return;
 		}
 
-	Py_INCREF(&Test_type);
-	PyModule_AddObject(module, "Test", (PyObject *)&Test_type);
+	Py_INCREF(&PanoView_type);
+	PyModule_AddObject(module, "PanoView", (PyObject *)&PanoView_type);
 
 }
