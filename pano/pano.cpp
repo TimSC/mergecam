@@ -11,6 +11,7 @@
 #include <Python.h>
 #include <string.h>
 #include <string>
+#include <iostream>
 #include <sstream>
 #include <map>
 #include <vector>
@@ -40,20 +41,41 @@ static void PanoView_dealloc(PanoView *self)
 static int PanoView_init(PanoView *self, PyObject *args,
 		PyObject *kwargs)
 {
+	if(PyTuple_Size(args) < 1)
+	{
+		PyErr_Format(PyExc_RuntimeError, "Argument 1 should be camera arragement.");
+		return 0;
+	}
+
+	PyObject *cameraArragement = PyTuple_GetItem(args, 0);
+
+	PyObject *addedPhotos = PyObject_GetAttrString(cameraArragement, "addedPhotos");
+	std::cout << "PyDict_Check " << PyDict_Check(addedPhotos) << std::endl;
+	
 	return 0;
 }
 
-static PyObject *PanoView_Test(PanoView *self, PyObject *args)
+static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 {
+
+	if(PyTuple_Size(args) < 2)
+	{
+		PyErr_Format(PyExc_RuntimeError, "Two arguments required.");
+ 		Py_RETURN_NONE;
+	}
+
+	PyObject *images = PyTuple_GetItem(args, 0);
+	PyObject *metas = PyTuple_GetItem(args, 1);
+
 	Py_RETURN_NONE;
 }
 
 // *********************************************************************
 
 static PyMethodDef PanoView_methods[] = {
-	{"test", (PyCFunction)PanoView_Test, METH_VARARGS,
-			 "test()\n\n"
-			 "Test func"},
+	{"Vis", (PyCFunction)PanoView_Vis, METH_VARARGS,
+			 "Vis(image_byte_buffer_list, meta_data_list)\n\n"
+			 "Combine images to form a panorama"},
 	{NULL}
 };
 

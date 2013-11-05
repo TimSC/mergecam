@@ -4,7 +4,7 @@ import uuid
 import cv2, cv, proj, math
 import numpy as np
 import scipy.optimize as optimize
-import visualise
+import visualise, pano
 
 ### Utility functions
 
@@ -477,12 +477,15 @@ class PanoWidget(QtGui.QFrame):
 			#We have received this frame again; it is time to write output
 
 			if self.cameraArrangement is not None:
-				visobj = visualise.VisualiseArrangement()
-				vis = visobj.Vis(self.currentFrame.values(), self.currentMeta.values(), self.framePairs[0], self.cameraArrangement)
-				#vis.save("vis{0}.png".format(len(self.cameraArrangement.addedPhotos)))
+				if 0:
+					visobj = visualise.VisualiseArrangement()
+					vis = visobj.Vis(self.currentFrame.values(), self.currentMeta.values(), self.framePairs[0], self.cameraArrangement)
+					metaOut = {'width': vis.size[0], 'height': vis.size[1], 'format': 'RGB24'}
+					self.outBuffer.append([vis.tostring(), metaOut])
+				if 1:
+					visobj = pano.PanoView(self.cameraArrangement)
+					visOut = visobj.Vis(self.currentFrame.values(), self.currentMeta.values())
 
-				metaOut = {'width': vis.size[0], 'height': vis.size[1], 'format': 'RGB24'}
-				self.outBuffer.append([vis.tostring(), metaOut])
 			self.framesRcvSinceOutput = set()
 
 		self.framesRcvSinceOutput.add(devName)
