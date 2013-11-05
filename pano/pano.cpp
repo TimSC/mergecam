@@ -49,12 +49,6 @@ static int PanoView_init(PanoView *self, PyObject *args,
  		return 0;
 	}
 
-	PyObject *cameraArragement = PyTuple_GetItem(args, 0);
-
-	PyObject *addedPhotos = PyObject_GetAttrString(cameraArragement, "addedPhotos");
-	std::cout << "PyDict_Check " << PyDict_Check(addedPhotos) << std::endl;
-
-	Py_DECREF(addedPhotos);
 
 	PyObject *outProj = PyTuple_GetItem(args, 1);
 	PyObject *outWidthObj = PyObject_GetAttrString(outProj, "imgW");
@@ -80,21 +74,53 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	
 	PyObject *unProjArgs = PyTuple_New(1);
 	PyTuple_SetItem(unProjArgs, 0, imgPix);
-	PyObject *out = PyObject_Call(outUnProj, unProjArgs, NULL);
+	Py_INCREF(imgPix);
+	PyObject *worldPix = PyObject_Call(outUnProj, unProjArgs, NULL);
 
+	//Iterate over cameras in arrangement
+	PyObject *cameraArragement = PyTuple_GetItem(args, 0);
+	PyObject *addedPhotos = PyObject_GetAttrString(cameraArragement, "addedPhotos");
+		
+	std::cout << "a"<< std::endl;
+	PyObject *addedPhotosItems = PyDict_Items(addedPhotos);
+	Py_ssize_t numCams = PySequence_Size(addedPhotosItems);
+	std::cout << "b"<< std::endl;
 
-	
+	for(Py_ssize_t i=0; i<numCams; i++)
+	{
+		std::cout << "c"<< std::endl;
+		//Check positions in source image of world positions
+		PyObject *camDataTup = PySequence_GetItem(addedPhotosItems, i);
+		PyObject *camData = PyTuple_GetItem(camDataTup, 1);
+		std::cout << PyObject_HasAttrString(camData, "Proj") << std::endl;
 
+		PyObject_Print(camData, stdout, Py_PRINT_RAW);
+		PyObject *camProj = PyObject_GetAttrString(camData, "Proj");
+		PyObject *projArgs = PyTuple_New(1);
+		PyTuple_SetItem(projArgs, 0, worldPix);
+		Py_INCREF(projArgs);
 
+		PyObject *result = PyObject_Call(camProj, projArgs, NULL);
+
+		std::cout << "i"<< i << std::endl;
+
+		if(result != NULL) Py_DECREF(result);
+		Py_DECREF(projArgs);
+		Py_DECREF(camProj);
+		Py_DECREF(camData);
+	}
 
 
 	//Clean up	
-
-	if(out != Py_None) Py_DECREF(out);
+	std::cout << "z"<< std::endl;
+	if(worldPix != NULL) Py_DECREF(worldPix);
 	Py_DECREF(unProjArgs);
 	Py_DECREF(outUnProj);
 
 	Py_DECREF(imgPix);
+
+	Py_DECREF(addedPhotos);
+	Py_DECREF(addedPhotosItems);
 
 	Py_DECREF(outWidthObj);
 	Py_DECREF(outHeightObj);

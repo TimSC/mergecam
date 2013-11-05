@@ -101,7 +101,11 @@ class RectilinearCam(object):
 			out.append((lat, lon))
 		return out
 
-	def Proj(self, np.ndarray[np.float64_t,ndim=2] ptsLatLon): #Lat, lon radians to image px
+	def Proj(self, ptsLatLon): #Lat, lon radians to image px
+		arr = np.array(ptsLatLon, dtype=np.float64)
+		return self.ProjNumpy(arr)
+
+	def ProjNumpy(self, np.ndarray[np.float64_t,ndim=2] ptsLatLon): #Lat, lon radians to image px
 
 		cdef double x = 0., y = 0.
 		cdef int valid = 1
