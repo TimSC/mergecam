@@ -483,7 +483,10 @@ class PanoWidget(QtGui.QFrame):
 					metaOut = {'width': vis.size[0], 'height': vis.size[1], 'format': 'RGB24'}
 					self.outBuffer.append([vis.tostring(), metaOut])
 				if 1:
-					visobj = pano.PanoView(self.cameraArrangement)
+					outProj = proj.EquirectangularCam()
+					outProj.imgW = 800
+					outProj.imgH = 600
+					visobj = pano.PanoView(self.cameraArrangement, outProj)
 					visOut = visobj.Vis(self.currentFrame.values(), self.currentMeta.values())
 
 			self.framesRcvSinceOutput = set()

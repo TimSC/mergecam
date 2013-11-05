@@ -21,7 +21,9 @@
 class PanoView_cl{
 public:
 	PyObject_HEAD
-	int val;
+
+	
+
 };
 typedef PanoView_cl PanoView;
 
@@ -41,17 +43,62 @@ static void PanoView_dealloc(PanoView *self)
 static int PanoView_init(PanoView *self, PyObject *args,
 		PyObject *kwargs)
 {
-	if(PyTuple_Size(args) < 1)
+	if(PyTuple_Size(args) < 2)
 	{
-		PyErr_Format(PyExc_RuntimeError, "Argument 1 should be camera arragement.");
-		return 0;
+		PyErr_Format(PyExc_RuntimeError, "Two arguments required.");
+ 		return 0;
 	}
 
 	PyObject *cameraArragement = PyTuple_GetItem(args, 0);
 
 	PyObject *addedPhotos = PyObject_GetAttrString(cameraArragement, "addedPhotos");
 	std::cout << "PyDict_Check " << PyDict_Check(addedPhotos) << std::endl;
+
+	Py_DECREF(addedPhotos);
+
+	PyObject *outProj = PyTuple_GetItem(args, 1);
+	PyObject *outWidthObj = PyObject_GetAttrString(outProj, "imgW");
+	PyObject *outHeightObj = PyObject_GetAttrString(outProj, "imgH");
+	long outWidth = PyInt_AsLong(outWidthObj);
+	long outHeight = PyInt_AsLong(outHeightObj);
 	
+	//Create list of screen coordinates
+	std::cout << outWidth << "," << outHeight << std::endl;
+	PyObject *imgPix = PyList_New(0);
+	for(long x=0;x<outWidth;x++)
+	for(long y=0;y<outHeight;y++)
+	{
+		PyObject *tupleTemp = PyTuple_New(2);
+		PyTuple_SetItem(tupleTemp, 0, PyInt_FromLong(x));
+		PyTuple_SetItem(tupleTemp, 1, PyInt_FromLong(y));
+		PyList_Append(imgPix, tupleTemp);
+		Py_DECREF(tupleTemp);		
+	}
+
+	//Transform to world coordinates	
+	PyObject *outUnProj = PyObject_GetAttrString(outProj, "UnProj");
+	
+	PyObject *unProjArgs = PyTuple_New(1);
+	PyTuple_SetItem(unProjArgs, 0, imgPix);
+	PyObject *out = PyObject_Call(outUnProj, unProjArgs, NULL);
+
+
+	
+
+
+
+
+	//Clean up	
+
+	if(out != Py_None) Py_DECREF(out);
+	Py_DECREF(unProjArgs);
+	Py_DECREF(outUnProj);
+
+	Py_DECREF(imgPix);
+
+	Py_DECREF(outWidthObj);
+	Py_DECREF(outHeightObj);
+
 	return 0;
 }
 
