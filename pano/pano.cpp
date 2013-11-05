@@ -49,8 +49,13 @@ static int PanoView_init(PanoView *self, PyObject *args,
  		return 0;
 	}
 
-
 	PyObject *outProj = PyTuple_GetItem(args, 1);
+	if(!PyObject_HasAttrString(outProj, "imgW")||!PyObject_HasAttrString(outProj, "imgH"))
+	{
+		PyErr_Format(PyExc_RuntimeError, "imgH or imgW not set");
+ 		return 0;
+	}
+
 	PyObject *outWidthObj = PyObject_GetAttrString(outProj, "imgW");
 	PyObject *outHeightObj = PyObject_GetAttrString(outProj, "imgH");
 	long outWidth = PyInt_AsLong(outWidthObj);
@@ -71,7 +76,13 @@ static int PanoView_init(PanoView *self, PyObject *args,
 
 	//Transform to world coordinates	
 	PyObject *outUnProj = PyObject_GetAttrString(outProj, "UnProj");
-	
+	if(outUnProj==NULL)
+	{
+		PyErr_Format(PyExc_RuntimeError, "UnProj method not defined");
+ 		return 0;
+	}
+
+
 	PyObject *unProjArgs = PyTuple_New(1);
 	PyTuple_SetItem(unProjArgs, 0, imgPix);
 	Py_INCREF(imgPix);
@@ -80,31 +91,62 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	//Iterate over cameras in arrangement
 	PyObject *cameraArragement = PyTuple_GetItem(args, 0);
 	PyObject *addedPhotos = PyObject_GetAttrString(cameraArragement, "addedPhotos");
-		
-	std::cout << "a"<< std::endl;
+	if(addedPhotos==NULL)
+	{
+		PyErr_Format(PyExc_RuntimeError, "addedPhotos dict not defined");
+ 		return 0;
+	}
+
 	PyObject *addedPhotosItems = PyDict_Items(addedPhotos);
 	Py_ssize_t numCams = PySequence_Size(addedPhotosItems);
-	std::cout << "b"<< std::endl;
 
 	for(Py_ssize_t i=0; i<numCams; i++)
 	{
-		std::cout << "c"<< std::endl;
 		//Check positions in source image of world positions
 		PyObject *camDataTup = PySequence_GetItem(addedPhotosItems, i);
 		PyObject *camData = PyTuple_GetItem(camDataTup, 1);
-		std::cout << PyObject_HasAttrString(camData, "Proj") << std::endl;
 
-		PyObject_Print(camData, stdout, Py_PRINT_RAW);
+		//PyObject_Print(camData, stdout, Py_PRINT_RAW);
 		PyObject *camProj = PyObject_GetAttrString(camData, "Proj");
+		if(camProj==NULL)
+		{
+			PyErr_Format(PyExc_RuntimeError, "Proj method not defined");
+	 		return 0;
+		}
+
 		PyObject *projArgs = PyTuple_New(1);
 		PyTuple_SetItem(projArgs, 0, worldPix);
 		Py_INCREF(projArgs);
 
-		PyObject *result = PyObject_Call(camProj, projArgs, NULL);
+		PyObject *pixMapping = PyObject_Call(camProj, projArgs, NULL);
 
-		std::cout << "i"<< i << std::endl;
+		if(pixMapping != NULL)
+		{
+			Py_ssize_t numPix = PySequence_Size(pixMapping);
 
-		if(result != NULL) Py_DECREF(result);
+			for(Py_ssize_t j=0; j<numPix; j++)
+			{
+				PyObject *pos = PySequence_GetItem(pixMapping, j);
+				//PyObject_Print(pos, stdout, Py_PRINT_RAW);
+				
+				Py_ssize_t numComp = PySequence_Size(pos);
+				int nan = 0;
+				for(Py_ssize_t c=0; c<numComp; c++)
+				{
+					PyObject *compObj = PySequence_GetItem(pos, c);
+					double comp = PyFloat_AsDouble(compObj);
+					std::cout << comp << ",";
+					if(Py_IS_NAN(comp)) nan = 1;
+					Py_DECREF(compObj);
+				}
+				std::cout << nan << std::endl;
+
+				Py_DECREF(pos);
+			}
+
+
+			Py_DECREF(pixMapping);
+		}
 		Py_DECREF(projArgs);
 		Py_DECREF(camProj);
 		Py_DECREF(camData);
@@ -112,7 +154,6 @@ static int PanoView_init(PanoView *self, PyObject *args,
 
 
 	//Clean up	
-	std::cout << "z"<< std::endl;
 	if(worldPix != NULL) Py_DECREF(worldPix);
 	Py_DECREF(unProjArgs);
 	Py_DECREF(outUnProj);
