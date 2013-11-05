@@ -34,6 +34,34 @@ static PyObject *TestFunc(PyObject *self, PyObject *args)
 
 // **********************************************************************
 
+class PxInfo
+{
+public:
+	long camId;
+	float x, y;
+
+	PxInfo()
+	{
+		x = 0;
+		y = 0;
+	}
+
+	PxInfo(const PxInfo &in)
+	{
+		PxInfo::operator=(in);
+	}	
+
+	const PxInfo &operator=(const PxInfo &in)
+	{
+		camId = in.camId;
+		x = in.x;
+		y = in.y;
+		return *this;
+	}
+};
+
+// **********************************************************************
+
 static void PanoView_dealloc(PanoView *self)
 {
 
@@ -79,38 +107,58 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	if(outUnProj==NULL)
 	{
 		PyErr_Format(PyExc_RuntimeError, "UnProj method not defined");
+		//TODO fix possible memory leaks?
  		return 0;
 	}
-
 
 	PyObject *unProjArgs = PyTuple_New(1);
 	PyTuple_SetItem(unProjArgs, 0, imgPix);
 	Py_INCREF(imgPix);
 	PyObject *worldPix = PyObject_Call(outUnProj, unProjArgs, NULL);
 
-	//Iterate over cameras in arrangement
 	PyObject *cameraArragement = PyTuple_GetItem(args, 0);
 	PyObject *addedPhotos = PyObject_GetAttrString(cameraArragement, "addedPhotos");
 	if(addedPhotos==NULL)
 	{
 		PyErr_Format(PyExc_RuntimeError, "addedPhotos dict not defined");
+		//TODO fix possible memory leaks?
  		return 0;
 	}
 
 	PyObject *addedPhotosItems = PyDict_Items(addedPhotos);
 	Py_ssize_t numCams = PySequence_Size(addedPhotosItems);
 
+	std::cout << "a" << std::endl;
+
+	//Initialise low level mapping structure
+	std::vector<std::vector<std::vector<class PxInfo> > > mapping;
+	std::vector<std::vector<class PxInfo> > col;
+	for(long y=0;y<outHeight;y++)
+	{
+		std::vector<class PxInfo> tmp;
+		col.push_back(tmp);
+	}
+	for(long x=0;x<outWidth;x++)
+		mapping.push_back(col);
+
+	std::cout << "b" << std::endl;
+
+	//Iterate over cameras in arrangement
 	for(Py_ssize_t i=0; i<numCams; i++)
 	{
 		//Check positions in source image of world positions
 		PyObject *camDataTup = PySequence_GetItem(addedPhotosItems, i);
+		PyObject *camIdObj = PyTuple_GetItem(camDataTup, 0);
+		long camId = PyLong_AsLong(camIdObj);
 		PyObject *camData = PyTuple_GetItem(camDataTup, 1);
 
-		//PyObject_Print(camData, stdout, Py_PRINT_RAW);
+		//PyObject_Print(test, stdout, Py_PRINT_RAW); std::cout << std::endl;
+
 		PyObject *camProj = PyObject_GetAttrString(camData, "Proj");
 		if(camProj==NULL)
 		{
 			PyErr_Format(PyExc_RuntimeError, "Proj method not defined");
+			//TODO fix possible memory leaks?
 	 		return 0;
 		}
 
@@ -120,28 +168,70 @@ static int PanoView_init(PanoView *self, PyObject *args,
 
 		PyObject *pixMapping = PyObject_Call(camProj, projArgs, NULL);
 
+		//Convert mapping into low level C structure for speed
 		if(pixMapping != NULL)
 		{
 			Py_ssize_t numPix = PySequence_Size(pixMapping);
 
+			if(numPix != PySequence_Size(imgPix))
+			{
+				PyErr_Format(PyExc_RuntimeError, "Proj function returned unexpected number of points");
+				//TODO fix possible memory leaks?
+		 		return 0;
+			}
+
 			for(Py_ssize_t j=0; j<numPix; j++)
 			{
-				PyObject *pos = PySequence_GetItem(pixMapping, j);
-				//PyObject_Print(pos, stdout, Py_PRINT_RAW);
+				PyObject *posSrc = PySequence_GetItem(pixMapping, j);
+				PyObject *posDst = PySequence_GetItem(imgPix, j);
+				//PyObject_Print(posSrc, stdout, Py_PRINT_RAW);
 				
-				Py_ssize_t numComp = PySequence_Size(pos);
+				Py_ssize_t numComp = PySequence_Size(posSrc);
 				int nan = 0;
+				std::vector<double> posc;
 				for(Py_ssize_t c=0; c<numComp; c++)
 				{
-					PyObject *compObj = PySequence_GetItem(pos, c);
+					PyObject *compObj = PySequence_GetItem(posSrc, c);
 					double comp = PyFloat_AsDouble(compObj);
-					std::cout << comp << ",";
+					posc.push_back(comp);
+					//std::cout << comp << ",";
 					if(Py_IS_NAN(comp)) nan = 1;
 					Py_DECREF(compObj);
 				}
 				std::cout << nan << std::endl;
 
-				Py_DECREF(pos);
+				if(!nan)
+				{
+					std::cout << "1a" << std::endl;
+					PyObject_Print(posDst, stdout, Py_PRINT_RAW);
+					PyObject *destXobj = PySequence_GetItem(posDst, 0);
+					PyObject *destYobj = PySequence_GetItem(posDst, 1);
+					if(destXobj == NULL || destYobj == NULL)
+					{
+						PyErr_Format(PyExc_RuntimeError, "Failed to convert position to PyObject");
+						//TODO fix possible memory leaks?
+				 		return 0;
+					}
+
+					long destX = PyLong_AsLong(destXobj);
+					long destY = PyLong_AsLong(destYobj);
+					class PxInfo pxInfo;
+					pxInfo.camId = camId;
+					pxInfo.x = posc[0];
+					pxInfo.y = posc[1];
+					std::cout << "1b " << destX << "," << destY << std::endl;
+					mapping[destX][destY].push_back(pxInfo);
+					std::cout << "1c" << std::endl;
+
+					Py_DECREF(destXobj);
+					Py_DECREF(destYobj);
+				}
+				std::cout << "1" << std::endl;
+
+				Py_DECREF(posSrc);
+				Py_DECREF(posDst);
+
+				std::cout << "1z" << std::endl;
 			}
 
 
