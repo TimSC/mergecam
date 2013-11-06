@@ -22,7 +22,7 @@ class PanoView_cl{
 public:
 	PyObject_HEAD
 
-	std::vector<std::vector<std::vector<class PxInfo> > > mapping;
+	std::vector<std::vector<std::vector<class PxInfo> > > *mapping;
 	long outImgW, outImgH;
 };
 typedef PanoView_cl PanoView;
@@ -65,12 +65,17 @@ public:
 static void PanoView_dealloc(PanoView *self)
 {
 
+	if(self->mapping) delete self->mapping;
+	self->mapping = NULL;
+
 	self->ob_type->tp_free((PyObject *)self);
 }
 
 static int PanoView_init(PanoView *self, PyObject *args,
 		PyObject *kwargs)
 {
+	self->mapping = new std::vector<std::vector<std::vector<class PxInfo> > >;
+
 	if(PyTuple_Size(args) < 2)
 	{
 		PyErr_Format(PyExc_RuntimeError, "Two arguments required.");
@@ -131,7 +136,7 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	Py_ssize_t numCams = PySequence_Size(addedPhotosItems);
 
 	//Initialise low level mapping structure
-	std::vector<std::vector<std::vector<class PxInfo> > > &mapping = self->mapping;
+	std::vector<std::vector<std::vector<class PxInfo> > > &mapping = *self->mapping;
 	mapping.clear();
 	std::vector<std::vector<class PxInfo> > col;
 	for(long y=0;y<outHeight;y++)
@@ -261,7 +266,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	PyObject *images = PyTuple_GetItem(args, 0);
 	PyObject *metas = PyTuple_GetItem(args, 1);
-	std::vector<std::vector<std::vector<class PxInfo> > > &mapping = self->mapping;
+	std::vector<std::vector<std::vector<class PxInfo> > > &mapping = *self->mapping;
 
 	//Create output image buffer
 	PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
@@ -350,11 +355,14 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			class PxInfo &pxInfo = sources[srcNum];
 			unsigned char *srcBuff = srcBuffs[pxInfo.camId];
 			long sw = srcWidth[pxInfo.camId];
-			//long sh = srcHeight[pxInfo.camId];
+			long sh = srcHeight[pxInfo.camId];
 
 			//Nearest neighbour pixel
 			long srx = (int)(pxInfo.x+0.5);
 			long sry = (int)(pxInfo.y+0.5);
+
+			if(srx<0 || srx >= sw) continue;
+			if(sry<0 || sry >= sh) continue;
 
 			unsigned tupleOffset = srx*3 + sry*3*sw;
 			if(tupleOffset < 0 || tupleOffset+3 >= srcBuffLen[pxInfo.camId])
