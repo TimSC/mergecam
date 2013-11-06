@@ -291,7 +291,7 @@ class PanoWidget(QtGui.QFrame):
 		self.framesRcvSinceOutput = set()
 		self.framePairs = None
 		self.cameraArrangement = None
-
+		self.visobj = None
 
 		self.widgetLayout = QtGui.QVBoxLayout()
 		self.setLayout(self.widgetLayout)
@@ -465,6 +465,11 @@ class PanoWidget(QtGui.QFrame):
 				vis = visobj.Vis(self.calibrationFrames[0], self.calibrationMeta[0], self.framePairs[0], self.cameraArrangement)
 				vis.save("vis{0}.png".format(len(self.cameraArrangement.addedPhotos)))
 
+		outProj = proj.EquirectangularCam()
+		outProj.imgW = 800
+		outProj.imgH = 600
+		self.visobj = pano.PanoView(self.cameraArrangement, outProj)
+
 	def SendFrame(self, frame, meta, devName):
 
 		if devName not in self.devInputs: return
@@ -483,11 +488,7 @@ class PanoWidget(QtGui.QFrame):
 					metaOut = {'width': vis.size[0], 'height': vis.size[1], 'format': 'RGB24'}
 					self.outBuffer.append([vis.tostring(), metaOut])
 				if 1:
-					outProj = proj.EquirectangularCam()
-					outProj.imgW = 800
-					outProj.imgH = 600
-					visobj = pano.PanoView(self.cameraArrangement, outProj)
-					visPixOut, visMetaOut = visobj.Vis(self.currentFrame.values(), self.currentMeta.values())
+					visPixOut, visMetaOut = self.visobj.Vis(self.currentFrame.values(), self.currentMeta.values())
 					print len(visPixOut), visMetaOut
 					self.outBuffer.append([visPixOut, visMetaOut])
 
