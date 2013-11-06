@@ -92,7 +92,7 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	self->outImgH = outHeight;
 	
 	//Create list of screen coordinates
-	std::cout << outWidth << "," << outHeight << std::endl;
+	//std::cout << outWidth << "," << outHeight << std::endl;
 	PyObject *imgPix = PyList_New(0);
 	for(long x=0;x<outWidth;x++)
 	for(long y=0;y<outHeight;y++)
@@ -327,9 +327,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
  			Py_RETURN_NONE;
 		}
 	}
-	std::cout << "a" << std::endl;
 
-	//Transfer source images to output buffer
+	//Initialize output image colour
 	for(long y=0; y < self->outImgH; y++)
 	for(long x=0; x < self->outImgW; x++)
 	{
@@ -337,17 +336,36 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		dstRgbTuple[0] = 0;
 		dstRgbTuple[1] = 0;
 		dstRgbTuple[2] = 0;
+	}
+
+	//Transfer source images to output buffer
+	for(long y=0; y < self->outImgH; y++)
+	for(long x=0; x < self->outImgW; x++)
+	{
+		unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
 
 		std::vector<class PxInfo> &sources = mapping[x][y];
-		/*for(unsigned srcNum = 0; srcNum <sources.size(); srcNum++)
+		for(unsigned srcNum = 0; srcNum <sources.size(); srcNum++)
 		{ 
 			class PxInfo &pxInfo = sources[srcNum];
 			unsigned char *srcBuff = srcBuffs[pxInfo.camId];
+			long sw = srcWidth[pxInfo.camId];
+			//long sh = srcHeight[pxInfo.camId];
 
-			//unsigned char *srcRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
+			//Nearest neighbour pixel
+			long srx = (int)(pxInfo.x+0.5);
+			long sry = (int)(pxInfo.y+0.5);
+
+			unsigned tupleOffset = srx*3 + sry*3*sw;
+			if(tupleOffset < 0 || tupleOffset+3 >= srcBuffLen[pxInfo.camId])
+				continue; //Protect against buffer overrun
+			unsigned char *srcRgbTuple = (unsigned char *)&srcBuff[tupleOffset];
 			
-		}*/
-
+			//Copy pixel
+			dstRgbTuple[0] = srcRgbTuple[0];
+			dstRgbTuple[1] = srcRgbTuple[1];
+			dstRgbTuple[2] = srcRgbTuple[2];
+		}
 	}
 
 	//Format meta data
