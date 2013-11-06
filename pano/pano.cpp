@@ -22,8 +22,8 @@ class PanoView_cl{
 public:
 	PyObject_HEAD
 
-	
-
+	std::vector<std::vector<std::vector<class PxInfo> > > mapping;
+	long outImgW, outImgH;
 };
 typedef PanoView_cl PanoView;
 
@@ -88,6 +88,8 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	PyObject *outHeightObj = PyObject_GetAttrString(outProj, "imgH");
 	long outWidth = PyInt_AsLong(outWidthObj);
 	long outHeight = PyInt_AsLong(outHeightObj);
+	self->outImgW = outWidth;
+	self->outImgH = outHeight;
 	
 	//Create list of screen coordinates
 	std::cout << outWidth << "," << outHeight << std::endl;
@@ -128,10 +130,9 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	PyObject *addedPhotosItems = PyDict_Items(addedPhotos);
 	Py_ssize_t numCams = PySequence_Size(addedPhotosItems);
 
-	std::cout << "a" << std::endl;
-
 	//Initialise low level mapping structure
-	std::vector<std::vector<std::vector<class PxInfo> > > mapping;
+	std::vector<std::vector<std::vector<class PxInfo> > > &mapping = self->mapping;
+	mapping.clear();
 	std::vector<std::vector<class PxInfo> > col;
 	for(long y=0;y<outHeight;y++)
 	{
@@ -140,8 +141,6 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	}
 	for(long x=0;x<outWidth;x++)
 		mapping.push_back(col);
-
-	std::cout << "b" << std::endl;
 
 	//Iterate over cameras in arrangement
 	for(Py_ssize_t i=0; i<numCams; i++)
@@ -194,16 +193,13 @@ static int PanoView_init(PanoView *self, PyObject *args,
 					PyObject *compObj = PySequence_GetItem(posSrc, c);
 					double comp = PyFloat_AsDouble(compObj);
 					posc.push_back(comp);
-					//std::cout << comp << ",";
 					if(Py_IS_NAN(comp)) nan = 1;
 					Py_DECREF(compObj);
 				}
-				std::cout << nan << std::endl;
 
 				if(!nan)
 				{
-					std::cout << "1a" << std::endl;
-					PyObject_Print(posDst, stdout, Py_PRINT_RAW);
+					//PyObject_Print(posDst, stdout, Py_PRINT_RAW);
 					PyObject *destXobj = PySequence_GetItem(posDst, 0);
 					PyObject *destYobj = PySequence_GetItem(posDst, 1);
 					if(destXobj == NULL || destYobj == NULL)
@@ -219,19 +215,14 @@ static int PanoView_init(PanoView *self, PyObject *args,
 					pxInfo.camId = camId;
 					pxInfo.x = posc[0];
 					pxInfo.y = posc[1];
-					std::cout << "1b " << destX << "," << destY << std::endl;
 					mapping[destX][destY].push_back(pxInfo);
-					std::cout << "1c" << std::endl;
 
 					Py_DECREF(destXobj);
 					Py_DECREF(destYobj);
 				}
-				std::cout << "1" << std::endl;
 
 				Py_DECREF(posSrc);
 				Py_DECREF(posDst);
-
-				std::cout << "1z" << std::endl;
 			}
 
 
@@ -271,7 +262,32 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	PyObject *images = PyTuple_GetItem(args, 0);
 	PyObject *metas = PyTuple_GetItem(args, 1);
 
-	Py_RETURN_NONE;
+	//Create output image buffer
+	PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
+	PyByteArray_Resize(pxOut, 3 * self->outImgH * self->outImgW);
+	char *pxOutRaw = PyByteArray_AsString(pxOut);
+
+	//Transfer source images to output buffer
+	//TODO
+
+
+
+	//Format meta data
+	PyObject *metaOut = PyDict_New();
+	PyObject *widthObj = PyInt_FromLong(self->outImgW);
+	PyObject *heightObj = PyInt_FromLong(self->outImgH);
+	PyObject *formatObj = PyString_FromString("RGB24");
+	PyDict_SetItemString(metaOut, "width", widthObj);
+	PyDict_SetItemString(metaOut, "height", heightObj);
+	PyDict_SetItemString(metaOut, "format", formatObj);
+	Py_DECREF(widthObj);
+	Py_DECREF(heightObj);
+	Py_DECREF(formatObj);
+
+	PyObject *out = PyTuple_New(2);
+	PyTuple_SetItem(out, 0, pxOut);
+	PyTuple_SetItem(out, 1, metaOut);
+	return out;
 }
 
 // *********************************************************************

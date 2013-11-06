@@ -487,7 +487,9 @@ class PanoWidget(QtGui.QFrame):
 					outProj.imgW = 800
 					outProj.imgH = 600
 					visobj = pano.PanoView(self.cameraArrangement, outProj)
-					visOut = visobj.Vis(self.currentFrame.values(), self.currentMeta.values())
+					visPixOut, visMetaOut = visobj.Vis(self.currentFrame.values(), self.currentMeta.values())
+					print len(visPixOut), visMetaOut
+					self.outBuffer.append([visPixOut, visMetaOut])
 
 			self.framesRcvSinceOutput = set()
 
