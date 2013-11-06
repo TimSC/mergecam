@@ -261,16 +261,94 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	PyObject *images = PyTuple_GetItem(args, 0);
 	PyObject *metas = PyTuple_GetItem(args, 1);
+	std::vector<std::vector<std::vector<class PxInfo> > > &mapping = self->mapping;
 
 	//Create output image buffer
 	PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
 	PyByteArray_Resize(pxOut, 3 * self->outImgH * self->outImgW);
 	char *pxOutRaw = PyByteArray_AsString(pxOut);
 
+	Py_ssize_t numSources = PySequence_Size(images);
+	Py_ssize_t numMetas = PySequence_Size(metas);
+	if(numSources != numMetas)
+	{
+		PyErr_Format(PyExc_RuntimeError, "Number of sources and metas must match.");
+ 		Py_RETURN_NONE;
+	}
+
+	//Get source buffers and meta
+	std::vector<unsigned char *> srcBuffs;
+	std::vector<PyObject *> srcObjs;
+	std::vector<long> srcWidth, srcHeight, srcBuffLen;
+	for(Py_ssize_t i=0; i<numSources; i++)
+	{
+		int imageMetaErr = 0;
+		PyObject *srcObj = PySequence_GetItem(images, i);
+		PyObject *metaObj = PySequence_GetItem(metas, i);
+
+		srcObjs.push_back(srcObj);
+		srcBuffs.push_back((unsigned char *)PyByteArray_AsString(srcObj));
+		srcBuffLen.push_back(PyByteArray_Size(srcObj));
+		//PyObject_Print(metaObj, stdout, Py_PRINT_RAW);
+		
+		PyObject *widthObj = PyDict_GetItemString(metaObj, "width");
+		if(widthObj!=NULL)
+		{
+			srcWidth.push_back(PyInt_AsLong(widthObj));
+			Py_DECREF(widthObj);
+		}
+		else
+			imageMetaErr = 1;
+
+		PyObject *heightObj = PyDict_GetItemString(metaObj, "height");
+		if(heightObj != NULL)
+		{
+			srcHeight.push_back(PyInt_AsLong(heightObj));
+			Py_DECREF(heightObj);
+		}
+		else
+			imageMetaErr = 2;
+
+		PyObject *formatObj = PyDict_GetItemString(metaObj, "format");
+		if(formatObj != NULL)
+		{
+			if(strcmp(PyString_AsString(formatObj), "RGB24")!=0)
+				imageMetaErr = 4;
+			Py_DECREF(formatObj);
+		}
+		else
+			imageMetaErr = 3;
+
+		Py_DECREF(metaObj);
+
+		if(imageMetaErr>0)
+		{
+			PyErr_Format(PyExc_RuntimeError, "Image source error.");
+ 			Py_RETURN_NONE;
+		}
+	}
+	std::cout << "a" << std::endl;
+
 	//Transfer source images to output buffer
-	//TODO
+	for(long y=0; y < self->outImgH; y++)
+	for(long x=0; x < self->outImgW; x++)
+	{
+		unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
+		dstRgbTuple[0] = 0;
+		dstRgbTuple[1] = 0;
+		dstRgbTuple[2] = 0;
 
+		std::vector<class PxInfo> &sources = mapping[x][y];
+		/*for(unsigned srcNum = 0; srcNum <sources.size(); srcNum++)
+		{ 
+			class PxInfo &pxInfo = sources[srcNum];
+			unsigned char *srcBuff = srcBuffs[pxInfo.camId];
 
+			//unsigned char *srcRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
+			
+		}*/
+
+	}
 
 	//Format meta data
 	PyObject *metaOut = PyDict_New();
@@ -287,6 +365,14 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	PyObject *out = PyTuple_New(2);
 	PyTuple_SetItem(out, 0, pxOut);
 	PyTuple_SetItem(out, 1, metaOut);
+
+	//Free source objects
+	for(unsigned i=0; i<srcObjs.size(); i++)
+	{
+		Py_DECREF(srcObjs[i]);
+	}
+	srcObjs.clear();
+
 	return out;
 }
 
