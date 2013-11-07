@@ -87,6 +87,8 @@ class PatternModel(object):
 		self.ry = p[1]
 		self.rz = p[2]
 
+# ******************************************************************************************
+
 class LensFishEyeStereographicModel(object):
 	def __init__(self, f=10., w=1280, h=1024):
 		self.f = f
@@ -240,12 +242,7 @@ class LensRectilinearModel(object):
 	def SetParams(self, p):
 		self.f = p[0]
 
-
-
-
-
-
-
+# ******************************************************************************************
 
 def VisualisePoints(patternModel, corners, lens):
 	
@@ -287,6 +284,8 @@ def Eval(params, patternModel, lens, numLensParam, numPatternParam):
 			err = ((testProj[0]-pos[0])**2.+(testProj[1]-pos[1])**2.)**0.5
 			errs.append(err)
 	return sum(errs) / len(errs)
+
+# ******************************************************************************************
 
 if __name__ == "__main__":
 	corners = ReadCoord(open("genius.csv"))
@@ -345,7 +344,7 @@ if __name__ == "__main__":
 	#LensPolynomialModel
 	#LensRectilinearModel
 
-	lens = LensRectilinearModel(600)
+	lens = LensPolynomialModel(600)
 
 	#VisualisePoints(patternModel, corners, lens)
 	numLensParam = len(lens.GetParams())
