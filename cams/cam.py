@@ -97,8 +97,8 @@ class LensFishEyeStereographicModel(object):
 
 	def Proj(self, theta, ang):
 		r = 2 * self.f * math.tan(theta / 2.)
-		imx = 0.5 * self.w + math.sin(ang) * r
-		imy = 0.5 * self.h + math.cos(ang) * r
+		imx = 0.5 * self.w + math.sin(ang) * r * self.w
+		imy = 0.5 * self.h + math.cos(ang) * r * self.h
 		return imx, imy
 
 	def GetParams(self):
@@ -116,8 +116,8 @@ class LensFishEyeHybridModel(object):
 
 	def Proj(self, theta, ang):
 		r = self.f * math.tan(self.k*theta)
-		imx = 0.5 * self.w + math.sin(ang) * r
-		imy = 0.5 * self.h + math.cos(ang) * r
+		imx = 0.5 * self.w + math.sin(ang) * r * self.w
+		imy = 0.5 * self.h + math.cos(ang) * r * self.w
 		return imx, imy
 
 	def GetParams(self):
@@ -139,8 +139,8 @@ class LensPolynomialModel(object):
 		for i, coeff in enumerate(self.c):
 			tot += coeff * (theta ** (i+1))
 		r = self.f * tot
-		imx = 0.5 * self.w + math.sin(ang) * r
-		imy = 0.5 * self.h + math.cos(ang) * r
+		imx = 0.5 * self.w + math.sin(ang) * r * self.w
+		imy = 0.5 * self.h + math.cos(ang) * r * self.h
 		return imx, imy
 
 	def GetParams(self):
@@ -179,8 +179,8 @@ class LensFishEquisolidAngleModel(object):
 
 	def Proj(self, theta, ang):
 		r = 2 * self.f * math.sin(theta / 2.)
-		imx = 0.5 * self.w + math.sin(ang) * r
-		imy = 0.5 * self.h + math.cos(ang) * r
+		imx = 0.5 * self.w + math.sin(ang) * r * self.w
+		imy = 0.5 * self.h + math.cos(ang) * r * self.h
 		return imx, imy
 
 	def GetParams(self):
@@ -197,8 +197,8 @@ class LensOrthographicModel(object):
 
 	def Proj(self, theta, ang):
 		r = self.f * math.sin(theta)
-		imx = 0.5 * self.w + math.sin(ang) * r
-		imy = 0.5 * self.h + math.cos(ang) * r
+		imx = 0.5 * self.w + math.sin(ang) * r * self.w
+		imy = 0.5 * self.h + math.cos(ang) * r * self.h
 		return imx, imy
 
 	def GetParams(self):
@@ -234,7 +234,7 @@ class LensRectilinearModel(object):
 		xo = (math.cos(lat) * math.sin(lon - cLon)) / cosc
 		yo = (math.cos(cLat) * math.sin(lat) - math.sin(cLat) * math.cos(lat) * math.cos(lon - cLon)) / cosc
 
-		return xo * self.f + self.w / 2., yo * self.f + self.h / 2.
+		return xo * self.f * self.w + self.w / 2., yo * self.f * self.h + self.h / 2.
 
 	def GetParams(self):
 		return [self.f]
@@ -343,8 +343,9 @@ if __name__ == "__main__":
 	#LensOrthographicModel
 	#LensPolynomialModel
 	#LensRectilinearModel
+	#LensFishEyeHybridModel
 
-	lens = LensPolynomialModel(600)
+	lens = LensFishEyeHybridModel(1)
 
 	#VisualisePoints(patternModel, corners, lens)
 	numLensParam = len(lens.GetParams())
