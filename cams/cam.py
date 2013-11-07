@@ -4,6 +4,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.optimize as opt
 
+#Results on genius widecam
+#3rd order poly	    14.3005542503
+#Hybrid	            15.5126199515
+#Stereographic      22.5737763356
+#EquidistantModel   25.2579427817
+#EquisolidAngle     33.0249503865
+#OrthographicModel  44.681095153
+#Rectilinear        68.8396171272
+
 def MapToFloat(nums):
 	out = []
 	for v in nums:
@@ -62,6 +71,8 @@ class PatternModel(object):
 		vec3 = np.dot(Ry, vec2)
 		vec4 = np.dot(Rz, vec3)
 
+		#print vec4
+
 		optAxisDist = (vec4[0]**2. + vec4[1]**2.)**0.5
 
 		theta = math.atan2(optAxisDist, self.screenDist)
@@ -87,6 +98,12 @@ class LensFishEyeStereographicModel(object):
 		imx = 0.5 * self.w + math.sin(ang) * r
 		imy = 0.5 * self.h + math.cos(ang) * r
 		return imx, imy
+
+	def GetParams(self):
+		return [self.f]
+
+	def SetParams(self, p):
+		self.f = p[0]
 
 class LensFishEyeHybridModel(object):
 	def __init__(self, f=10., w=1280, h=1024):
@@ -145,6 +162,13 @@ class LensFishEyeEquidistantModel(object):
 		imy = 0.5 * self.h + math.cos(ang) * r
 		return imx, imy
 
+	def GetParams(self):
+		return [self.f]
+
+	def SetParams(self, p):
+		self.f = p[0]
+
+
 class LensFishEquisolidAngleModel(object):
 	def __init__(self, f=10., w=1280, h=1024):
 		self.f = f
@@ -157,6 +181,12 @@ class LensFishEquisolidAngleModel(object):
 		imy = 0.5 * self.h + math.cos(ang) * r
 		return imx, imy
 
+	def GetParams(self):
+		return [self.f]
+
+	def SetParams(self, p):
+		self.f = p[0]
+
 class LensOrthographicModel(object):
 	def __init__(self, f=10., w=1280, h=1024):
 		self.f = f
@@ -168,6 +198,53 @@ class LensOrthographicModel(object):
 		imx = 0.5 * self.w + math.sin(ang) * r
 		imy = 0.5 * self.h + math.cos(ang) * r
 		return imx, imy
+
+	def GetParams(self):
+		return [self.f]
+
+	def SetParams(self, p):
+		self.f = p[0]
+
+class LensRectilinearModel(object):
+
+	def __init__(self, f=10., w=1280, h=1024):
+		self.f = f
+		self.w = w
+		self.h = h
+
+	def Proj(self, theta, ang):
+		cLat = 0.
+		cLon = 0.
+		
+		x = math.cos(ang)
+		y = math.sin(ang)
+		oppOverAdj = math.tan(theta)
+
+		lat = math.atan(y * oppOverAdj)
+		lon = math.atan(x * oppOverAdj)
+
+		cosc = math.sin(cLat) * math.sin(lat) + math.cos(cLat) * math.cos(lat) * math.cos(lon - cLon)
+		if cosc < 0.:
+			xOut[0] = 0
+			yOut[0] = 0
+			validOut[0] = 0
+			return
+		xo = (math.cos(lat) * math.sin(lon - cLon)) / cosc
+		yo = (math.cos(cLat) * math.sin(lat) - math.sin(cLat) * math.cos(lat) * math.cos(lon - cLon)) / cosc
+
+		return xo * self.f + self.w / 2., yo * self.f + self.h / 2.
+
+	def GetParams(self):
+		return [self.f]
+
+	def SetParams(self, p):
+		self.f = p[0]
+
+
+
+
+
+
 
 
 def VisualisePoints(patternModel, corners, lens):
@@ -213,7 +290,6 @@ def Eval(params, patternModel, lens, numLensParam, numPatternParam):
 
 if __name__ == "__main__":
 	corners = ReadCoord(open("genius.csv"))
-	print corners
 
 	imsize = (1280, 1024)
 	cent = (imsize[0]/2., imsize[1]/2.)
@@ -266,6 +342,8 @@ if __name__ == "__main__":
 	#LensFishEyeEquidistantModel
 	#LensFishEquisolidAngleModel
 	#LensOrthographicModel
+	#LensPolynomialModel
+	#LensRectilinearModel
 
 	lens = LensPolynomialModel(600)
 
