@@ -363,12 +363,12 @@ if __name__ == "__main__":
 
 	lens = LensFishEyeHybridModel(1)
 
-	theta, ang = 0.4, 0.6
-	print theta, ang
-	test = lens.Proj(theta, ang)
-	print test
-	print lens.UnProj(*test)
-	exit(0)
+	if 0:
+		theta, ang = 0.4, 0.6
+		print theta, ang
+		test = lens.Proj(theta, ang)
+		print test
+		print lens.UnProj(*test)
 
 	#VisualisePoints(patternModel, corners, lens)
 	numLensParam = len(lens.GetParams())
