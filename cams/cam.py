@@ -14,7 +14,7 @@ def MapToFloat(nums):
 	return out
 
 def ReadCoord(fina):
-	csvdata = csv.reader(fina)
+	csvdata = csv.reader(fina, delimiter='\t')
 	csvdata = [li for li in csvdata]
 
 	#Remove top row
@@ -36,7 +36,6 @@ class PatternModel(object):
 		self.rx = 0.
 		self.ry = 0.
 		self.rz = 0.
-
 
 	def GetPoint(self, row, col):
 		rowOff = row - self.centr
@@ -114,7 +113,7 @@ class LensPolynomialModel(object):
 		self.f = f
 		self.w = w
 		self.h = h
-		self.c = [1., 0., 0., 0.]
+		self.c = [1., 0., 0.]
 
 	def Proj(self, theta, ang):
 		tot = 0.
@@ -214,6 +213,7 @@ def Eval(params, patternModel, lens, numLensParam, numPatternParam):
 
 if __name__ == "__main__":
 	corners = ReadCoord(open("genius.csv"))
+	print corners
 
 	imsize = (1280, 1024)
 	cent = (imsize[0]/2., imsize[1]/2.)
@@ -267,7 +267,7 @@ if __name__ == "__main__":
 	#LensFishEquisolidAngleModel
 	#LensOrthographicModel
 
-	lens = LensPolynomialModel(600)	
+	lens = LensPolynomialModel(600)
 
 	#VisualisePoints(patternModel, corners, lens)
 	numLensParam = len(lens.GetParams())
@@ -281,5 +281,8 @@ if __name__ == "__main__":
 	patternModel.SetParams(result.x[numLensParam:])
 	
 	print "Error:", Eval(result.x, patternModel, lens, numLensParam, numPatternParam)
+	print "Lens params:", result.x[:numLensParam]
+	print "Pattern params:", result.x[numLensParam:]
+
 	VisualisePoints(patternModel, corners, lens)
 
