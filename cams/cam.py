@@ -345,7 +345,7 @@ if __name__ == "__main__":
 	#LensPolynomialModel
 	#LensRectilinearModel
 
-	lens = LensPolynomialModel(600)
+	lens = LensRectilinearModel(600)
 
 	#VisualisePoints(patternModel, corners, lens)
 	numLensParam = len(lens.GetParams())
