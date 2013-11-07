@@ -166,4 +166,55 @@ class EquirectangularCam(object):
 			out.append(worldPos)
 		return out
 
+class GeniusWidecam(object):
+	def __init__(self):
+		self.f = 0.49389104
+		self.w = 640
+		self.h = 480
+		self.k = 0.8260964
+		self.cLat = 0.
+		self.cLon = 0.
+		
+	def Proj(self, ptsLatLon): #Lat, lon radians to image px
+		out = []
+		for pt in ptsLatLon:
+
+			lat = pt[0]+self.cLat
+			lon = pt[1]+self.cLon
+
+			xdist = math.tan(lon)
+			ydist = math.tan(lat)
+			dist = (xdist ** 2. + ydist ** 2.) ** 0.5
+
+			ang = math.atan2(xdist, ydist)
+			theta = math.atan(dist)
+
+			r = self.f * math.tan(self.k*theta)
+			imx = 0.5 * self.w + math.sin(ang) * r * self.w
+			imy = 0.5 * self.h + math.cos(ang) * r * self.w
+			out.append((imx, imy))
+
+		return out
+
+	def UnProj(self, ptsPix): #Image px to Lat, lon radians
+		out = []
+		for pt in ptsPix:
+
+			x2 = pt[0] - (0.5 * self.w)
+			y2 = pt[1] - (0.5 * self.h)
+			ang = math.atan2(x2, y2)
+			x3 = x2 / (math.sin(ang) * self.w)
+			theta = math.atan2(x3, self.f) / self.k
+
+			x = math.sin(ang)
+			y = math.cos(ang)
+			oppOverAdj = math.tan(theta)
+
+			lat = math.atan(y * oppOverAdj)
+			lon = math.atan(x * oppOverAdj)
+			out.append((lat-self.cLat, lon-self.cLon))
+
+		return out
+
+
 

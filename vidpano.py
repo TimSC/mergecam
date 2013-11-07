@@ -260,6 +260,9 @@ def SelectPhotoToAdd(imgPairs, cameraArrangement):
 			bestScore = pairScore
 			bestPair = pair
 
+	if bestScore is None:
+		return None, None, None
+
 	return bestPair, included1, included2
 
 def GetStrongestLinkForPhotoId(imgPairs, photoId):
@@ -452,7 +455,7 @@ class PanoWidget(QtGui.QFrame):
 				
 			for photoId in photosToAdd:
 				wang = 100
-				self.cameraArrangement.addedPhotos[photoId] = proj.RectilinearCam(wang, wang * 3. / 4.)
+				self.cameraArrangement.addedPhotos[photoId] = proj.GeniusWidecam()
 	
 			if 1:		
 				self.cameraArrangement.OptimiseFit(photosToAdd, optRotation = False)
@@ -477,6 +480,7 @@ class PanoWidget(QtGui.QFrame):
 		self.currentMeta[devName] = meta
 
 		if not self.devOn: return
+		if self.visobj is None: return
 
 		if devName in self.framesRcvSinceOutput:
 			#We have received this frame again; it is time to write output
