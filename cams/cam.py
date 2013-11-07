@@ -96,10 +96,18 @@ class LensFishEyeStereographicModel(object):
 		self.h = h
 
 	def Proj(self, theta, ang):
-		r = 2 * self.f * math.tan(theta / 2.)
+		r = 2. * self.f * math.tan(theta / 2.)
 		imx = 0.5 * self.w + math.sin(ang) * r * self.w
-		imy = 0.5 * self.h + math.cos(ang) * r * self.h
+		imy = 0.5 * self.h + math.cos(ang) * r * self.w
 		return imx, imy
+
+	def UnProj(self, x, y):
+		x2 = x - (0.5 * self.w)
+		y2 = y - (0.5 * self.h)
+		ang = math.atan2(x2, y2)
+		x3 = x2 / (math.sin(ang) * self.w)
+		theta = math.atan2(x3, 2. * self.f) * 2.
+		return theta, ang
 
 	def GetParams(self):
 		return [self.f]
@@ -119,6 +127,14 @@ class LensFishEyeHybridModel(object):
 		imx = 0.5 * self.w + math.sin(ang) * r * self.w
 		imy = 0.5 * self.h + math.cos(ang) * r * self.w
 		return imx, imy
+
+	def UnProj(self, x, y):
+		x2 = x - (0.5 * self.w)
+		y2 = y - (0.5 * self.h)
+		ang = math.atan2(x2, y2)
+		x3 = x2 / (math.sin(ang) * self.w)
+		theta = math.atan2(x3, self.f) / self.k
+		return theta, ang
 
 	def GetParams(self):
 		return self.f, self.k
@@ -140,7 +156,7 @@ class LensPolynomialModel(object):
 			tot += coeff * (theta ** (i+1))
 		r = self.f * tot
 		imx = 0.5 * self.w + math.sin(ang) * r * self.w
-		imy = 0.5 * self.h + math.cos(ang) * r * self.h
+		imy = 0.5 * self.h + math.cos(ang) * r * self.w
 		return imx, imy
 
 	def GetParams(self):
@@ -180,7 +196,7 @@ class LensFishEquisolidAngleModel(object):
 	def Proj(self, theta, ang):
 		r = 2 * self.f * math.sin(theta / 2.)
 		imx = 0.5 * self.w + math.sin(ang) * r * self.w
-		imy = 0.5 * self.h + math.cos(ang) * r * self.h
+		imy = 0.5 * self.h + math.cos(ang) * r * self.w
 		return imx, imy
 
 	def GetParams(self):
@@ -198,7 +214,7 @@ class LensOrthographicModel(object):
 	def Proj(self, theta, ang):
 		r = self.f * math.sin(theta)
 		imx = 0.5 * self.w + math.sin(ang) * r * self.w
-		imy = 0.5 * self.h + math.cos(ang) * r * self.h
+		imy = 0.5 * self.h + math.cos(ang) * r * self.w
 		return imx, imy
 
 	def GetParams(self):
@@ -346,6 +362,13 @@ if __name__ == "__main__":
 	#LensFishEyeHybridModel
 
 	lens = LensFishEyeHybridModel(1)
+
+	theta, ang = 0.4, 0.6
+	print theta, ang
+	test = lens.Proj(theta, ang)
+	print test
+	print lens.UnProj(*test)
+	exit(0)
 
 	#VisualisePoints(patternModel, corners, lens)
 	numLensParam = len(lens.GetParams())
