@@ -33,6 +33,10 @@ class PatternModel(object):
 	def __init__(self, screenDist, squareSize):
 		self.screenDist = screenDist
 		self.squareSize = squareSize
+		self.rx = 0.
+		self.ry = 0.
+		self.rz = 0.
+
 
 	def GetPoint(self, row, col):
 		rowOff = row - self.centr
@@ -41,11 +45,37 @@ class PatternModel(object):
 		x = rowOff + self.squareSize * self.patternShift[0] + colOff * self.squareSize
 		y = rowOff + self.squareSize * self.patternShift[1] + rowOff * self.squareSize
 
-		optAxisDist = (x**2. + y**2.)**0.5
+		vec = np.array([x, y, 1.])
+		
+		Rx = np.array([[1.,0.,0.],
+			[0., math.cos(self.rx),-math.sin(self.rx)], 
+			[0., math.sin(self.rx), math.cos(self.rx)]])
+
+		Ry = np.array([[math.cos(self.ry),0.,math.sin(self.ry)],
+			[0., 1., 0.], 
+			[math.sin(self.ry), 0., math.cos(self.ry)]])	
+
+		Rz = np.array([[math.cos(self.rz),-math.sin(self.rz),0.],
+			[math.sin(self.rz), math.cos(self.rz), 0.], 
+			[0., 0., 1.]])	
+
+		vec2 = np.dot(Rx, vec)
+		vec3 = np.dot(Ry, vec2)
+		vec4 = np.dot(Rz, vec3)
+
+		optAxisDist = (vec4[0]**2. + vec4[1]**2.)**0.5
 
 		theta = math.atan2(optAxisDist, self.screenDist)
-		ang = math.atan2(x, y)
+		ang = math.atan2(vec4[0], vec4[1])
 		return theta, ang
+
+	def GetParams(self):
+		return self.rx, self.ry, self.rz
+
+	def SetParams(self, p):
+		self.rx = p[0]
+		self.ry = p[1]
+		self.rz = p[2]
 
 class LensFishEyeStereographicModel(object):
 	def __init__(self, f=10., w=1280, h=1024):
@@ -78,6 +108,31 @@ class LensFishEyeHybridModel(object):
 	def SetParams(self, p):
 		self.f = p[0]
 		self.k = p[1]
+
+class LensPolynomialModel(object):
+	def __init__(self, f=10., w=1280, h=1024):
+		self.f = f
+		self.w = w
+		self.h = h
+		self.c = [1., 0., 0., 0.]
+
+	def Proj(self, theta, ang):
+		tot = 0.
+		for i, coeff in enumerate(self.c):
+			tot += coeff * (theta ** (i+1))
+		r = self.f * tot
+		imx = 0.5 * self.w + math.sin(ang) * r
+		imy = 0.5 * self.h + math.cos(ang) * r
+		return imx, imy
+
+	def GetParams(self):
+		out = [self.f]
+		out.extend(self.c)
+		return out
+
+	def SetParams(self, p):
+		self.f = p[0]
+		self.c = p[1:]
 
 class LensFishEyeEquidistantModel(object):
 	def __init__(self, f=10., w=1280, h=1024):
@@ -139,10 +194,11 @@ def VisualisePoints(patternModel, corners, lens):
 	plt.plot(predPts[:,0], predPts[:,1], 'x')
 	plt.show()
 
-def Eval(params, patternModel, lens):
-	errs = []
-	lens.SetParams(params)
+def Eval(params, patternModel, lens, numLensParam, numPatternParam):
 	print params
+	errs = []
+	lens.SetParams(params[:numLensParam])
+	patternModel.SetParams(params[numLensParam:])
 
 	for r, row in enumerate(corners):
 		for c, pos in enumerate(row):
@@ -211,13 +267,19 @@ if __name__ == "__main__":
 	#LensFishEquisolidAngleModel
 	#LensOrthographicModel
 
-	lens = LensFishEyeHybridModel(600)	
+	lens = LensPolynomialModel(600)	
 
 	#VisualisePoints(patternModel, corners, lens)
-	result = opt.minimize(Eval, lens.GetParams(), args=[patternModel, lens])
+	numLensParam = len(lens.GetParams())
+	numPatternParam = len(patternModel.GetParams())
+	x0 = list(lens.GetParams())
+	x0.extend(patternModel.GetParams())
+
+	result = opt.minimize(Eval, x0, args=[patternModel, lens, numLensParam, numPatternParam], tol=1e-3)
 	print result
-	lens.SetParams(result.x)
+	lens.SetParams(result.x[:numLensParam])
+	patternModel.SetParams(result.x[numLensParam:])
 	
-	print "Error:", Eval(result.x, patternModel, lens)
+	print "Error:", Eval(result.x, patternModel, lens, numLensParam, numPatternParam)
 	VisualisePoints(patternModel, corners, lens)
 
