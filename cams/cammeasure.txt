@@ -1,0 +1,10 @@
+Genius
+Screen dist 180mm
+Square size 35.8mm
+
+Logitech
+655mm
+
+Generic
+1505mm
+
