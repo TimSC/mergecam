@@ -182,6 +182,18 @@ class CameraArrangement(object):
 			if "rot" in params:
 				self.addedPhotos[phot].rot = finalVals[params["rot"]]
 
+
+		#Recentre cameras
+		moveLat, moveLon = None, None
+		for camId in self.addedPhotos:
+			camData = self.addedPhotos[camId]	
+			if moveLat is None:
+				moveLat = camData.cLat
+				moveLon = camData.cLon
+			camData.cLat -= moveLat
+			camData.cLon -= moveLon
+
+
 	def Eval(self, vals, separateTerms, initialValKey, photToOpt, vis=0):
 
 		print "vals", vals
