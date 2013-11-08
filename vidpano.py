@@ -171,8 +171,8 @@ class CameraArrangement(object):
 			print "final values", final[0]
 			finalVals = final[0]
 
-		test = self.Eval(finalVals, 1, {}, None, 1)
-		print "test mean", np.array(test).mean()
+		test = self.Eval(finalVals, 1, {}, None, vis=0)
+		print "recheck error mean", np.array(test).mean()
 
 		#Set values
 		for phot in initialValKey:
@@ -508,8 +508,9 @@ class PanoWidget(QtGui.QFrame):
 					metaOut = {'width': vis.size[0], 'height': vis.size[1], 'format': 'RGB24'}
 					self.outBuffer.append([vis.tostring(), metaOut])
 				if 1:
+					#print len(self.currentFrame), self.currentMeta
 					visPixOut, visMetaOut = self.visobj.Vis(self.currentFrame.values(), self.currentMeta.values())
-					print len(visPixOut), visMetaOut
+					#print len(visPixOut), visMetaOut
 					self.outBuffer.append([str(visPixOut), visMetaOut])
 
 			self.framesRcvSinceOutput = set()

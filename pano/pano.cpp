@@ -352,8 +352,32 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	for(long x=0; x < self->outImgW; x++)
 	{
 		unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
-
 		std::vector<class PxInfo> &sources = mapping[x][y];
+
+		//Count input images
+		int count = 0;
+		for(unsigned srcNum = 0; srcNum <sources.size(); srcNum++)
+		{ 
+			class PxInfo &pxInfo = sources[srcNum];
+			unsigned char *srcBuff = srcBuffs[pxInfo.camId];
+			long sw = srcWidth[pxInfo.camId];
+			long sh = srcHeight[pxInfo.camId];
+
+			//Nearest neighbour pixel
+			long srx = (int)(pxInfo.x+0.5);
+			long sry = (int)(pxInfo.y+0.5);
+
+			if(srx<0 || srx >= sw) continue;
+			if(sry<0 || sry >= sh) continue;
+
+			unsigned tupleOffset = srx*3 + sry*3*sw;
+			if(tupleOffset < 0 || tupleOffset+3 >= srcBuffLen[pxInfo.camId])
+				continue; //Protect against buffer overrun
+
+			count ++;
+		}
+
+		//Copy pixels
 		for(unsigned srcNum = 0; srcNum <sources.size(); srcNum++)
 		{ 
 			class PxInfo &pxInfo = sources[srcNum];
@@ -374,9 +398,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			unsigned char *srcRgbTuple = (unsigned char *)&srcBuff[tupleOffset];
 
 			//Copy pixel
-			dstRgbTuple[0] = srcRgbTuple[0];
-			dstRgbTuple[1] = srcRgbTuple[1];
-			dstRgbTuple[2] = srcRgbTuple[2];
+			dstRgbTuple[0] += srcRgbTuple[0] / count;
+			dstRgbTuple[1] += srcRgbTuple[1] / count;
+			dstRgbTuple[2] += srcRgbTuple[2] / count;
 
 		}
 	}
