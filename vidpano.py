@@ -165,11 +165,14 @@ class CameraArrangement(object):
 
 		if 0:
 			final = optimize.minimize(self.Eval, initialVals, (0, initialValKey, photToOpt), method="Powell")
-			print "score", final.x, final.fun
+			print "final values", final.x, final.fun
 		if 1:
 			final = optimize.leastsq(self.Eval, initialVals, (1, initialValKey, photToOpt), xtol=1e-4)
-			print "score", final
+			print "final values", final[0]
 			finalVals = final[0]
+
+		test = self.Eval(finalVals, 1, {}, None, 1)
+		print "test mean", np.array(test).mean()
 
 		#Set values
 		for phot in initialValKey:
@@ -179,7 +182,7 @@ class CameraArrangement(object):
 			if "rot" in params:
 				self.addedPhotos[phot].rot = finalVals[params["rot"]]
 
-	def Eval(self, vals, separateTerms, initialValKey, photToOpt):
+	def Eval(self, vals, separateTerms, initialValKey, photToOpt, vis=0):
 
 		print "vals", vals
 		dists = []
@@ -191,7 +194,7 @@ class CameraArrangement(object):
 			fina2 = pair[2]
 			if fina1 not in self.addedPhotos: continue
 			if fina2 not in self.addedPhotos: continue
-			if fina1 not in photToOpt and fina2 not in photToOpt: continue
+			if (photToOpt is not None) and (fina1 not in photToOpt and fina2 not in photToOpt): continue
 			countPairs += 1
 
 			#print fina1, fina2, fina1index, fina2index
@@ -218,6 +221,18 @@ class CameraArrangement(object):
 
 			proj1 = camModel1.UnProj(ptsA)
 			proj2 = camModel2.UnProj(ptsB)
+
+			if vis:
+				import matplotlib.pyplot as plt
+				nproj1 = np.array(proj1)
+				nproj2 = np.array(proj2)
+				for ptNum in range(nproj1.shape[0]):
+					plt.plot([nproj1[ptNum,0], nproj2[ptNum,0]], [nproj1[ptNum,1], nproj2[ptNum,1]])
+
+				plt.plot(nproj1[:,0], nproj1[:,1], 'o')
+				plt.plot(nproj2[:,0], nproj2[:,1], 'x')
+
+				plt.show()
 			
 			#distsX = []
 			#distsY = []
@@ -237,7 +252,7 @@ class CameraArrangement(object):
 		#print countPairs
 
 		if separateTerms:
-			print np.abs(dists).mean()
+			print "mean dist error", np.abs(dists).mean()
 			return np.abs(dists)
 		score = np.array(dists).mean() ** 1.
 
