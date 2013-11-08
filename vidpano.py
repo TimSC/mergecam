@@ -465,7 +465,7 @@ class PanoWidget(QtGui.QFrame):
 				photo = self.cameraArrangement.addedPhotos[photoId]
 				print photoId, photo.cLat, photo.cLon
 
-			if 0:
+			if 1:
 				vis = visobj.Vis(self.calibrationFrames[0], self.calibrationMeta[0], self.framePairs[0], self.cameraArrangement)
 				vis.save("vis{0}.png".format(len(self.cameraArrangement.addedPhotos)))
 

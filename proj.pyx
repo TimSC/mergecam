@@ -169,8 +169,8 @@ class EquirectangularCam(object):
 class GeniusWidecam(object):
 	def __init__(self):
 		self.f = 0.49389104
-		self.w = 640
-		self.h = 480
+		self.imgW = 640
+		self.imgH = 480
 		self.k = 0.8260964
 		self.cLat = 0.
 		self.cLon = 0.
@@ -196,8 +196,8 @@ class GeniusWidecam(object):
 			theta = math.atan(dist)
 
 			r = self.f * math.tan(self.k*theta)
-			imx = 0.5 * self.w + math.sin(ang) * r * self.w
-			imy = 0.5 * self.h + math.cos(ang) * r * self.w
+			imx = 0.5 * self.imgW + math.sin(ang) * r * self.imgW
+			imy = 0.5 * self.imgH + math.cos(ang) * r * self.imgW
 			out.append((imx, imy))
 
 		return out
@@ -206,10 +206,10 @@ class GeniusWidecam(object):
 		out = []
 		for pt in ptsPix:
 
-			x2 = pt[0] - (0.5 * self.w)
-			y2 = pt[1] - (0.5 * self.h)
+			x2 = pt[0] - (0.5 * self.imgW)
+			y2 = pt[1] - (0.5 * self.imgH)
 			ang = math.atan2(x2, y2)
-			x3 = x2 / (math.sin(ang) * self.w)
+			x3 = x2 / (math.sin(ang) * self.imgW)
 			theta = math.atan2(x3, self.f) / self.k
 
 			x = math.sin(ang)

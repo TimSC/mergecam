@@ -269,9 +269,13 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	std::vector<std::vector<std::vector<class PxInfo> > > &mapping = *self->mapping;
 
 	//Create output image buffer
-	PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
-	PyByteArray_Resize(pxOut, 3 * self->outImgH * self->outImgW);
-	char *pxOutRaw = PyByteArray_AsString(pxOut);
+	
+
+	//PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
+	//PyByteArray_Resize(pxOut, 3 * self->outImgH * self->outImgW);
+	//PyByteArray_AsString(pxOut);
+	unsigned pxOutSize = 3 * self->outImgH * self->outImgW;
+	char *pxOutRaw = new char[pxOutSize];
 
 	Py_ssize_t numSources = PySequence_Size(images);
 	Py_ssize_t numMetas = PySequence_Size(metas);
@@ -376,6 +380,10 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		}
 	}
+
+	PyObject *pxOut = PyByteArray_FromStringAndSize(pxOutRaw, pxOutSize);
+	delete [] pxOutRaw;
+	pxOutRaw = NULL;
 
 	//Format meta data
 	PyObject *metaOut = PyDict_New();
