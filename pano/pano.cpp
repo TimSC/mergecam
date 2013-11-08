@@ -368,11 +368,12 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			if(tupleOffset < 0 || tupleOffset+3 >= srcBuffLen[pxInfo.camId])
 				continue; //Protect against buffer overrun
 			unsigned char *srcRgbTuple = (unsigned char *)&srcBuff[tupleOffset];
-			
+
 			//Copy pixel
 			dstRgbTuple[0] = srcRgbTuple[0];
 			dstRgbTuple[1] = srcRgbTuple[1];
 			dstRgbTuple[2] = srcRgbTuple[2];
+
 		}
 	}
 

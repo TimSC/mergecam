@@ -1,7 +1,7 @@
 
 from PyQt4 import QtGui, QtCore
 import uuid
-import cv2, cv, proj, math
+import cv2, cv, proj, math, random
 import numpy as np
 import scipy.optimize as optimize
 import visualise, pano
@@ -455,8 +455,9 @@ class PanoWidget(QtGui.QFrame):
 				
 			for photoId in photosToAdd:
 				wang = 100
-				self.cameraArrangement.addedPhotos[photoId] = proj.GeniusWidecam()
-	
+				newCam = proj.GeniusWidecam()
+				newCam.cLon = random.uniform(-math.pi, math.pi)
+				self.cameraArrangement.addedPhotos[photoId] = newCam
 			if 1:		
 				self.cameraArrangement.OptimiseFit(photosToAdd, optRotation = False)
 
@@ -494,7 +495,7 @@ class PanoWidget(QtGui.QFrame):
 				if 1:
 					visPixOut, visMetaOut = self.visobj.Vis(self.currentFrame.values(), self.currentMeta.values())
 					print len(visPixOut), visMetaOut
-					self.outBuffer.append([visPixOut, visMetaOut])
+					self.outBuffer.append([str(visPixOut), visMetaOut])
 
 			self.framesRcvSinceOutput = set()
 
