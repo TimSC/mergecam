@@ -350,7 +350,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	}
 
 	//Resize weight sum structure if necessary
-	while(self->weightSum.size() < self->outImgW)
+	/*while(self->weightSum.size() < self->outImgW)
 	{
 		std::vector<float> temp;	
 		self->weightSum.push_back(temp);
@@ -380,8 +380,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		self->weightSum[x][y] = 0.f;
 		self->imageCount[x][y] = 0;
 	}
-
+*/
 	//Transfer source images to output buffer
+	int count = 0;
 	for(long y=0; y < self->outImgH; y++)
 	for(long x=0; x < self->outImgW; x++)
 	{
@@ -414,21 +415,26 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			float alpha = fabs(0.5 - fx) * fabs(0.5 - fy) * 4.;
 
 			//Calculate colour mix
-			float pxWeightSum = self->weightSum[x][y];
+			/*float pxWeightSum = self->weightSum[x][y];
 			unsigned pxImageCount = self->imageCount[x][y];
 
 			float mixFraction1 = alpha / (alpha + pxWeightSum * pxImageCount);
 			float mixFraction2 = 1.f - mixFraction1;
 			self->imageCount[x][y] ++;
-			self->weightSum[x][y] = (pxWeightSum * pxImageCount + alpha) / (pxImageCount + 1);
+			self->weightSum[x][y] = (pxWeightSum * pxImageCount + alpha) / (pxImageCount + 1);*/
 
 			//Copy pixel
-			dstRgbTuple[0] = srcRgbTuple[0] * mixFraction1 + dstRgbTuple[0] * mixFraction2;
+			/*dstRgbTuple[0] = srcRgbTuple[0] * mixFraction1 + dstRgbTuple[0] * mixFraction2;
 			dstRgbTuple[1] = srcRgbTuple[1] * mixFraction1 + dstRgbTuple[1] * mixFraction2;
-			dstRgbTuple[2] = srcRgbTuple[2] * mixFraction1 + dstRgbTuple[2] * mixFraction2;
+			dstRgbTuple[2] = srcRgbTuple[2] * mixFraction1 + dstRgbTuple[2] * mixFraction2;*/
+			dstRgbTuple[0] = srcRgbTuple[0];
+			dstRgbTuple[1] = srcRgbTuple[1];
+			dstRgbTuple[2] = srcRgbTuple[2];
 
+			count += 1;
 		}
 	}
+	//std::cout << count << std::endl;
 
 	PyObject *pxOut = PyByteArray_FromStringAndSize(pxOutRaw, pxOutSize);
 	delete [] pxOutRaw;
