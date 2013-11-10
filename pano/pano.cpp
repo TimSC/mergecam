@@ -23,6 +23,8 @@ public:
 	PyObject_HEAD
 
 	std::vector<std::vector<std::vector<class PxInfo> > > *mapping;
+	std::vector<std::vector<float> > weightSum;
+	std::vector<std::vector<unsigned> > imageCount;
 	long outImgW, outImgH;
 };
 typedef PanoView_cl PanoView;
@@ -347,35 +349,44 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		dstRgbTuple[2] = 0;
 	}
 
+	//Resize weight sum structure if necessary
+	while(self->weightSum.size() < self->outImgW)
+	{
+		std::vector<float> temp;	
+		self->weightSum.push_back(temp);
+	}
+	for(long x=0; x < self->outImgW; x++)
+	while(self->weightSum[x].size() < self->outImgH)
+	{
+		self->weightSum[x].push_back(0.f);
+	}
+	
+	//Resize image count structure if necessary
+	while(self->imageCount.size() < self->outImgW)
+	{
+		std::vector<unsigned> temp;	
+		self->imageCount.push_back(temp);
+	}
+	for(long x=0; x < self->outImgW; x++)
+	while(self->imageCount[x].size() < self->outImgH)
+	{
+		self->imageCount[x].push_back(0);
+	}
+	
+	//Initialise weights and count to zero
+	for(long y=0; y < self->outImgH; y++)
+	for(long x=0; x < self->outImgW; x++)
+	{
+		self->weightSum[x][y] = 0.f;
+		self->imageCount[x][y] = 0;
+	}
+
 	//Transfer source images to output buffer
 	for(long y=0; y < self->outImgH; y++)
 	for(long x=0; x < self->outImgW; x++)
 	{
 		unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
 		std::vector<class PxInfo> &sources = mapping[x][y];
-
-		//Count input images
-		int count = 0;
-		for(unsigned srcNum = 0; srcNum <sources.size(); srcNum++)
-		{ 
-			class PxInfo &pxInfo = sources[srcNum];
-			unsigned char *srcBuff = srcBuffs[pxInfo.camId];
-			long sw = srcWidth[pxInfo.camId];
-			long sh = srcHeight[pxInfo.camId];
-
-			//Nearest neighbour pixel
-			long srx = (int)(pxInfo.x+0.5);
-			long sry = (int)(pxInfo.y+0.5);
-
-			if(srx<0 || srx >= sw) continue;
-			if(sry<0 || sry >= sh) continue;
-
-			unsigned tupleOffset = srx*3 + sry*3*sw;
-			if(tupleOffset < 0 || tupleOffset+3 >= srcBuffLen[pxInfo.camId])
-				continue; //Protect against buffer overrun
-
-			count ++;
-		}
 
 		//Copy pixels
 		for(unsigned srcNum = 0; srcNum <sources.size(); srcNum++)
@@ -397,10 +408,24 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				continue; //Protect against buffer overrun
 			unsigned char *srcRgbTuple = (unsigned char *)&srcBuff[tupleOffset];
 
+			//Calculate alpha opacity
+			float fx = pxInfo.x / sw;
+			float fy = pxInfo.y / sh;
+			float alpha = fabs(0.5 - fx) * fabs(0.5 - fy) * 4.;
+
+			//Calculate colour mix
+			float pxWeightSum = self->weightSum[x][y];
+			unsigned pxImageCount = self->imageCount[x][y];
+
+			float mixFraction1 = alpha / (alpha + pxWeightSum * pxImageCount);
+			float mixFraction2 = 1.f - mixFraction1;
+			self->imageCount[x][y] ++;
+			self->weightSum[x][y] = (pxWeightSum * pxImageCount + alpha) / (pxImageCount + 1);
+
 			//Copy pixel
-			dstRgbTuple[0] += srcRgbTuple[0] / count;
-			dstRgbTuple[1] += srcRgbTuple[1] / count;
-			dstRgbTuple[2] += srcRgbTuple[2] / count;
+			dstRgbTuple[0] = srcRgbTuple[0] * mixFraction1 + dstRgbTuple[0] * mixFraction2;
+			dstRgbTuple[1] = srcRgbTuple[1] * mixFraction1 + dstRgbTuple[1] * mixFraction2;
+			dstRgbTuple[2] = srcRgbTuple[2] * mixFraction1 + dstRgbTuple[2] * mixFraction2;
 
 		}
 	}
