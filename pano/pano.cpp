@@ -272,10 +272,11 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	//Create output image buffer
 	
-	//PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
-	//PyByteArray_Resize(pxOut, 3 * self->outImgH * self->outImgW);
-	//PyByteArray_AsString(pxOut);
 	unsigned pxOutSize = 3 * self->outImgH * self->outImgW;
+	PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
+	PyByteArray_Resize(pxOut, pxOutSize);
+	char *pxOutRaw = PyByteArray_AsString(pxOut);
+	
 	//char *pxOutRaw = new char[pxOutSize];
 
 	Py_ssize_t numSources = PySequence_Size(images);
@@ -339,14 +340,14 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		}
 	}
 
-/*	//Initialize output image colour
+	//Initialize output image colour
 	for(long y=0; y < self->outImgH; y++)
 	for(long x=0; x < self->outImgW; x++)
 	{
-		//unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
-		//dstRgbTuple[0] = 0;
-		//dstRgbTuple[1] = 0;
-		//dstRgbTuple[2] = 0;
+		unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
+		dstRgbTuple[0] = 0;
+		dstRgbTuple[1] = 0;
+		dstRgbTuple[2] = 0;
 	}
 
 	//Resize weight sum structure if necessary
@@ -386,7 +387,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	for(long y=0; y < self->outImgH; y++)
 	for(long x=0; x < self->outImgW; x++)
 	{
-		//unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
+		unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
 		std::vector<class PxInfo> &sources = mapping[x][y];
 
 		//Copy pixels
@@ -424,21 +425,21 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			self->imageCount[x][y] ++;
 
 			//Copy pixel
-			//dstRgbTuple[0] = srcRgbTuple[0] * mixFraction1 + dstRgbTuple[0] * mixFraction2;
-			//dstRgbTuple[1] = srcRgbTuple[1] * mixFraction1 + dstRgbTuple[1] * mixFraction2;
-			//dstRgbTuple[2] = srcRgbTuple[2] * mixFraction1 + dstRgbTuple[2] * mixFraction2;
+			dstRgbTuple[0] = srcRgbTuple[0] * mixFraction1 + dstRgbTuple[0] * mixFraction2;
+			dstRgbTuple[1] = srcRgbTuple[1] * mixFraction1 + dstRgbTuple[1] * mixFraction2;
+			dstRgbTuple[2] = srcRgbTuple[2] * mixFraction1 + dstRgbTuple[2] * mixFraction2;
 			//dstRgbTuple[0] = srcRgbTuple[0];
 			//dstRgbTuple[1] = srcRgbTuple[1];
 			//dstRgbTuple[2] = srcRgbTuple[2];
 
 			count += 1;
 		}
-	}*/
+	}
 	//std::cout << count << std::endl;
 
 	//PyObject *pxOut = PyByteArray_FromStringAndSize(pxOutRaw, pxOutSize);
-	PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
-	PyByteArray_Resize(pxOut, pxOutSize);
+	//PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
+	//PyByteArray_Resize(pxOut, pxOutSize);
 	//delete [] pxOutRaw;
 	//pxOutRaw = NULL;
 
