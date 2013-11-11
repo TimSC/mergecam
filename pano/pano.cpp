@@ -277,7 +277,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	//PyByteArray_AsString(pxOut);
 	unsigned pxOutSize = 3 * self->outImgH * self->outImgW;
 	//char *pxOutRaw = new char[pxOutSize];
-/*
+
 	Py_ssize_t numSources = PySequence_Size(images);
 	Py_ssize_t numMetas = PySequence_Size(metas);
 	if(numSources != numMetas)
@@ -292,6 +292,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	std::vector<unsigned char *> srcBuffs;
 	std::vector<PyObject *> srcObjs;
 	std::vector<long> srcWidth, srcHeight, srcBuffLen;
+/*
 	for(Py_ssize_t i=0; i<numSources; i++)
 	{
 		int imageMetaErr = 0;
@@ -460,13 +461,13 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	PyTuple_SetItem(out, 1, metaOut);
 
 	//Free source objects
-	/*for(unsigned i=0; i<srcObjs.size(); i++)
+	for(unsigned i=0; i<srcObjs.size(); i++)
 	{
 		Py_DECREF(srcObjs[i]);
 	}
 	srcObjs.clear();
 	Py_DECREF(images);
-	Py_DECREF(metas);*/
+	Py_DECREF(metas);
 
 	//Py_RETURN_NONE;
 	return out;
