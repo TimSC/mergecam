@@ -269,7 +269,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	PyObject *images = PyTuple_GetItem(args, 0);
 	PyObject *metas = PyTuple_GetItem(args, 1);
 	std::vector<std::vector<std::vector<class PxInfo> > > &mapping = *self->mapping;
-/*
+
 	//Create output image buffer
 	
 	//PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
@@ -277,7 +277,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	//PyByteArray_AsString(pxOut);
 	unsigned pxOutSize = 3 * self->outImgH * self->outImgW;
 	//char *pxOutRaw = new char[pxOutSize];
-
+/*
 	Py_ssize_t numSources = PySequence_Size(images);
 	Py_ssize_t numMetas = PySequence_Size(metas);
 	if(numSources != numMetas)
@@ -436,8 +436,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		}
 	}
 	//std::cout << count << std::endl;
-
-	if(0)
+*/
+	PyObject *out = NULL;
+	if(1)
 	{
 	//PyObject *pxOut = PyByteArray_FromStringAndSize(pxOutRaw, pxOutSize);
 	PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
@@ -457,13 +458,13 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	Py_DECREF(heightObj);
 	Py_DECREF(formatObj);
 
-	PyObject *out = PyTuple_New(2);
+	out = PyTuple_New(2);
 	PyTuple_SetItem(out, 0, pxOut);
 	PyTuple_SetItem(out, 1, metaOut);
 
 	}
 	//Free source objects
-	for(unsigned i=0; i<srcObjs.size(); i++)
+	/*for(unsigned i=0; i<srcObjs.size(); i++)
 	{
 		Py_DECREF(srcObjs[i]);
 	}
@@ -471,8 +472,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	Py_DECREF(images);
 	Py_DECREF(metas);
 
-	Py_RETURN_NONE;
-	//return out;
+	//Py_RETURN_NONE;
+	return out;
 }
 
 // *********************************************************************
