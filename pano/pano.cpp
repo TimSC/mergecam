@@ -303,12 +303,11 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		srcBuffs.push_back((unsigned char *)PyByteArray_AsString(srcObj));
 		srcBuffLen.push_back(PyByteArray_Size(srcObj));
 		//PyObject_Print(metaObj, stdout, Py_PRINT_RAW);
-		/*
+		
 		PyObject *widthObj = PyDict_GetItemString(metaObj, "width");
 		if(widthObj!=NULL)
 		{
 			srcWidth.push_back(PyInt_AsLong(widthObj));
-			Py_DECREF(widthObj);
 		}
 		else
 			imageMetaErr = 1;
@@ -317,7 +316,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		if(heightObj != NULL)
 		{
 			srcHeight.push_back(PyInt_AsLong(heightObj));
-			Py_DECREF(heightObj);
 		}
 		else
 			imageMetaErr = 2;
@@ -327,19 +325,18 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		{
 			if(strcmp(PyString_AsString(formatObj), "RGB24")!=0)
 				imageMetaErr = 4;
-			Py_DECREF(formatObj);
 		}
 		else
 			imageMetaErr = 3;
-*/
+
 		Py_DECREF(metaObj);
 	
-/*
+
 		if(imageMetaErr>0)
 		{
 			PyErr_Format(PyExc_RuntimeError, "Image source error.");
  			Py_RETURN_NONE;
-		}*/
+		}
 	}
 
 /*	//Initialize output image colour
