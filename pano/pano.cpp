@@ -277,7 +277,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	//PyByteArray_AsString(pxOut);
 	unsigned pxOutSize = 3 * self->outImgH * self->outImgW;
 	//char *pxOutRaw = new char[pxOutSize];
-/*
+
 	Py_ssize_t numSources = PySequence_Size(images);
 	Py_ssize_t numMetas = PySequence_Size(metas);
 	if(numSources != numMetas)
@@ -340,7 +340,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		}
 	}
 
-	//Initialize output image colour
+/*	//Initialize output image colour
 	for(long y=0; y < self->outImgH; y++)
 	for(long x=0; x < self->outImgW; x++)
 	{
@@ -434,12 +434,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 			count += 1;
 		}
-	}
+	}*/
 	//std::cout << count << std::endl;
-*/
-	PyObject *out = NULL;
-	if(1)
-	{
+
 	//PyObject *pxOut = PyByteArray_FromStringAndSize(pxOutRaw, pxOutSize);
 	PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
 	PyByteArray_Resize(pxOut, pxOutSize);
@@ -458,17 +455,16 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	Py_DECREF(heightObj);
 	Py_DECREF(formatObj);
 
-	out = PyTuple_New(2);
+	PyObject *out = PyTuple_New(2);
 	PyTuple_SetItem(out, 0, pxOut);
 	PyTuple_SetItem(out, 1, metaOut);
 
-	}
 	//Free source objects
-	/*for(unsigned i=0; i<srcObjs.size(); i++)
+	for(unsigned i=0; i<srcObjs.size(); i++)
 	{
 		Py_DECREF(srcObjs[i]);
 	}
-	srcObjs.clear();*/
+	srcObjs.clear();
 	Py_DECREF(images);
 	Py_DECREF(metas);
 
