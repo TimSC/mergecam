@@ -277,7 +277,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	//PyByteArray_Resize(pxOut, 3 * self->outImgH * self->outImgW);
 	//PyByteArray_AsString(pxOut);
 	unsigned pxOutSize = 3 * self->outImgH * self->outImgW;
-	char *pxOutRaw = new char[pxOutSize];
+	//char *pxOutRaw = new char[pxOutSize];
 
 	Py_ssize_t numSources = PySequence_Size(images);
 	Py_ssize_t numMetas = PySequence_Size(metas);
@@ -343,10 +343,10 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	for(long y=0; y < self->outImgH; y++)
 	for(long x=0; x < self->outImgW; x++)
 	{
-		unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
+		/*unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
 		dstRgbTuple[0] = 0;
 		dstRgbTuple[1] = 0;
-		dstRgbTuple[2] = 0;
+		dstRgbTuple[2] = 0;*/
 	}
 
 	//Resize weight sum structure if necessary
@@ -386,7 +386,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	for(long y=0; y < self->outImgH; y++)
 	for(long x=0; x < self->outImgW; x++)
 	{
-		unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
+		//unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
 		std::vector<class PxInfo> &sources = mapping[x][y];
 
 		//Copy pixels
@@ -436,9 +436,11 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	}
 	//std::cout << count << std::endl;
 
-	PyObject *pxOut = PyByteArray_FromStringAndSize(pxOutRaw, pxOutSize);
-	delete [] pxOutRaw;
-	pxOutRaw = NULL;
+	//PyObject *pxOut = PyByteArray_FromStringAndSize(pxOutRaw, pxOutSize);
+	PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
+	PyByteArray_Resize(pxOut, pxOutSize);
+	//delete [] pxOutRaw;
+	//pxOutRaw = NULL;
 
 	//Format meta data
 	PyObject *metaOut = PyDict_New();
