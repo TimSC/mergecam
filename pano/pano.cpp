@@ -424,9 +424,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			self->imageCount[x][y] ++;
 
 			//Copy pixel
-			dstRgbTuple[0] = srcRgbTuple[0] * mixFraction1 + dstRgbTuple[0] * mixFraction2;
+			/*dstRgbTuple[0] = srcRgbTuple[0] * mixFraction1 + dstRgbTuple[0] * mixFraction2;
 			dstRgbTuple[1] = srcRgbTuple[1] * mixFraction1 + dstRgbTuple[1] * mixFraction2;
-			dstRgbTuple[2] = srcRgbTuple[2] * mixFraction1 + dstRgbTuple[2] * mixFraction2;
+			dstRgbTuple[2] = srcRgbTuple[2] * mixFraction1 + dstRgbTuple[2] * mixFraction2;*/
 			/*dstRgbTuple[0] = srcRgbTuple[0];
 			dstRgbTuple[1] = srcRgbTuple[1];
 			dstRgbTuple[2] = srcRgbTuple[2];*/
