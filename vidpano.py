@@ -254,6 +254,11 @@ class CameraArrangement(object):
 				while malDist2 > math.pi: #Limit difference to -pi to +pi range
 					malDist2 -= 2. * math.pi
 
+				if math.isnan(malDist1):
+					raise Exception("Distance error is nan (1)")
+				if math.isnan(malDist2):
+					raise Exception("Distance error is nan (2)")
+
 				dists.append(malDist1 * weight)
 				dists.append(malDist2 * weight)
 
@@ -492,7 +497,7 @@ class PanoWidget(QtGui.QFrame):
 				photo = self.cameraArrangement.addedPhotos[photoId]
 				print photoId, photo.cLat, photo.cLon
 
-			if 1:
+			if 0:
 				vis = visobj.Vis(self.calibrationFrames[0], self.calibrationMeta[0], self.framePairs[0], self.cameraArrangement)
 				vis.save("vis{0}.png".format(len(self.cameraArrangement.addedPhotos)))
 
