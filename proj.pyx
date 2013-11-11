@@ -179,8 +179,8 @@ class GeniusWidecam(object):
 		out = []
 		for pt in ptsLatLon:
 
-			lat = pt[0]+self.cLat
-			lon = pt[1]+self.cLon
+			lat = pt[0]-self.cLat
+			lon = pt[1]-self.cLon
 
 			#circles = lon / (2. * math.pi)
 			#if lon > 0.:
@@ -225,10 +225,14 @@ class GeniusWidecam(object):
 			y2 = pt[1] - (0.5 * self.imgH)
 			if y2 != 0.:
 				ang = math.atan2(x2, y2)
+				if ang != 0.:
+					x3 = x2 / (math.sin(ang) * self.imgW)
+					theta = math.atan2(x3, self.f) / self.k
+				else:
+					theta = 0.					
 			else:
 				ang = 0.
-			x3 = x2 / (math.sin(ang) * self.imgW)
-			theta = math.atan2(x3, self.f) / self.k
+				theta = 0.
 
 			x = math.sin(ang)
 			y = math.cos(ang)
@@ -237,8 +241,12 @@ class GeniusWidecam(object):
 			lat = math.atan(y * oppOverAdj)
 			lon = math.atan(x * oppOverAdj)
 
-			outLat = lat-self.cLat
-			outLon = lon-self.cLon
+			outLat = lat+self.cLat
+			outLon = lon+self.cLon
+			if math.isnan(outLat):
+				print pt, outLat, outLon
+			if math.isnan(outLon):
+				print pt, outLat, outLon
 
 			out.append((outLat, outLon))
 
