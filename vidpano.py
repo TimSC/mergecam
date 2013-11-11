@@ -526,9 +526,9 @@ class PanoWidget(QtGui.QFrame):
 					self.outBuffer.append([vis.tostring(), metaOut])
 				if 1:
 					#print len(self.currentFrame), self.currentMeta
-					#visPixOut, visMetaOut = self.visobj.Vis(self.currentFrame.values(), self.currentMeta.values())
+					visPixOut2, visMetaOut2 = self.visobj.Vis(self.currentFrame.values(), self.currentMeta.values())
 					
-					visPixOut = bytearray([128 for i in range(800 * 600 * 3)])
+					visPixOut = visPixOut2# bytearray([128 for i in range(800 * 600 * 3)])
 					visMetaOut = {"height": 600, "width": 800, "format": "RGB24"}
 					
 					#print len(visPixOut), visMetaOut
