@@ -272,18 +272,20 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	//Create output image buffer
 	
-
-	//PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
-	//PyByteArray_Resize(pxOut, 3 * self->outImgH * self->outImgW);
-	//PyByteArray_AsString(pxOut);
 	unsigned pxOutSize = 3 * self->outImgH * self->outImgW;
-	char *pxOutRaw = new char[pxOutSize];
+	PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
+	PyByteArray_Resize(pxOut, pxOutSize);
+	char *pxOutRaw = PyByteArray_AsString(pxOut);
+	
+	//char *pxOutRaw = new char[pxOutSize];
 
 	Py_ssize_t numSources = PySequence_Size(images);
 	Py_ssize_t numMetas = PySequence_Size(metas);
 	if(numSources != numMetas)
 	{
 		PyErr_Format(PyExc_RuntimeError, "Number of sources and metas must match.");
+		Py_DECREF(images);
+		Py_DECREF(metas);
  		Py_RETURN_NONE;
 	}
 
@@ -291,6 +293,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	std::vector<unsigned char *> srcBuffs;
 	std::vector<PyObject *> srcObjs;
 	std::vector<long> srcWidth, srcHeight, srcBuffLen;
+
 	for(Py_ssize_t i=0; i<numSources; i++)
 	{
 		int imageMetaErr = 0;
@@ -306,7 +309,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		if(widthObj!=NULL)
 		{
 			srcWidth.push_back(PyInt_AsLong(widthObj));
-			Py_DECREF(widthObj);
 		}
 		else
 			imageMetaErr = 1;
@@ -315,7 +317,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		if(heightObj != NULL)
 		{
 			srcHeight.push_back(PyInt_AsLong(heightObj));
-			Py_DECREF(heightObj);
 		}
 		else
 			imageMetaErr = 2;
@@ -325,12 +326,12 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		{
 			if(strcmp(PyString_AsString(formatObj), "RGB24")!=0)
 				imageMetaErr = 4;
-			Py_DECREF(formatObj);
 		}
 		else
 			imageMetaErr = 3;
 
 		Py_DECREF(metaObj);
+	
 
 		if(imageMetaErr>0)
 		{
@@ -424,21 +425,23 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			self->imageCount[x][y] ++;
 
 			//Copy pixel
-			/*dstRgbTuple[0] = srcRgbTuple[0] * mixFraction1 + dstRgbTuple[0] * mixFraction2;
+			dstRgbTuple[0] = srcRgbTuple[0] * mixFraction1 + dstRgbTuple[0] * mixFraction2;
 			dstRgbTuple[1] = srcRgbTuple[1] * mixFraction1 + dstRgbTuple[1] * mixFraction2;
-			dstRgbTuple[2] = srcRgbTuple[2] * mixFraction1 + dstRgbTuple[2] * mixFraction2;*/
-			/*dstRgbTuple[0] = srcRgbTuple[0];
-			dstRgbTuple[1] = srcRgbTuple[1];
-			dstRgbTuple[2] = srcRgbTuple[2];*/
+			dstRgbTuple[2] = srcRgbTuple[2] * mixFraction1 + dstRgbTuple[2] * mixFraction2;
+			//dstRgbTuple[0] = srcRgbTuple[0];
+			//dstRgbTuple[1] = srcRgbTuple[1];
+			//dstRgbTuple[2] = srcRgbTuple[2];
 
 			count += 1;
 		}
 	}
 	//std::cout << count << std::endl;
 
-	PyObject *pxOut = PyByteArray_FromStringAndSize(pxOutRaw, pxOutSize);
-	delete [] pxOutRaw;
-	pxOutRaw = NULL;
+	//PyObject *pxOut = PyByteArray_FromStringAndSize(pxOutRaw, pxOutSize);
+	//PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
+	//PyByteArray_Resize(pxOut, pxOutSize);
+	//delete [] pxOutRaw;
+	//pxOutRaw = NULL;
 
 	//Format meta data
 	PyObject *metaOut = PyDict_New();
@@ -462,7 +465,10 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		Py_DECREF(srcObjs[i]);
 	}
 	srcObjs.clear();
+	Py_DECREF(images);
+	Py_DECREF(metas);
 
+	//Py_RETURN_NONE;
 	return out;
 }
 
