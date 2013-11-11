@@ -255,10 +255,8 @@ class CameraArrangement(object):
 					malDist2 -= 2. * math.pi
 
 				if math.isnan(malDist1):
-					print pt1, pt2
 					raise Exception("Distance error is nan (1)")
 				if math.isnan(malDist2):
-					print pt1, pt2
 					raise Exception("Distance error is nan (2)")
 
 				dists.append(malDist1 * weight)
