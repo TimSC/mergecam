@@ -204,7 +204,10 @@ class GeniusWidecam(object):
 			ydist = math.tan(lat)
 			dist = (xdist ** 2. + ydist ** 2.) ** 0.5
 
-			ang = math.atan2(xdist, ydist)
+			if ydist != 0.:
+				ang = math.atan2(xdist, ydist)
+			else:
+				ang = 0.
 			theta = math.atan(dist)
 
 			r = self.f * math.tan(self.k*theta)
@@ -220,7 +223,10 @@ class GeniusWidecam(object):
 
 			x2 = pt[0] - (0.5 * self.imgW)
 			y2 = pt[1] - (0.5 * self.imgH)
-			ang = math.atan2(x2, y2)
+			if y2 != 0.:
+				ang = math.atan2(x2, y2)
+			else:
+				ang = 0.
 			x3 = x2 / (math.sin(ang) * self.imgW)
 			theta = math.atan2(x3, self.f) / self.k
 
@@ -230,7 +236,11 @@ class GeniusWidecam(object):
 
 			lat = math.atan(y * oppOverAdj)
 			lon = math.atan(x * oppOverAdj)
-			out.append((lat-self.cLat, lon-self.cLon))
+
+			outLat = lat-self.cLat
+			outLon = lon-self.cLon
+
+			out.append((outLat, outLon))
 
 		return out
 
