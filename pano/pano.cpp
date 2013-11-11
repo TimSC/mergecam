@@ -413,7 +413,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			//Calculate alpha opacity
 			float fx = pxInfo.x / sw;
 			float fy = pxInfo.y / sh;
-			float alpha = 1. - fabs(0.5 - fx) * fabs(0.5 - fy) * 4.;
+			float alpha = (0.5 - fabs(0.5 - fx)) * (0.5 - fabs(0.5 - fy)) * 4.;
+			if(alpha < 0.) alpha = 0.;
+			//std::cout << fx << "," << fy << "," << alpha << std::endl;
 
 			//Calculate colour mix
 			float pxWeightSum = self->weightSum[x][y];
