@@ -292,7 +292,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	std::vector<unsigned char *> srcBuffs;
 	std::vector<PyObject *> srcObjs;
 	std::vector<long> srcWidth, srcHeight, srcBuffLen;
-/*
+
 	for(Py_ssize_t i=0; i<numSources; i++)
 	{
 		int imageMetaErr = 0;
@@ -340,7 +340,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
  			Py_RETURN_NONE;
 		}
 	}
-*/
+
 /*	//Initialize output image colour
 	for(long y=0; y < self->outImgH; y++)
 	for(long x=0; x < self->outImgW; x++)
