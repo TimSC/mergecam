@@ -243,11 +243,6 @@ class GeniusWidecam(object):
 
 			outLat = lat+self.cLat
 			outLon = lon+self.cLon
-			if math.isnan(outLat):
-				print pt, outLat, outLon
-			if math.isnan(outLon):
-				print pt, outLat, outLon
-
 			out.append((outLat, outLon))
 
 		return out
