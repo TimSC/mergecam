@@ -269,10 +269,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	PyObject *images = PyTuple_GetItem(args, 0);
 	PyObject *metas = PyTuple_GetItem(args, 1);
 	std::vector<std::vector<std::vector<class PxInfo> > > &mapping = *self->mapping;
-
+/*
 	//Create output image buffer
 	
-
 	//PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
 	//PyByteArray_Resize(pxOut, 3 * self->outImgH * self->outImgW);
 	//PyByteArray_AsString(pxOut);
@@ -284,6 +283,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	if(numSources != numMetas)
 	{
 		PyErr_Format(PyExc_RuntimeError, "Number of sources and metas must match.");
+		Py_DECREF(images);
+		Py_DECREF(metas);
  		Py_RETURN_NONE;
 	}
 
@@ -343,10 +344,10 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	for(long y=0; y < self->outImgH; y++)
 	for(long x=0; x < self->outImgW; x++)
 	{
-		/*unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
-		dstRgbTuple[0] = 0;
-		dstRgbTuple[1] = 0;
-		dstRgbTuple[2] = 0;*/
+		//unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
+		//dstRgbTuple[0] = 0;
+		//dstRgbTuple[1] = 0;
+		//dstRgbTuple[2] = 0;
 	}
 
 	//Resize weight sum structure if necessary
@@ -424,18 +425,20 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			self->imageCount[x][y] ++;
 
 			//Copy pixel
-			/*dstRgbTuple[0] = srcRgbTuple[0] * mixFraction1 + dstRgbTuple[0] * mixFraction2;
-			dstRgbTuple[1] = srcRgbTuple[1] * mixFraction1 + dstRgbTuple[1] * mixFraction2;
-			dstRgbTuple[2] = srcRgbTuple[2] * mixFraction1 + dstRgbTuple[2] * mixFraction2;*/
-			/*dstRgbTuple[0] = srcRgbTuple[0];
-			dstRgbTuple[1] = srcRgbTuple[1];
-			dstRgbTuple[2] = srcRgbTuple[2];*/
+			//dstRgbTuple[0] = srcRgbTuple[0] * mixFraction1 + dstRgbTuple[0] * mixFraction2;
+			//dstRgbTuple[1] = srcRgbTuple[1] * mixFraction1 + dstRgbTuple[1] * mixFraction2;
+			//dstRgbTuple[2] = srcRgbTuple[2] * mixFraction1 + dstRgbTuple[2] * mixFraction2;
+			//dstRgbTuple[0] = srcRgbTuple[0];
+			//dstRgbTuple[1] = srcRgbTuple[1];
+			//dstRgbTuple[2] = srcRgbTuple[2];
 
 			count += 1;
 		}
 	}
 	//std::cout << count << std::endl;
 
+	if(0)
+	{
 	//PyObject *pxOut = PyByteArray_FromStringAndSize(pxOutRaw, pxOutSize);
 	PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
 	PyByteArray_Resize(pxOut, pxOutSize);
@@ -458,14 +461,18 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	PyTuple_SetItem(out, 0, pxOut);
 	PyTuple_SetItem(out, 1, metaOut);
 
+	}
 	//Free source objects
 	for(unsigned i=0; i<srcObjs.size(); i++)
 	{
 		Py_DECREF(srcObjs[i]);
 	}
-	srcObjs.clear();
+	srcObjs.clear();*/
+	Py_DECREF(images);
+	Py_DECREF(metas);
 
-	return out;
+	Py_RETURN_NONE;
+	//return out;
 }
 
 // *********************************************************************
