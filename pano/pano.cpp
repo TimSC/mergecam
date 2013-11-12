@@ -413,7 +413,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			//Calculate alpha opacity
 			float fx = pxInfo.x / sw;
 			float fy = pxInfo.y / sh;
-			float alpha = (0.5 - fabs(0.5 - fx)) * (0.5 - fabs(0.5 - fy)) * 4.;
+			float featherExp = 2.0;
+			float alpha = pow(1.f - 2.f * fabs(0.5 - fx), featherExp) * pow(1.f - 2.f * fabs(0.5 - fy), featherExp);
 			if(alpha < 0.) alpha = 0.;
 			//std::cout << fx << "," << fy << "," << alpha << std::endl;
 
