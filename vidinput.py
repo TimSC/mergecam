@@ -34,6 +34,8 @@ class SourceWidget(QtGui.QFrame):
 		#Create video preview
 		img = QtGui.QImage(300, 200, QtGui.QImage.Format_RGB888)
 		self.pic = QtGui.QLabel()
+		self.pic.setMinimumSize(300,200)
+		
 		self.pic.setPixmap(QtGui.QPixmap.fromImage(img))
 		self.widgetLayout.addWidget(self.pic, 0)
 

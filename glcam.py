@@ -32,21 +32,22 @@ class MainWindow(QtGui.QMainWindow):
 		self.sourcesColumn = QtGui.QVBoxLayout()
 
 		#Add sources list
-		s = QtGui.QScrollArea()
-		s.setMinimumWidth(340)
+		self.sourceScrollArea = QtGui.QScrollArea()
+		self.sourceScrollArea.setMinimumWidth(340)
 
-		frame = QtGui.QFrame();
-		#frame.setFrameStyle(QtGui.QFrame.Box)
-		frame.setContentsMargins(0, 0, 0, 0)
+		self.sourceFrame = QtGui.QFrame();
+		#self.sourceFrame.setFrameStyle(QtGui.QFrame.Box)
+		self.sourceFrame.setContentsMargins(0, 0, 0, 0)
+		#self.sourceFrame.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
 
 		self.sourceList = QtGui.QVBoxLayout()
 		self.sourceList.setContentsMargins(0, 0, 0, 0)
-		frame.setLayout(self.sourceList)
+		self.sourceFrame.setLayout(self.sourceList)
 
 		self.UpdateSourceList()
-		s.setWidget(frame)
+		self.sourceScrollArea.setWidget(self.sourceFrame)
 
-		self.sourcesColumn.addWidget(s, 1)
+		self.sourcesColumn.addWidget(self.sourceScrollArea, 1)
 
 		#Source add buttons
 		self.sourceAddButtons = QtGui.QHBoxLayout()
@@ -116,6 +117,8 @@ class MainWindow(QtGui.QMainWindow):
 			self.sourceList.addWidget(widget)
 			self.outputDeviceToWidgetDict[fina] = widget
 
+		self.sourceList.addWidget(widget)
+
 	def ProcessFrame(self, frame, meta, devName):
 
 		#Send frames to processing widgets
@@ -165,6 +168,8 @@ class MainWindow(QtGui.QMainWindow):
 		QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
 		QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
 		self.sourceList.addWidget(widget)
+
+		self.sourceFrame.adjustSize()
 		self.processingWidgets[widget.devId] = widget
 
 	def AddPanoramaPressed(self):
@@ -181,6 +186,8 @@ class MainWindow(QtGui.QMainWindow):
 		QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
 		QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
 		self.sourceList.addWidget(widget)
+
+		self.sourceFrame.adjustSize()
 		self.processingWidgets[widget.devId] = widget
 
 
