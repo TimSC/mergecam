@@ -45,6 +45,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.sourceFrame.setLayout(self.sourceList)
 
 		self.UpdateSourceList()
+
 		self.sourceScrollArea.setWidget(self.sourceFrame)
 
 		self.sourcesColumn.addWidget(self.sourceScrollArea, 1)
@@ -167,9 +168,12 @@ class MainWindow(QtGui.QMainWindow):
 		widget = vidstack.GridStackWidget(selectedDevs)
 		QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
 		QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
-		self.sourceList.addWidget(widget)
 
+		self.sourceFrame.setShown(0)
+		self.sourceList.addWidget(widget)
 		self.sourceFrame.adjustSize()
+		self.sourceFrame.setShown(1)
+
 		self.processingWidgets[widget.devId] = widget
 
 	def AddPanoramaPressed(self):
@@ -185,9 +189,12 @@ class MainWindow(QtGui.QMainWindow):
 		widget = vidpano.PanoWidget(selectedDevs)
 		QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
 		QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
-		self.sourceList.addWidget(widget)
 
+		self.sourceFrame.setShown(0)
+		self.sourceList.addWidget(widget)
 		self.sourceFrame.adjustSize()
+		self.sourceFrame.setShown(1)
+
 		self.processingWidgets[widget.devId] = widget
 
 
