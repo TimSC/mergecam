@@ -178,6 +178,7 @@ class GeniusWidecam(object):
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
 		out = []
 		for pt in ptsLatLon:
+			#print "lat", pt[0], ", lon", pt[1]
 
 			lat = pt[0]-self.cLat
 			lon = pt[1]-self.cLon
@@ -205,10 +206,24 @@ class GeniusWidecam(object):
 			dist = (xdist ** 2. + ydist ** 2.) ** 0.5
 
 			if ydist != 0.:
-				ang = math.atan2(xdist, ydist)
+				if xdist != 0.:
+					ang = math.atan2(xdist, ydist)
+				else:
+					if ydist > 0.:
+						ang = 0.
+					else:
+						ang = math.pi
 			else:
-				ang = 0.
+				if xdist == 0.:
+					ang = 0.
+				else:
+					if xdist > 0.:
+						ang = math.pi / 2.
+					else:
+						ang = -math.pi / 2.
 			theta = math.atan(dist)
+
+			#print "ang1=", ang, "theta1=",theta
 
 			r = self.f * math.tan(self.k*theta)
 			imx = 0.5 * self.imgW + math.sin(ang) * r * self.imgW
@@ -220,35 +235,42 @@ class GeniusWidecam(object):
 	def UnProj(self, ptsPix): #Image px to Lat, lon radians
 		out = []
 		for pt in ptsPix:
-			print "pt", pt
+			#print "pt", pt
 
 			x2 = pt[0] - (0.5 * self.imgW)
 			y2 = pt[1] - (0.5 * self.imgH)
+
+			#print "x2", x2, ", y2", y2
 			if y2 != 0.:
 				ang = math.atan2(x2, y2)
-				if ang != 0.:
-					print "a"
+				if x2 != 0.:
+					#print "a"
 					x3 = x2 / (math.sin(ang) * self.imgW)
 					theta = math.atan2(x3, self.f) / self.k
 				else:
-					y3 = y2 / (math.cos(ang) * self.imgW)
-					theta = math.atan2(y3, self.f) / self.k
-					print "b"
+					#print "b"
+					if y2 > 0.:
+						ang = 0.
+					else:
+						ang = math.pi
+					y3 = y2 / self.imgW
+					theta = math.atan2(abs(y3), self.f) / self.k
+
 			else:
 				if x2 != 0:
-					print "c"
+					#print "c"
 					if x2 > 0:
-						ang = math.pi() / 2
+						ang = math.pi / 2.
 					else:
-						ang = -math.pi() / 2
-					x3 = x2 / (math.sin(ang) * self.imgW)
-					theta = math.atan2(x3, self.f) / self.k
+						ang = -math.pi / 2.
+					x3 = x2 / self.imgW
+					theta = math.atan2(abs(x3), self.f) / self.k
 				else:
-					print "d"
+					#print "d"
 					ang = 0.
 					theta = 0.
 
-			print "ang=", ang, "theta=",theta
+			#print "ang2=", ang, "theta2=",theta
 
 			x = math.sin(ang)
 			y = math.cos(ang)
