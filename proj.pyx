@@ -220,19 +220,35 @@ class GeniusWidecam(object):
 	def UnProj(self, ptsPix): #Image px to Lat, lon radians
 		out = []
 		for pt in ptsPix:
+			print "pt", pt
 
 			x2 = pt[0] - (0.5 * self.imgW)
 			y2 = pt[1] - (0.5 * self.imgH)
 			if y2 != 0.:
 				ang = math.atan2(x2, y2)
 				if ang != 0.:
+					print "a"
 					x3 = x2 / (math.sin(ang) * self.imgW)
 					theta = math.atan2(x3, self.f) / self.k
 				else:
-					theta = 0.					
+					y3 = y2 / (math.cos(ang) * self.imgW)
+					theta = math.atan2(y3, self.f) / self.k
+					print "b"
 			else:
-				ang = 0.
-				theta = 0.
+				if x2 != 0:
+					print "c"
+					if x2 > 0:
+						ang = math.pi() / 2
+					else:
+						ang = -math.pi() / 2
+					x3 = x2 / (math.sin(ang) * self.imgW)
+					theta = math.atan2(x3, self.f) / self.k
+				else:
+					print "d"
+					ang = 0.
+					theta = 0.
+
+			print "ang=", ang, "theta=",theta
 
 			x = math.sin(ang)
 			y = math.cos(ang)
