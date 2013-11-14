@@ -166,12 +166,12 @@ class EquirectangularCam(object):
 			out.append(worldPos)
 		return out
 
-class GeniusWidecam(object):
+class FishEyeCamera(object):
 	def __init__(self):
-		self.f = 0.49389104
+		self.f = 0.5
 		self.imgW = 640
 		self.imgH = 480
-		self.k = 0.8260964
+		self.k = 1.0
 		self.cLat = 0.
 		self.cLon = 0.
 		
@@ -294,5 +294,10 @@ class GeniusWidecam(object):
 
 		return out
 
+class GeniusWidecam(FishEyeCamera):
+	def __init__(self):
+		FishEyeCamera.__init__(self)
+		self.f = 0.49389104
+		self.k = 0.8260964
 
 
