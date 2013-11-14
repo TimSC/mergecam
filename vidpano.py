@@ -432,6 +432,17 @@ class PanoWidget(QtGui.QFrame):
 	def ClickedCalibrate(self):
 		self.keypDescs = []
 
+		#Get projection from gui
+		selectedProj = self.projectionType.currentText()
+		camProjFactory = None
+		if selectedProj == "Rectilinear":
+			camProjFactory = proj.RectilinearCam
+			projParams = {}
+		if selectedProj == "Fisheye":
+			camProjFactory = proj.FishEyeCamera
+			projParams = {"f": 0.49389104, "k": 0.8260964}
+		assert camProjFactory is not None
+
 		#Extract interest points
 		for photoSet, metaSet in zip(self.calibrationFrames, self.calibrationMeta):
 			keypDescsSet = []
@@ -507,7 +518,11 @@ class PanoWidget(QtGui.QFrame):
 				
 			for photoId in photosToAdd:
 				wang = 100
-				newCam = proj.GeniusWidecam()
+				newCam = camProjFactory()
+				if "f" in projParams:
+					newCam.f = projParams['f']
+				if "k" in projParams:
+					newCam.k = projParams['k']
 				newCam.cLon = random.uniform(-math.pi, math.pi)
 				self.cameraArrangement.addedPhotos[photoId] = newCam
 			if 1:		
