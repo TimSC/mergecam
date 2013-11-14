@@ -183,11 +183,20 @@ class GeniusWidecam(object):
 			lat = pt[0]-self.cLat
 			lon = pt[1]-self.cLon
 
-			#circles = lon / (2. * math.pi)
-			#if lon > 0.:
-			#	lon2 = lon - math.floor(circles) * 2. * math.pi
-			#else:
-			#	lon2 = lon - math.ceil(circles) * 2. * math.pi
+			circles = lon / (2. * math.pi)
+			if lon > 0.:
+				lon = lon - math.floor(circles) * 2. * math.pi
+			else:
+				lon = lon - math.ceil(circles) * 2. * math.pi
+
+			while lon > math.pi:
+				lon -= math.pi * 2.
+			while lon < -math.pi:
+				lon += math.pi * 2.
+
+			if abs(lon) > math.pi / 2.:
+				out.append((None, None))
+				continue
 
 			#if lon2 < -math.pi:
 			#	lon2 += math.pi * 2.
