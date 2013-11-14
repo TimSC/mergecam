@@ -193,18 +193,24 @@ static int PanoView_init(PanoView *self, PyObject *args,
 				//PyObject_Print(posSrc, stdout, Py_PRINT_RAW);
 				
 				Py_ssize_t numComp = PySequence_Size(posSrc);
-				int nan = 0;
+				int noValue = 0;
 				std::vector<double> posc;
 				for(Py_ssize_t c=0; c<numComp; c++)
 				{
 					PyObject *compObj = PySequence_GetItem(posSrc, c);
+					if(compObj == Py_None)
+					{	
+						noValue = 1;
+						posc.push_back(0.);
+						continue;
+					}
 					double comp = PyFloat_AsDouble(compObj);
 					posc.push_back(comp);
-					if(Py_IS_NAN(comp)) nan = 1;
+					if(Py_IS_NAN(comp)) noValue = 1;
 					Py_DECREF(compObj);
 				}
 
-				if(!nan)
+				if(!noValue)
 				{
 					//PyObject_Print(posDst, stdout, Py_PRINT_RAW);
 					PyObject *destXobj = PySequence_GetItem(posDst, 0);
