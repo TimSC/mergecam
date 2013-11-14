@@ -343,8 +343,28 @@ class PanoWidget(QtGui.QFrame):
 
 		#Create calibration controls
 
+		self.projectionType = QtGui.QComboBox()
+		self.projectionType.addItem("Rectilinear")
+		self.projectionType.addItem("Fisheye")
+		self.widgetLayout.addWidget(self.projectionType, 0)
+
+		self.projectionParamLayout = QtGui.QHBoxLayout()
+		self.widgetLayout.addLayout(self.projectionParamLayout)	
+
+		self.projFlabel = QtGui.QLabel("F=")
+		self.projectionParamLayout.addWidget(self.projFlabel, 0)
+
+		self.projF = QtGui.QLineEdit()
+		self.projectionParamLayout.addWidget(self.projF, 1)
+
+		self.projKlabel = QtGui.QLabel("K=")
+		self.projectionParamLayout.addWidget(self.projKlabel, 0)
+
+		self.projK = QtGui.QLineEdit()
+		self.projectionParamLayout.addWidget(self.projK, 1)
+
 		self.calibrateControls = QtGui.QHBoxLayout()
-		self.widgetLayout.addLayout(self.calibrateControls)
+		self.widgetLayout.addLayout(self.calibrateControls)	
 
 		self.onButton = QtGui.QPushButton("Store Calibration Frames")
 		self.calibrateControls.addWidget(self.onButton, 0)
