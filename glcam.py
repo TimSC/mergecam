@@ -4,7 +4,7 @@ All rights reserved.
 '''
 import sys, time, os
 from PyQt4 import QtGui, QtCore
-import v4l2capture
+import videolive
 import vidinput, vidoutput, vidstack, vidpano
 
 class MainWindow(QtGui.QMainWindow):
@@ -16,9 +16,9 @@ class MainWindow(QtGui.QMainWindow):
 		self.processingWidgets = {}
 		self.currentSrcId = None
 
-		self.vidOut = v4l2capture.Video_out_manager()
-		self.devManager = v4l2capture.Device_manager()
-
+		self.vidOut = videolive.Video_out_manager()
+		self.devManager = videolive.Video_in_manager()
+	
 		self.resize(700, 550)
 		self.move(300, 300)
 		self.setWindowTitle('Qt Webcam Demo')
@@ -92,10 +92,12 @@ class MainWindow(QtGui.QMainWindow):
 		self.show()
 
 	def UpdateSourceList(self):
-		
+		print "UpdateSourceList"
 		self.devNames = self.devManager.list_devices()
-		for fina in self.devNames[:]:
 
+		for devInfo in self.devNames[:]:
+
+                        fina = devInfo[0]
 			if self.currentSrcId is None:
 				self.currentSrcId = fina
 
@@ -119,6 +121,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.outputDeviceToWidgetDict[fina] = widget
 
 		self.sourceList.addWidget(widget)
+                print "Done"
 
 	def ProcessFrame(self, frame, meta, devName):
 
