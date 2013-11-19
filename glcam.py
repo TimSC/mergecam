@@ -124,7 +124,6 @@ class MainWindow(QtGui.QMainWindow):
 			self.outputDeviceToWidgetDict[fina] = widget
 
 		self.sourceList.addWidget(widget)
-                print "Done"
 
 	def ProcessFrame(self, frame, meta, devName):
 
