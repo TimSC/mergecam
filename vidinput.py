@@ -2,7 +2,7 @@
 from PyQt4 import QtGui, QtCore
 
 class SourceWidget(QtGui.QFrame):
-	def __init__(self, devId, devManager):
+	def __init__(self, devId, devManager, friendlyName):
 		QtGui.QFrame.__init__(self)
 
 		self.widgetLayout = QtGui.QVBoxLayout()
@@ -11,6 +11,7 @@ class SourceWidget(QtGui.QFrame):
 		self.devId = devId
 		self.cameraOn = False
 		self.devManager = devManager
+		self.friendlyName = friendlyName
 
 		#Create toolbar
 		self.toolbar = QtGui.QHBoxLayout()
@@ -19,7 +20,7 @@ class SourceWidget(QtGui.QFrame):
 		self.checkbox = QtGui.QCheckBox()
 		self.toolbar.addWidget(self.checkbox, 0)
 
-		label = QtGui.QLabel(devId)
+		label = QtGui.QLabel(friendlyName)
 		self.toolbar.addWidget(label, 1)
 
 		self.onButton = QtGui.QPushButton("On")

@@ -101,7 +101,7 @@ class MainWindow(QtGui.QMainWindow):
 			if self.currentSrcId is None:
 				self.currentSrcId = fina
 
-			widget = vidinput.SourceWidget(fina, self.devManager)
+			widget = vidinput.SourceWidget(fina, self.devManager, devInfo[1])
 			QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
 			QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
 			self.sourceList.addWidget(widget)
