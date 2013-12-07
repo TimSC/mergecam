@@ -123,8 +123,6 @@ class MainWindow(QtGui.QMainWindow):
 			self.sourceList.addWidget(widget)
 			self.outputDeviceToWidgetDict[fina] = widget
 
-		self.sourceList.addWidget(widget)
-
 	def ProcessFrame(self, frame, meta, devName):
 
 		#Send frames to processing widgets
@@ -169,6 +167,10 @@ class MainWindow(QtGui.QMainWindow):
 			if dev.IsChecked():
 				selectedDevs.append(devId)
 
+		if len(selectedDevs) < 2:
+			print "Only", len(selectedDevs), "inputs selected"
+			return
+
 		#Create a processing widget
 		widget = vidstack.GridStackWidget(selectedDevs)
 		QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
@@ -189,6 +191,10 @@ class MainWindow(QtGui.QMainWindow):
 			dev = self.inputDeviceToWidgetDict[devId]
 			if dev.IsChecked():
 				selectedDevs.append(devId)
+
+		if len(selectedDevs) < 2:
+			print "Only", len(selectedDevs), "inputs selected"
+			return
 
 		#Create a processing widget
 		widget = vidpano.PanoWidget(selectedDevs)
