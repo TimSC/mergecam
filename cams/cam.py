@@ -132,8 +132,12 @@ class LensFishEyeHybridModel(object):
 		x2 = x - (0.5 * self.w)
 		y2 = y - (0.5 * self.h)
 		ang = math.atan2(x2, y2)
-		x3 = x2 / (math.sin(ang) * self.w)
-		theta = math.atan2(x3, self.f) / self.k
+		den = (math.sin(ang) * self.w)
+		if den != 0.:
+			x3 = x2 / den
+			theta = math.atan2(x3, self.f) / self.k
+		else:
+			theta = 0.
 		return theta, ang
 
 	def GetParams(self):
@@ -376,7 +380,7 @@ if __name__ == "__main__":
 	x0 = list(lens.GetParams())
 	x0.extend(patternModel.GetParams())
 
-	result = opt.minimize(Eval, x0, args=[patternModel, lens, numLensParam, numPatternParam], tol=1e-3)
+	result = opt.minimize(Eval, x0, args=(patternModel, lens, numLensParam, numPatternParam), tol=1e-3)
 	print result
 	lens.SetParams(result.x[:numLensParam])
 	patternModel.SetParams(result.x[numLensParam:])
@@ -386,4 +390,11 @@ if __name__ == "__main__":
 	print "Pattern params:", result.x[numLensParam:]
 
 	VisualisePoints(patternModel, corners, lens)
+
+	print "size", (lens.w, lens.h), (lens.k, lens.f)
+	print "c", lens.UnProj(0.5*lens.w, 0.5*lens.h)
+	print "horizontal", lens.UnProj(0, 0.5*lens.h), lens.UnProj(lens.w, 0.5*lens.h)
+	print "vertical", lens.UnProj(0.5*lens.w, 0), lens.UnProj(0.5*lens.w, lens.h)
+
+
 
