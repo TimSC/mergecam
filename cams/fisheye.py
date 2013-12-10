@@ -101,7 +101,8 @@ class FishEye(object):
 
 if __name__ == "__main__":
 	
-	x, y = 226.2789025152, 108.4201414704
+	x, y = 954.855305466, 849.9035369775
+
 	
 	cam = FishEye()
 	latLons = cam.UnProj([[x, y]])
