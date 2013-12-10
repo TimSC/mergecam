@@ -30,7 +30,8 @@ class FishEye(object):
 		self.c = -0.028
 		self.d = -18
 		self.e = -0.8
-		self.vfov = math.radians(47.9)
+		self.hfov = 119.4
+		self.halfVfov = self.imgH * math.radians(self.hfov / 2.) / self.imgW
 
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
 		out = []
@@ -43,7 +44,7 @@ class FishEye(object):
 
 			ang = math.atan2(screenX, screenY)
 			radius = (screenX ** 2. + screenY ** 2.) ** 0.5
-			R = math.atan2(radius, math.tan(self.vfov)) / math.atan(1.)
+			R = math.atan2(radius, math.tan(self.halfVfov)) / math.atan(1.)
 			
 			#Apply camera lens adjustment
 			dval = 1 - (self.a + self.b + self.c)
@@ -85,7 +86,7 @@ class FishEye(object):
 			Rcorrected = correctionFunc.InvFunc(R)
 
 			#Calculate x and y in screen plane
-			radius = math.tan(Rcorrected * math.atan(1.)) * math.tan(self.vfov)
+			radius = math.tan(Rcorrected * math.atan(1.)) * math.tan(self.halfVfov)
 			screenX = radius * math.sin(ang)
 			screenY = radius * math.cos(ang)
 			screenDistOnGnd = (screenX**2+1.)**0.5
@@ -101,8 +102,7 @@ class FishEye(object):
 
 if __name__ == "__main__":
 	
-	x, y = 954.855305466, 849.9035369775
-
+	x, y = 84.3729903537, 508.2958199357
 	
 	cam = FishEye()
 	latLons = cam.UnProj([[x, y]])
