@@ -19,45 +19,6 @@ class InvertableFunc(object):
 	def __call__(self, x):
 		return self.func(x)
 
-def ThetaAngToLatLon(theta, ang):
-	scalex = math.sin(ang)
-	scaley = math.cos(ang)
-	oppOverAdj = math.tan(theta) #Ratio of radius and object distance
-
-	objXOverScreenCentDist = scalex * oppOverAdj
-	objYOverScreenCentDist = scaley * oppOverAdj
-	screenDistOnGroundPlane = (objXOverScreenCentDist ** 2. + 1.) ** 0.5
-
-	lon = math.atan(objXOverScreenCentDist)
-	lat = math.atan2(objYOverScreenCentDist, screenDistOnGroundPlane)
-	return lat, lon
-
-def LatLonToThetaAng(lat, lon):
-	objXOverScreenCentDist = math.tan(lon)
-	screenDistOnGroundPlane = (objXOverScreenCentDist ** 2. + 1.) ** 0.5
-
-	objYOverScreenCentDist = math.tan(lat) * screenDistOnGroundPlane
-	optAxisDist = (objXOverScreenCentDist ** 2. + objYOverScreenCentDist ** 2.) ** 0.5
-	theta = math.atan(optAxisDist)
-
-	if objYOverScreenCentDist != 0.:
-		if objXOverScreenCentDist != 0.:
-			ang = math.atan2(objXOverScreenCentDist, objYOverScreenCentDist)
-		else:
-			if objYOverScreenCentDist > 0.:
-				ang = 0.
-			else:
-				ang = math.pi
-	else:
-		if objXOverScreenCentDist == 0.:
-			ang = 0.
-		else:
-			if objXOverScreenCentDist > 0.:
-				ang = math.pi / 2.
-			else:
-				ang = -math.pi / 2.
-	return theta, ang
-
 # **************************************************************************
 
 class FishEye(object):
@@ -72,8 +33,34 @@ class FishEye(object):
 		self.vfov = math.radians(47.9)
 
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
+		out = []
+		for pt in ptsLatLon:
 
-		pass
+			#Convert lat lon to theta, ang
+			screenX = math.tan(pt[1])
+			screenDistOnGnd = (screenX**2+1.)**0.5
+			screenY = math.tan(pt[0]) * screenDistOnGnd
+
+			ang = math.atan2(screenX, screenY)
+			radius = (screenX ** 2. + screenY ** 2.) ** 0.5
+			R = math.atan2(radius, math.tan(self.vfov)) / math.atan(1.)
+			
+			#Apply camera lens adjustment
+			dval = 1 - (self.a + self.b + self.c)
+			correctionFunc = lambda x: (x ** 4) * self.a + (x ** 3) * self.b + (x ** 2) * self.c + x * dval
+			Rcorrected = correctionFunc(R)
+
+			#Calc centred image positions
+			centImgX = Rcorrected * math.sin(ang) * (self.imgH / 2.)
+			centImgY = Rcorrected * math.cos(ang) * (self.imgH / 2.)
+
+			#Calc final position
+			x = centImgX + (self.imgW / 2.) - self.d
+			y = centImgY + (self.imgH / 2.) - self.e
+
+			out.append((x, y))
+
+		return out
 
 	def UnProj(self, ptsPix): #Image px to Lat, lon radians
 
@@ -98,16 +85,14 @@ class FishEye(object):
 			Rcorrected = correctionFunc.InvFunc(R)
 
 			#Calculate x and y in screen plane
-			mag = math.tan(Rcorrected * math.atan(1.))
-			screenXnorm = mag * math.sin(ang)
-			screenYnorm = mag * math.cos(ang)
-			screenX = screenXnorm * math.tan(self.vfov)
-			screenY = screenYnorm * math.tan(self.vfov)
+			radius = math.tan(Rcorrected * math.atan(1.)) * math.tan(self.vfov)
+			screenX = radius * math.sin(ang)
+			screenY = radius * math.cos(ang)
 			screenDistOnGnd = (screenX**2+1.)**0.5
 			
 			#Convert to lat and lon
 			lon = math.atan(screenX)
-			lat = math.atan(screenX / screenDistOnGnd)
+			lat = math.atan2(screenY, screenDistOnGnd)
 			out.append((lat, lon))
 
 		return out
@@ -122,4 +107,8 @@ if __name__ == "__main__":
 	latLons = cam.UnProj([[x, y]])
 
 	print [map(math.degrees, pt) for pt in latLons]
+
+	pos2 = cam.Proj(latLons)
+
+	print pos2
 
