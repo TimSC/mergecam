@@ -439,8 +439,8 @@ class PanoWidget(QtGui.QFrame):
 			camProjFactory = proj.RectilinearCam
 			projParams = {}
 		if selectedProj == "Fisheye":
-			camProjFactory = proj.FishEyeCamera
-			projParams = {"f": 0.49389104, "k": 0.8260964}
+			camProjFactory = proj.FishEyePolyCorrectedCamera
+			projParams = {}
 		assert camProjFactory is not None
 
 		#Extract interest points

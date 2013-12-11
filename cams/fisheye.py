@@ -32,15 +32,17 @@ class FishEye(object):
 		self.e = -0.8
 		self.hfov = 119.4
 		self.halfVfov = self.imgH * math.radians(self.hfov / 2.) / self.imgW
+		self.cLat = 0.
+		self.cLon = 0.
 
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
 		out = []
 		for pt in ptsLatLon:
 
 			#Convert lat lon to theta, ang
-			screenX = math.tan(pt[1])
+			screenX = math.tan(pt[1] - self.cLon)
 			screenDistOnGnd = (screenX**2+1.)**0.5
-			screenY = math.tan(pt[0]) * screenDistOnGnd
+			screenY = math.tan(pt[0] - self.cLat) * screenDistOnGnd
 
 			ang = math.atan2(screenX, screenY)
 			radius = (screenX ** 2. + screenY ** 2.) ** 0.5
@@ -92,8 +94,8 @@ class FishEye(object):
 			screenDistOnGnd = (screenX**2+1.)**0.5
 			
 			#Convert to lat and lon
-			lon = math.atan(screenX)
-			lat = math.atan2(screenY, screenDistOnGnd)
+			lon = math.atan(screenX) + self.cLon
+			lat = math.atan2(screenY, screenDistOnGnd) + self.cLat
 			out.append((lat, lon))
 
 		return out

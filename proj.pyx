@@ -317,113 +317,80 @@ class GeniusWidecam(FishEyeCamera):
 
 class FishEyePolyCorrectedCamera(object):
 	def __init__(self):
-		self.f = 0.5
 		self.imgW = 640
 		self.imgH = 480
-		self.k = 1.0
+		self.a = 0.027
+		self.b = 0.206
+		self.c = -0.028
+		self.d = -18
+		self.e = -0.8
+		self.hfov = 119.4
+		self.halfVfov = self.imgH * math.radians(self.hfov / 2.) / self.imgW
 		self.cLat = 0.
 		self.cLon = 0.
-		self.poly = InvertableFunc()
-		self.polyCoeffs = [0., 1., 0., 0., 0.] #4th order
-		self.poly.func = self.PolyEval
-
-	def PolyEval(self, x):
-		tot = 0.
-		for i, c in enumerate(self.polyCoeffs):
-			tot += (x ** i) * c
-		return tot
 
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
 		out = []
 		for pt in ptsLatLon:
-			#print "lat", pt[0], ", lon", pt[1]
 
-			lat = pt[0]-self.cLat
-			lon = pt[1]-self.cLon
+			#Convert lat lon to theta, ang
+			screenX = math.tan(pt[1] - self.cLon)
+			screenDistOnGnd = (screenX**2+1.)**0.5
+			screenY = math.tan(pt[0] - self.cLat) * screenDistOnGnd
 
-			circles = lon / (2. * math.pi)
-			if lon > 0.:
-				lon = lon - math.floor(circles) * 2. * math.pi
-			else:
-				lon = lon - math.ceil(circles) * 2. * math.pi
+			ang = math.atan2(screenX, screenY)
+			radius = (screenX ** 2. + screenY ** 2.) ** 0.5
+			R = math.atan2(radius, math.tan(self.halfVfov)) / math.atan(1.)
+			
+			#Apply camera lens adjustment
+			dval = 1 - (self.a + self.b + self.c)
+			correctionFunc = lambda x: (x ** 4) * self.a + (x ** 3) * self.b + (x ** 2) * self.c + x * dval
+			Rcorrected = correctionFunc(R)
 
-			while lon > math.pi:
-				lon -= math.pi * 2.
-			while lon < -math.pi:
-				lon += math.pi * 2.
+			#Calc centred image positions
+			centImgX = Rcorrected * math.sin(ang) * (self.imgH / 2.)
+			centImgY = Rcorrected * math.cos(ang) * (self.imgH / 2.)
 
-			if abs(lon) > math.pi / 2.:
-				out.append((None, None))
-				continue
+			#Calc final position
+			x = centImgX + (self.imgW / 2.) - self.d
+			y = centImgY + (self.imgH / 2.) - self.e
 
-			#if lon2 < -math.pi:
-			#	lon2 += math.pi * 2.
-			#if lon2 > math.pi:
-			#	lon2 -= math.pi * 2.
-
-			#assert lon2 >= -math.pi * 2.
-			#assert lon2 <= math.pi * 2.
-			#if lon2 < -math.pi * 0.5 or lon2 > math.pi * 0.5: 
-			#	#print "lon2", lon2, lon, self.cLon
-			#	out.append((None, None))
-			#	continue
-
-			theta, ang = LatLonToThetaAng(lat, lon)
-
-			thetaCorrected = self.poly.InvFunc(theta)
-
-			r = self.f * math.tan(self.k*thetaCorrected)
-			imx = 0.5 * self.imgW + math.sin(ang) * r * self.imgW
-			imy = 0.5 * self.imgH + math.cos(ang) * r * self.imgW
-			out.append((imx, imy))
+			out.append((x, y))
 
 		return out
 
 	def UnProj(self, ptsPix): #Image px to Lat, lon radians
-		out = []
+
+		out = [] 
 		for pt in ptsPix:
-			#print "pt", pt
+			#Centre image
+			centImgX = pt[0] - (self.imgW / 2.) + self.d
+			centImgY = pt[1] - (self.imgH / 2.) + self.e
 
-			x2 = pt[0] - (0.5 * self.imgW)
-			y2 = pt[1] - (0.5 * self.imgH)
+			#Normalise positions
+			centImgX2 = centImgX / (self.imgH / 2.)
+			centImgY2 = centImgY / (self.imgH / 2.)
 
-			#print "x2", x2, ", y2", y2
-			if y2 != 0.:
-				ang = math.atan2(x2, y2)
-				if x2 != 0.:
-					#print "a"
-					x3 = x2 / (math.sin(ang) * self.imgW)
-					theta = math.atan2(x3, self.f) / self.k
-				else:
-					#print "b"
-					if y2 > 0.:
-						ang = 0.
-					else:
-						ang = math.pi
-					y3 = y2 / self.imgW
-					theta = math.atan2(abs(y3), self.f) / self.k
+			#Calculate radius and angle
+			R = (centImgX2 ** 2. + centImgY2 ** 2.) ** 0.5
+			ang = math.atan2(centImgX2, centImgY2)
+			
+			#Apply lens correction function
+			correctionFunc = InvertableFunc()
+			dval = 1 - (self.a + self.b + self.c)
+			correctionFunc.func = lambda x: (x ** 4) * self.a + (x ** 3) * self.b + (x ** 2) * self.c + x * dval
+			Rcorrected = correctionFunc.InvFunc(R)
 
-			else:
-				if x2 != 0:
-					#print "c"
-					if x2 > 0:
-						ang = math.pi / 2.
-					else:
-						ang = -math.pi / 2.
-					x3 = x2 / self.imgW
-					theta = math.atan2(abs(x3), self.f) / self.k
-				else:
-					#print "d"
-					ang = 0.
-					theta = 0.
-
-			#print "ang2=", ang, "theta2=",theta
-
-			lat, lon = ThetaAngToLatLon(theta, ang)
-
-			outLat = lat+self.cLat
-			outLon = lon+self.cLon
-			out.append((outLat, outLon))
+			#Calculate x and y in screen plane
+			radius = math.tan(Rcorrected * math.atan(1.)) * math.tan(self.halfVfov)
+			screenX = radius * math.sin(ang)
+			screenY = radius * math.cos(ang)
+			screenDistOnGnd = (screenX**2+1.)**0.5
+			
+			#Convert to lat and lon
+			lon = math.atan(screenX) + self.cLon
+			lat = math.atan2(screenY, screenDistOnGnd) + self.cLat
+			out.append((lat, lon))
 
 		return out
 
