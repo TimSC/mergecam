@@ -82,8 +82,8 @@ class FishEye(object):
 		self._a = 0.02694
 		self._b = 0.20635
 		self._c = -0.02845
-		self.d = +18. / 1280.
-		self.e = -0.8 / 1024.
+		self.d = 0. / 1280.
+		self.e = 0. / 1024.
 		self.hfov = 118.75
 		self.halfVfov = self.imgH * math.radians(self.hfov / 2.) / self.imgW
 		self.cLat = 0.
