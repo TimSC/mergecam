@@ -59,13 +59,11 @@ if __name__=="__main__":
 		rpt = cam1.Proj(pt2)
 		print "chk", pt, rpt[0]
 
-	exit(0)
-
 	cam2latLons = cam2.UnProj(cam2Pts)
 	#for i, (pt1, pt2) in enumerate(zip(cam1latLons, cam2latLons)):
 	#	print i, (pt1, pt2)
 
-	if 0:
+	if 1:
 		#Project back for reconstruction error
 		pts2cam1 = cam1.Proj(cam2latLons)
 		cam1errs = []
@@ -75,6 +73,8 @@ if __name__=="__main__":
 			cam1errs.append(dist)
 		cam1errs = np.array(cam1errs)
 		print cam1errs.mean(), cam1errs.max()
+
+	exit(0)
 
 	outImg = np.zeros((1800/4, 3600/4, 3))
 	outPts = []
