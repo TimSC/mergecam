@@ -2,7 +2,7 @@
 Copyright (c) 2013, Tim Sheerman-Chase
 All rights reserved.
 '''
-import sys, time, os, copy
+import sys, time, os
 from PyQt4 import QtGui, QtCore
 import videolive
 import vidinput, vidoutput, vidstack, vidpano
@@ -144,8 +144,6 @@ class MainWindow(QtGui.QMainWindow):
 		if devName == self.currentSrcId:
 			for outDevName in self.outputDeviceToWidgetDict:
 				outWidget = self.outputDeviceToWidgetDict[outDevName]
-				if frameCopy is None:
-					frameCopy = copy.deepcopy(frame) #Suspect this is an incomplete solution to crash
 				outWidget.SendFrame(frameCopy, meta, devName)
 
 	def IdleEvent(self):
