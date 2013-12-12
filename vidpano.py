@@ -123,157 +123,26 @@ def HomographyQualityScore(hom):
 		return 1000.
 	return 1./costsum
 
-
-
 class CameraArrangement(object):
 	def __init__(self, imgPairs):
 		self.imgPairs = imgPairs
 		self.addedPhotos = {}
 
+	def AddAnchorPhoto(self, photoId):
+		print "AddAnchorPhoto", AddAnchorPhoto
+		pass
+
 	def OptimiseFit(self, photToOpt = None, optRotation=False):
-
-		if 0:
-			plt.plot(ptsA[:,0], ptsA[:,1], '.')
-			plt.plot(ptsB[:,0], ptsB[:,1], '.')
-			plt.show()			
-
-		if 0:
-			proj1 = np.array(proj1)
-			proj2 = np.array(proj2)
-			plt.plot(proj1[:,0], proj1[:,1], '.')
-			plt.plot(proj2[:,0], proj2[:,1], '.')
-			plt.show()
-
-		if photToOpt is None:
-			photToOpt = self.addedPhotos
-
-		initialVals = []
-		initialValKey = {}
-		for i, phot in enumerate(self.addedPhotos):
-			if photToOpt is not None and phot not in photToOpt: continue
-			camModel = self.addedPhotos[phot]
-			initialValKey[phot] = {}
-			initialValKey[phot]["lat"] = len(initialVals)
-			initialVals.append(camModel.cLat)
-			initialValKey[phot]["lon"] = len(initialVals)
-			initialVals.append(camModel.cLon)
-			if optRotation:
-				initialValKey[phot]["rot"] = len(initialVals)
-				initialVals.append(camModel.rot)
-
-		print initialVals
-
-		if 0:
-			final = optimize.minimize(self.Eval, initialVals, (0, initialValKey, photToOpt), method="Powell")
-			print "final values", final.x, final.fun
-		if 1:
-			final = optimize.leastsq(self.Eval, initialVals, (1, initialValKey, photToOpt), xtol=1e-4)
-			print "final values", final[0]
-			finalVals = final[0]
-
-		test = self.Eval(finalVals, 1, {}, None, vis=0)
-		print "recheck error mean", np.array(test).mean()
-
-		#Set values
-		for phot in initialValKey:
-			params = initialValKey[phot]
-			self.addedPhotos[phot].cLat = finalVals[params["lat"]]
-			self.addedPhotos[phot].cLon = finalVals[params["lon"]]
-			if "rot" in params:
-				self.addedPhotos[phot].rot = finalVals[params["rot"]]
-
-
-		#Recentre cameras
-		moveLat, moveLon = None, None
-		for camId in self.addedPhotos:
-			camData = self.addedPhotos[camId]	
-			if moveLat is None:
-				moveLat = camData.cLat
-				moveLon = camData.cLon
-			camData.cLat -= moveLat
-			camData.cLon -= moveLon
-
+		print "OptimiseFit", photToOpt
 
 	def Eval(self, vals, separateTerms, initialValKey, photToOpt, vis=0):
 
-		print "vals", vals
-		dists = []
-		countPairs = 0
-
-		for pair in self.imgPairs:
-			weight = pair[0]
-			fina1 = pair[1]
-			fina2 = pair[2]
-			if fina1 not in self.addedPhotos: continue
-			if fina2 not in self.addedPhotos: continue
-			if (photToOpt is not None) and (fina1 not in photToOpt and fina2 not in photToOpt): continue
-			countPairs += 1
-
-			#print fina1, fina2, fina1index, fina2index
-			camModel1 = self.addedPhotos[fina1]
-			if fina1 in initialValKey:
-				camModel1.cLat = vals[initialValKey[fina1]["lat"]]
-				camModel1.cLon = vals[initialValKey[fina1]["lon"]]
-				if "rot" in initialValKey[fina1]:
-					camModel1.rot = vals[initialValKey[fina1]["rot"]]
-
-			camModel2 = self.addedPhotos[fina2]
-			if fina2 in initialValKey:
-				camModel2.cLat = vals[initialValKey[fina2]["lat"]]
-				camModel2.cLon = vals[initialValKey[fina2]["lon"]]
-				if "rot" in initialValKey[fina2]:
-					camModel2.rot = vals[initialValKey[fina2]["rot"]]
-
-			ptsA = np.array(pair[3])
-			ptsB = np.array(pair[4])
-			
-			#Use only a subset of points
-			ptsA = ptsA[:,:]
-			ptsB = ptsB[:,:]
-
-			proj1 = camModel1.UnProj(ptsA)
-			proj2 = camModel2.UnProj(ptsB)
-
-			if vis:
-				import matplotlib.pyplot as plt
-				nproj1 = np.array(proj1)
-				nproj2 = np.array(proj2)
-				for ptNum in range(nproj1.shape[0]):
-					plt.plot([nproj1[ptNum,0], nproj2[ptNum,0]], [nproj1[ptNum,1], nproj2[ptNum,1]])
-
-				plt.plot(nproj1[:,0], nproj1[:,1], 'o')
-				plt.plot(nproj2[:,0], nproj2[:,1], 'x')
-
-				plt.show()
-			
-			#distsX = []
-			#distsY = []
-			for pt1, pt2 in zip(proj1, proj2):
-				malDist1 = abs(pt1[0]-pt2[0])#Lat 
-				malDist2 = abs(pt1[1]-pt2[1])#Lon
-				while malDist2 > math.pi: #Limit difference to -pi to +pi range
-					malDist2 -= 2. * math.pi
-
-				if math.isnan(malDist1):
-					raise Exception("Distance error is nan (1)")
-				if math.isnan(malDist2):
-					raise Exception("Distance error is nan (2)")
-
-				dists.append(malDist1 * weight)
-				dists.append(malDist2 * weight)
-
-			#dists.append(np.array(distsX).mean())
-			#dists.append(np.array(distsY).mean())
-
-		#print vals, score
-		#print countPairs
-
-		if separateTerms:
-			print "mean dist error", np.abs(dists).mean()
-			return np.abs(dists)
-		score = np.array(dists).mean() ** 1.
 
 		return score
+
+	def NumPhotos(self):
+		print self.addedPhotos
+		return len(self.addedPhotos)
 
 def SelectPhotoToAdd(imgPairs, cameraArrangement):
 	bestScore = None
@@ -439,7 +308,7 @@ class PanoWidget(QtGui.QFrame):
 			camProjFactory = proj.RectilinearCam
 			projParams = {}
 		if selectedProj == "Fisheye":
-			camProjFactory = proj.FishEyePolyCorrectedCamera
+			camProjFactory = proj.FishEye
 			projParams = {}
 		assert camProjFactory is not None
 
@@ -525,8 +394,13 @@ class PanoWidget(QtGui.QFrame):
 					newCam.k = projParams['k']
 				newCam.cLon = random.uniform(-math.pi, math.pi)
 				self.cameraArrangement.addedPhotos[photoId] = newCam
-			if 1:		
-				self.cameraArrangement.OptimiseFit(photosToAdd, optRotation = False)
+			if 1:
+				if self.cameraArrangement.NumPhotos() == 0:
+					self.cameraArrangement.AddAnchorPhoto(photosToAdd[0])
+					photosToAdd.pop(0)
+				for pid in photosToAdd:
+					#Add photos one by one to scene and optimise
+					self.cameraArrangement.OptimiseFit([pid], optRotation = True)
 
 			for photoId in self.cameraArrangement.addedPhotos:
 				photo = self.cameraArrangement.addedPhotos[photoId]

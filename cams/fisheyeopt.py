@@ -65,7 +65,7 @@ if __name__=="__main__":
 	#for i, (pt1, pt2) in enumerate(zip(cam1latLons, cam2latLons)):
 	#	print i, (pt1, pt2)
 
-	if 0:
+	if 1:
 		#Project back for reconstruction error
 		pts2cam1 = cam1.Proj(cam2latLons)
 		cam1errs = []
