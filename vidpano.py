@@ -490,7 +490,7 @@ class PanoWidget(QtGui.QFrame):
 					#visMetaOut = {"height": 600, "width": 800, "format": "RGB24"}
 					
 					#print len(visPixOut), visMetaOut
-					self.outBuffer.append([str(visPixOut), visMetaOut])
+					self.outBuffer.append([bytearray(visPixOut), visMetaOut])
 
 			self.framesRcvSinceOutput = set()
 

@@ -52,7 +52,6 @@ class SourceWidget(QtGui.QFrame):
 			data = self.devManager.get_frame(self.devId)
 
 			if data is not None:
-				#print len(data[0])
 				self.emit(QtCore.SIGNAL('webcam_frame'), data[0], data[1], self.devId)
 				self.UpdatePreview(data[0], data[1])
 
