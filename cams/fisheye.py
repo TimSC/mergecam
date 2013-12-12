@@ -88,6 +88,7 @@ class FishEye(object):
 		self.halfVfov = self.imgH * math.radians(self.hfov / 2.) / self.imgW
 		self.cLat = 0.
 		self.cLon = 0.
+		self.rot = 0.
 
 		self.correctionFunc = InvertableFunc()
 		self.paramsChanged = True
@@ -144,9 +145,15 @@ class FishEye(object):
 
 			#print "a3", centImgX, centImgY
 
+			#Calc rotation
+			x1 = centImgX * math.cos(self.rot) - centImgY * math.sin(self.rot)
+			y1 = centImgX * math.sin(self.rot) + centImgY * math.cos(self.rot)
+
 			#Calc final position
-			x = centImgX + (self.imgW / 2.) - self.d * self.imgW
-			y = centImgY + (self.imgH / 2.) - self.e * self.imgH
+			x2 = x1 + (self.imgW / 2.)
+			y2 = y1 + (self.imgH / 2.)
+			x = x2 - self.d * self.imgW
+			y = y2 - self.e * self.imgH
 
 			if x < 0. or x >= self.imgW:
 				out.append((None, None))
@@ -169,9 +176,13 @@ class FishEye(object):
 
 			#print "b3", centImgX, centImgY
 
+			#Apply rotation
+			rotx = centImgX * math.cos(-self.rot) - centImgY * math.sin(-self.rot)
+			roty = centImgX * math.sin(-self.rot) + centImgY * math.cos(-self.rot)			
+
 			#Normalise positions
-			centImgX2 = centImgX / (self.imgH / 2.)
-			centImgY2 = centImgY / (self.imgH / 2.)
+			centImgX2 = rotx / (self.imgH / 2.)
+			centImgY2 = roty / (self.imgH / 2.)
 
 			#Calculate radius and angle
 			R = (centImgX2 ** 2. + centImgY2 ** 2.) ** 0.5

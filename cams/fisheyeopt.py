@@ -7,13 +7,14 @@ import numpy as np
 def SetCamVariables(cam1, cam2, x):
 	cam2.cLat = x[0]
 	cam2.cLon = x[1]
+	cam2.rot = x[2]
 
-	cam1.SetCorrectionParams(x[2], x[3], x[4])
-	cam1.d = x[5]
-	cam1.e = x[6]
-	cam2.SetCorrectionParams(x[2], x[3], x[4])
-	cam2.d = x[5]
-	cam2.e = x[6]
+	cam1.SetCorrectionParams(x[3], x[4], x[5])
+	cam1.d = x[6]
+	cam1.e = x[7]
+	cam2.SetCorrectionParams(x[3], x[4], x[5])
+	cam2.d = x[6]
+	cam2.e = x[7]
 
 def ErrEval(x, cam1, cam2, cam1Pts, cam2Pts):
 	SetCamVariables(cam1, cam2, x)
@@ -38,7 +39,7 @@ if __name__=="__main__":
 
 	cam1 = fisheye.FishEye()
 	cam2 = fisheye.FishEye()
-	x0 = [cam2.cLat, cam2.cLon, cam1._a, cam1._b, cam1._c, cam1.d, cam1.e]
+	x0 = [cam2.cLat, cam2.cLon, cam2.rot, cam1._a, cam1._b, cam1._c, cam1.d, cam1.e]
 
 	if 1:
 		ret = optimize.minimize(ErrEval, x0, args=(cam1, cam2, cam1Pts, cam2Pts), method="Powell")
@@ -75,7 +76,7 @@ if __name__=="__main__":
 		cam1errs = np.array(cam1errs)
 		print cam1errs.mean(), cam1errs.max()
 
-	outImg = np.zeros((1800/8, 3600/8, 3), dtype=np.uint8)
+	outImg = np.zeros((1800/2, 3600/2, 3), dtype=np.uint8)
 	outPts = []
 	outLatLon = []
 	for x in range(outImg.shape[1]):
