@@ -420,29 +420,31 @@ class PanoWidget(QtGui.QFrame):
 			print bestPair[:3], newInd1, newInd2
 		
 			photosToAdd = []
+			photosMetaToAdd = []
+
 			if not newInd1:
 				print "Adding", bestPair[1]
 				photosToAdd.append(bestPair[1])
+				photosMetaToAdd.append(bestPair[5])
 				
 			if not newInd2:
 				print "Adding", bestPair[2]
 				photosToAdd.append(bestPair[2])
+				photosMetaToAdd.append(bestPair[6])
 				
-			for photoId in photosToAdd:
-				wang = 100
-				newCam = camProjFactory()
-				if "f" in projParams:
-					newCam.f = projParams['f']
-				if "k" in projParams:
-					newCam.k = projParams['k']
-				newCam.cLon = random.uniform(-math.pi, math.pi)
-				#self.cameraArrangement.addedPhotos[photoId] = newCam
 			if 1:
-				if self.cameraArrangement.NumPhotos() == 0:
+				if self.cameraArrangement.NumPhotos() == 0 and len(photosToAdd) > 0:
+					newCam = camProjFactory()
+					newCam.imgW = photosMetaToAdd[0][1]
+					newCam.imgH = photosMetaToAdd[0][0]
 					self.cameraArrangement.AddAnchorPhoto(photosToAdd[0], newCam)
 					photosToAdd.pop(0)
-				for pid in photosToAdd:
+					photosMetaToAdd.pop(0)
+				for pid, pmeta in zip(photosToAdd, photosMetaToAdd):
 					#Add photos one by one to scene and optimise
+					newCam = camProjFactory()
+					newCam.imgW = pmeta[1]
+					newCam.imgH = pmeta[0]				
 					self.cameraArrangement.AddAndOptimiseFit(pid, newCam, optRotation = True)
 
 			for photoId in self.cameraArrangement.addedPhotos:
@@ -453,10 +455,12 @@ class PanoWidget(QtGui.QFrame):
 				vis = visobj.Vis(self.calibrationFrames[0], self.calibrationMeta[0], self.framePairs[0], self.cameraArrangement)
 				vis.save("vis{0}.png".format(len(self.cameraArrangement.addedPhotos)))
 
+		print "Calculate final projection"
 		outProj = proj.EquirectangularCam()
 		outProj.imgW = 800
 		outProj.imgH = 600
 		self.visobj = pano.PanoView(self.cameraArrangement, outProj)
+		print "Done"
 
 	def SendFrame(self, frame, meta, devName):
 

@@ -282,7 +282,7 @@ class FishEye(object):
 
 			#Check that lon is in front of camera
 			londiff = (pt[1] - self.cLon + math.pi) % (2. * math.pi) - math.pi
-			if diff < -math.pi * 0.5 or diff >= math.pi * 0.5:
+			if londiff < -math.pi * 0.5 or londiff >= math.pi * 0.5:
 				out.append((None, None))
 				continue
 			latdiff = (pt[0] - self.cLat + math.pi * 0.5) % (math.pi) - (0.5 * math.pi)
@@ -336,6 +336,8 @@ class FishEye(object):
 		return out
 
 	def UnProj(self, ptsPix): #Image px to Lat, lon radians
+
+		print self.imgW, self.imgH
 
 		out = [] 
 		for pt in ptsPix:
