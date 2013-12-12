@@ -158,7 +158,7 @@ static int PanoView_init(PanoView *self, PyObject *args,
 		long camId = PyLong_AsLong(camIdObj);
 		PyObject *camData = PyTuple_GetItem(camDataTup, 1);
 
-		//PyObject_Print(test, stdout, Py_PRINT_RAW); std::cout << std::endl;
+		//PyObject_Print(camData, stdout, Py_PRINT_RAW); std::cout << std::endl;
 
 		PyObject *camProj = PyObject_GetAttrString(camData, "Proj");
 		if(camProj==NULL)
@@ -238,8 +238,11 @@ static int PanoView_init(PanoView *self, PyObject *args,
 				Py_DECREF(posDst);
 			}
 
-
 			Py_DECREF(pixMapping);
+		}
+		else
+		{
+			std::cout << "Warning: PyObject_Call to proj returned null" << std::endl;
 		}
 		Py_DECREF(projArgs);
 		Py_DECREF(camProj);

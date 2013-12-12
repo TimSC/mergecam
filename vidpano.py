@@ -455,7 +455,7 @@ class PanoWidget(QtGui.QFrame):
 				vis = visobj.Vis(self.calibrationFrames[0], self.calibrationMeta[0], self.framePairs[0], self.cameraArrangement)
 				vis.save("vis{0}.png".format(len(self.cameraArrangement.addedPhotos)))
 
-		print "Calculate final projection"
+		print "Calculate final projection"		
 		outProj = proj.EquirectangularCam()
 		outProj.imgW = 800
 		outProj.imgH = 600

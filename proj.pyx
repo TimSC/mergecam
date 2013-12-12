@@ -189,7 +189,7 @@ class InvertableFunc(object):
 	def InvFuncByPiecewise(self, y, singleRoot = False):
 		candidates = []
 		for yv1, yv2, xv1, xv2 in zip(self.yvals[:-1], self.yvals[1:], self.xvals[:-1], self.xvals[1:]):
-			if yv1 <= y and yv2 > y:
+			if min([yv1, yv2]) <= y and max([yv1, yv2]) > y:
 				rang = yv2 - yv1
 				if rang > 0.:
 					mix = (y - yv1) / rang
@@ -201,8 +201,13 @@ class InvertableFunc(object):
 
 		if len(candidates)>0:
 			return candidates
-		else:
-			return None
+		#print "yvals", min(self.yvals), max(self.yvals), len(self.yvals)
+		#print "xvals", min(self.xvals), max(self.xvals), len(self.xvals)
+		if y >= self.yvals[0] or y < self.yvals[-1]:
+			raise Exception("Error in inverse func at " +str(y))
+		#print self.xvals
+		#print self.yvals
+		return None
 
 	def InvFunc(self, y):
 		if self.xvals == None:
@@ -257,6 +262,7 @@ class FishEye(object):
 		self.cLat = 0.
 		self.cLon = 0.
 		self.rot = 0.
+		self.verbose = 0
 
 		self.correctionFunc = InvertableFunc()
 		self.paramsChanged = True
@@ -278,12 +284,16 @@ class FishEye(object):
 
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
 		out = []
+		print "Fisheye Proj"
+
 		for pt in ptsLatLon:
 
 			#Check that lon is in front of camera
 			londiff = (pt[1] - self.cLon + math.pi) % (2. * math.pi) - math.pi
 			if londiff < -math.pi * 0.5 or londiff >= math.pi * 0.5:
 				out.append((None, None))
+				if self.verbose:
+					print "Proj(0)", pt, (None, None)
 				continue
 			latdiff = (pt[0] - self.cLat + math.pi * 0.5) % (math.pi) - (0.5 * math.pi)
 
@@ -306,6 +316,8 @@ class FishEye(object):
 			#print "a2", Rcorrected
 			if Rcorrected is None:
 				out.append((None, None))
+				if self.verbose:
+					print "Proj(1)", pt, (None, None), R, Rcorrected
 				continue
 
 			#Calc centred image positions
@@ -326,18 +338,27 @@ class FishEye(object):
 
 			if x < 0. or x >= self.imgW:
 				out.append((None, None))
+				if self.verbose:
+					print "Proj(2)", pt, (None, None)
 				continue
 			if y < 0. or y >= self.imgH:
 				out.append((None, None))
+				if self.verbose:
+					print "Proj(3)", pt, (None, None)
 				continue
+
+			if self.verbose:
+				print "Proj", pt, (x, y)
 
 			out.append((x, y))
 
+		print "Fisheye Proj Done"
 		return out
 
 	def UnProj(self, ptsPix): #Image px to Lat, lon radians
 
-		print self.imgW, self.imgH
+		if self.verbose:
+			print "UnProj"
 
 		out = [] 
 		for pt in ptsPix:
@@ -378,6 +399,9 @@ class FishEye(object):
 			lon = math.atan(screenX) + self.cLon
 			lat = math.atan2(screenY, screenDistOnGnd) + self.cLat
 			out.append((lat, lon))
+
+			if self.verbose:
+				print "UnProj", pt, (lat, lon)
 
 		return out
 
