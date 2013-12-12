@@ -281,15 +281,16 @@ class FishEye(object):
 		for pt in ptsLatLon:
 
 			#Check that lon is in front of camera
-			diff = (pt[1] - self.cLat + math.pi) % (2. * math.pi) - math.pi
+			londiff = (pt[1] - self.cLon + math.pi) % (2. * math.pi) - math.pi
 			if diff < -math.pi * 0.5 or diff >= math.pi * 0.5:
 				out.append((None, None))
-				continue				
+				continue
+			latdiff = (pt[0] - self.cLat + math.pi * 0.5) % (math.pi) - (0.5 * math.pi)
 
 			#Convert lat lon to theta, ang
-			screenX = math.tan(pt[1] - self.cLon)
+			screenX = math.tan(londiff)
 			screenDistOnGnd = (screenX**2+1.)**0.5
-			screenY = math.tan(pt[0] - self.cLat) * screenDistOnGnd
+			screenY = math.tan(latdiff) * screenDistOnGnd
 
 			ang = math.atan2(screenX, screenY)
 			radius = (screenX ** 2. + screenY ** 2.) ** 0.5

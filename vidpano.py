@@ -138,16 +138,51 @@ class CameraArrangement(object):
 
 		x0 = [camModel.cLat, camModel.cLon, camModel.rot, 0., 0., 0., 0., 0.]
 		ret = optimize.minimize(self.Eval, x0, args=(photoId,), method="Powell")
+		
+		#Update camera parameters
+		xfinal = ret.x
+		camToOpt = self.addedPhotos[photoId]
+		camToOpt.cLat = xfinal[0]
+		camToOpt.cLon = xfinal[1]
+		camToOpt.rot = xfinal[2]
+
+		for cam in self.addedPhotos.values():
+			cam.SetCorrectionParams(xfinal[3], xfinal[4], xfinal[5])
+			cam.d = xfinal[6]
+			cam.e = xfinal[7]
 
 	def Eval(self, vals, photoId, vis=0):
+
+		camToOpt = self.addedPhotos[photoId]
+		camToOpt.cLat = vals[0]
+		camToOpt.cLon = vals[1]
+		camToOpt.rot = vals[2]
+
+		for cam in self.addedPhotos.values():
+			cam.SetCorrectionParams(vals[3], vals[4], vals[5])
+			cam.d = vals[6]
+			cam.e = vals[7]
+
+		err = 0.
 		for pair in self.imgPairs:
 			pairScore = pair[0]
 			included1 = pair[1] in self.addedPhotos
 			included2 = pair[2] in self.addedPhotos
-			if not included1 or included2: continue
-			print pair
+			if not included1 or not included2: continue
+			#print "Found pair", pair[:3]
 
-		return score
+			cam1 = self.addedPhotos[pair[1]]
+			cam2 = self.addedPhotos[pair[2]]
+
+			cam1latLons = cam1.UnProj(pair[3])
+			cam2latLons = cam2.UnProj(pair[4])
+			
+			for ptcam1, ptcam2 in zip(cam1latLons, cam2latLons):
+				err += abs(ptcam1[0] - ptcam2[0])
+				err += abs(ptcam1[1] - ptcam2[1])
+
+		print vals, err
+		return err
 
 	def NumPhotos(self):
 		return len(self.addedPhotos)

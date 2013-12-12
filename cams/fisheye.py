@@ -113,7 +113,7 @@ class FishEye(object):
 		for pt in ptsLatLon:
 
 			#Check that lon is in front of camera
-			diff = (pt[1] - self.cLat + math.pi) % (2. * math.pi) - math.pi
+			diff = (pt[1] - self.cLon + math.pi) % (2. * math.pi) - math.pi
 			if diff < -math.pi * 0.5 or diff >= math.pi * 0.5:
 				out.append((None, None))
 				continue				
