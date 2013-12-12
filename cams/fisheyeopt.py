@@ -63,7 +63,7 @@ if __name__=="__main__":
 	#for i, (pt1, pt2) in enumerate(zip(cam1latLons, cam2latLons)):
 	#	print i, (pt1, pt2)
 
-	if 1:
+	if 0:
 		#Project back for reconstruction error
 		pts2cam1 = cam1.Proj(cam2latLons)
 		cam1errs = []
@@ -74,17 +74,22 @@ if __name__=="__main__":
 		cam1errs = np.array(cam1errs)
 		print cam1errs.mean(), cam1errs.max()
 
-	exit(0)
-
-	outImg = np.zeros((1800/4, 3600/4, 3))
+	outImg = np.zeros((1800/4, 3600/4, 3), dtype=np.uint8)
 	outPts = []
+	outLatLon = []
 	for x in range(outImg.shape[1]):
 		for y in range(outImg.shape[0]):
+			lon = math.radians(x * 360. / outImg.shape[1] - 180.)
+			lat = math.radians(y * 180. / outImg.shape[1] - 90.)
+			outLatLon.append((lat, lon))
 			outPts.append((x, y))
+
+	cam1Img = misc.imread("correspond1.jpg")
+	cam2Img = misc.imread("correspond2.jpg")
 
 	print "Calc transform, cam1"
 	if 1:
-		cam1PxPt = cam1.Proj(outPts)
+		cam1PxPt = cam1.Proj(outLatLon)
 		pickle.dump(cam1PxPt, open("cam1PxPt.dat", "wb"), protocol=-1)
 	else:
 		cam1PxPt = pickle.load(open("cam1PxPt.dat", "rb"))
@@ -92,14 +97,28 @@ if __name__=="__main__":
 	print "Apply transform, cam1"
 	for inPt, outPt in zip(cam1PxPt, outPts):
 		try:
-			print outPt[1], outPt[0]
-			outImg[outPt[1], outPt[0]] = inPt[int(round(inPt[1])), int(round(inPt[0]))]
+			if inPt[0] is None: continue
+			outImg[outPt[1], outPt[0], :] = cam1Img[int(round(inPt[1])), int(round(inPt[0])), :]
 		except IndexError:
 			pass
 
-	misc.imsave(outImg, "out1.png")
+	misc.imsave("out1.png", outImg)
 
 	print "Calc transform, cam2"
 	#cam2latLons = cam2.Proj(outPts)
+	if 1:
+		cam2PxPt = cam2.Proj(outLatLon)
+		pickle.dump(cam1PxPt, open("cam2PxPt.dat", "wb"), protocol=-1)
+	else:
+		cam1PxPt = pickle.load(open("cam2PxPt.dat", "rb"))
+	
+	print "Apply transform, cam2"
+	for inPt, outPt in zip(cam2PxPt, outPts):
+		try:
+			if inPt[0] is None: continue
+			outImg[outPt[1], outPt[0], :] = cam2Img[int(round(inPt[1])), int(round(inPt[0])), :]
+		except IndexError:
+			pass
 
+	misc.imsave("out2.png", outImg)
 

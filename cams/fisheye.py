@@ -18,7 +18,7 @@ class InvertableFunc(object):
 		if verbose: print ret
 		return ret.x
 
-	def InvFuncByPiecewise(self, y):
+	def InvFuncByPiecewise(self, y, singleRoot = False):
 		candidates = []
 		for yv1, yv2, xv1, xv2 in zip(self.yvals[:-1], self.yvals[1:], self.xvals[:-1], self.xvals[1:]):
 			if yv1 <= y and yv2 > y:
@@ -29,6 +29,7 @@ class InvertableFunc(object):
 					mix = 0.
 				x = mix * (xv2 - xv1) + xv1
 				candidates.append(x)
+				break
 
 		if len(candidates)>0:
 			return candidates
@@ -38,7 +39,7 @@ class InvertableFunc(object):
 	def InvFunc(self, y):
 		if self.xvals == None:
 			self.EstimatePiecewiseInv(0., 2.)
-		xcands = self.InvFuncByPiecewise(y)
+		xcands = self.InvFuncByPiecewise(y, True)
 		if xcands is not None:
 			return xcands[0]
 		return None #No root found
@@ -58,7 +59,7 @@ class InvertableFunc(object):
 			ytest = np.linspace(min(self.yvals), max(self.yvals), numPoints)
 			xtest = []
 			for y in ytest:
-				xcands = self.InvFuncByPiecewise(y)
+				xcands = self.InvFuncByPiecewise(y, True)
 				if ycand is not None:
 					xtest.append(xcands[0])
 				else:
@@ -127,6 +128,9 @@ class FishEye(object):
 			Rcorrected = self.correctionFunc.InvFunc(R)
 
 			#print "a2", Rcorrected
+			if Rcorrected is None:
+				out.append((None, None))
+				continue
 
 			#Calc centred image positions
 			centImgX = Rcorrected * math.sin(ang) * (self.imgH / 2.)
