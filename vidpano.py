@@ -128,20 +128,28 @@ class CameraArrangement(object):
 		self.imgPairs = imgPairs
 		self.addedPhotos = {}
 
-	def AddAnchorPhoto(self, photoId):
-		print "AddAnchorPhoto", AddAnchorPhoto
-		pass
+	def AddAnchorPhoto(self, photoId, camModel):
+		print "AddAnchorPhoto", photoId
+		self.addedPhotos[photoId] = camModel
 
-	def OptimiseFit(self, photToOpt = None, optRotation=False):
-		print "OptimiseFit", photToOpt
+	def AddAndOptimiseFit(self, photoId, camModel, optRotation=False):
+		print "OptimiseFit", photoId
+		self.addedPhotos[photoId] = camModel
 
-	def Eval(self, vals, separateTerms, initialValKey, photToOpt, vis=0):
+		x0 = [camModel.cLat, camModel.cLon, camModel.rot, 0., 0., 0., 0., 0.]
+		ret = optimize.minimize(self.Eval, x0, args=(photoId,), method="Powell")
 
+	def Eval(self, vals, photoId, vis=0):
+		for pair in self.imgPairs:
+			pairScore = pair[0]
+			included1 = pair[1] in self.addedPhotos
+			included2 = pair[2] in self.addedPhotos
+			if not included1 or included2: continue
+			print pair
 
 		return score
 
 	def NumPhotos(self):
-		print self.addedPhotos
 		return len(self.addedPhotos)
 
 def SelectPhotoToAdd(imgPairs, cameraArrangement):
@@ -393,14 +401,14 @@ class PanoWidget(QtGui.QFrame):
 				if "k" in projParams:
 					newCam.k = projParams['k']
 				newCam.cLon = random.uniform(-math.pi, math.pi)
-				self.cameraArrangement.addedPhotos[photoId] = newCam
+				#self.cameraArrangement.addedPhotos[photoId] = newCam
 			if 1:
 				if self.cameraArrangement.NumPhotos() == 0:
-					self.cameraArrangement.AddAnchorPhoto(photosToAdd[0])
+					self.cameraArrangement.AddAnchorPhoto(photosToAdd[0], newCam)
 					photosToAdd.pop(0)
 				for pid in photosToAdd:
 					#Add photos one by one to scene and optimise
-					self.cameraArrangement.OptimiseFit([pid], optRotation = True)
+					self.cameraArrangement.AddAndOptimiseFit(pid, newCam, optRotation = True)
 
 			for photoId in self.cameraArrangement.addedPhotos:
 				photo = self.cameraArrangement.addedPhotos[photoId]

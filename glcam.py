@@ -2,7 +2,7 @@
 Copyright (c) 2013, Tim Sheerman-Chase
 All rights reserved.
 '''
-import sys, time, os
+import sys, time, os, copy
 from PyQt4 import QtGui, QtCore
 import videolive
 import vidinput, vidoutput, vidstack, vidpano
@@ -140,10 +140,13 @@ class MainWindow(QtGui.QMainWindow):
 			self.scene.addItem(gpm)
 
 		#Send frame to output device
+		frameCopy = None
 		if devName == self.currentSrcId:
 			for outDevName in self.outputDeviceToWidgetDict:
 				outWidget = self.outputDeviceToWidgetDict[outDevName]
-				outWidget.SendFrame(frame, meta, devName)
+				if frameCopy is None:
+					frameCopy = copy.deepcopy(frame)
+				outWidget.SendFrame(frameCopy, meta, devName)
 
 	def IdleEvent(self):
 		for fina in self.inputDeviceToWidgetDict:
