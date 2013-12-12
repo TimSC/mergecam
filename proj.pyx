@@ -317,8 +317,8 @@ class GeniusWidecam(FishEyeCamera):
 
 class FishEyePolyCorrectedCamera(object):
 	def __init__(self):
-		self.imgW = 640
-		self.imgH = 480
+		self.imgW = 1280
+		self.imgH = 1024
 		self.a = 0.027
 		self.b = 0.206
 		self.c = -0.028
@@ -334,9 +334,9 @@ class FishEyePolyCorrectedCamera(object):
 		for pt in ptsLatLon:
 
 			#Convert lat lon to theta, ang
-			screenX = math.tan(pt[1] - self.cLon)
+			screenX = math.tan(pt[1])
 			screenDistOnGnd = (screenX**2+1.)**0.5
-			screenY = math.tan(pt[0] - self.cLat) * screenDistOnGnd
+			screenY = math.tan(pt[0]) * screenDistOnGnd
 
 			ang = math.atan2(screenX, screenY)
 			radius = (screenX ** 2. + screenY ** 2.) ** 0.5
@@ -388,8 +388,8 @@ class FishEyePolyCorrectedCamera(object):
 			screenDistOnGnd = (screenX**2+1.)**0.5
 			
 			#Convert to lat and lon
-			lon = math.atan(screenX) + self.cLon
-			lat = math.atan2(screenY, screenDistOnGnd) + self.cLat
+			lon = math.atan(screenX)
+			lat = math.atan2(screenY, screenDistOnGnd)
 			out.append((lat, lon))
 
 		return out
