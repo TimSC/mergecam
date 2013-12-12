@@ -2,10 +2,11 @@
 Copyright (c) 2013, Tim Sheerman-Chase
 All rights reserved.
 '''
-import sys, time, os
+import sys, time, os, random
 from PyQt4 import QtGui, QtCore
 import videolive
 import vidinput, vidoutput, vidstack, vidpano
+import numpy as np
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self):
@@ -15,6 +16,8 @@ class MainWindow(QtGui.QMainWindow):
 		self.outputDeviceToWidgetDict = {}
 		self.processingWidgets = {}
 		self.currentSrcId = None
+		self.frameTestStore = []
+		self.metaTestStore = []
 
 		self.vidOut = videolive.Video_out_manager()
 		self.devManager = videolive.Video_in_manager()
@@ -124,6 +127,21 @@ class MainWindow(QtGui.QMainWindow):
 			self.outputDeviceToWidgetDict[fina] = widget
 
 	def ProcessFrame(self, frame, meta, devName):
+
+		self.frameTestStore.append(frame)
+		self.metaTestStore.append(meta)
+		while len(self.frameTestStore)>100:
+			self.frameTestStore.pop(0)
+			self.metaTestStore.pop(0)
+		ri = random.randint(0, len(self.frameTestStore)-1)
+		randomFrame = self.frameTestStore[ri]
+		randomMeta = self.metaTestStore[ri]
+		print len(randomFrame), randomMeta['height']*randomMeta['width']*3
+		arr = np.array(randomFrame, dtype=np.uint8)
+		source = arr.reshape((randomMeta['height'], randomMeta['width'], 3))
+		rx = random.randint(0, source.shape[1]-1)
+		ry = random.randint(0, source.shape[0]-1)
+		print source[ry, rx]
 
 		#Send frames to processing widgets
 		for devId in self.processingWidgets:
