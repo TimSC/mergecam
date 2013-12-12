@@ -142,6 +142,13 @@ class FishEye(object):
 			x = centImgX + (self.imgW / 2.) - self.d * self.imgW
 			y = centImgY + (self.imgH / 2.) - self.e * self.imgH
 
+			if x < 0. or x >= self.imgW:
+				out.append((None, None))
+				continue
+			if y < 0. or y >= self.imgH:
+				out.append((None, None))
+				continue
+
 			out.append((x, y))
 
 		return out
