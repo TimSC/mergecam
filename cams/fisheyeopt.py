@@ -8,14 +8,10 @@ def SetCamVariables(cam1, cam2, x):
 	cam2.cLat = x[0]
 	cam2.cLon = x[1]
 
-	cam1.a = x[2]
-	cam1.b = x[3]
-	cam1.c = x[4]
+	cam1.SetCorrectionParams(x[2], x[3], x[4])
 	cam1.d = x[5]
 	cam1.e = x[6]
-	cam2.a = x[2]
-	cam2.b = x[3]
-	cam2.c = x[4]
+	cam2.SetCorrectionParams(x[2], x[3], x[4])
 	cam2.d = x[5]
 	cam2.e = x[6]
 
@@ -42,12 +38,14 @@ if __name__=="__main__":
 
 	cam1 = fisheye.FishEye()
 	cam2 = fisheye.FishEye()
-	x0 = [cam2.cLat, cam2.cLon, cam1.a, cam1.b, cam1.c, cam1.d, cam1.e]
+	x0 = [cam2.cLat, cam2.cLon, cam1._a, cam1._b, cam1._c, cam1.d, cam1.e]
 
-	if 0:
+	if 1:
 		ret = optimize.minimize(ErrEval, x0, args=(cam1, cam2, cam1Pts, cam2Pts), method="Powell")
 		print ret.x
 		SetCamVariables(cam1, cam2, ret.x)
+		cam1.PrepareForPickle()
+		cam2.PrepareForPickle()
 		pickle.dump(cam1, open("cam1.dat", "wb"), protocol = -1)
 		pickle.dump(cam2, open("cam2.dat", "wb"), protocol = -1)
 	else:
@@ -67,8 +65,6 @@ if __name__=="__main__":
 	#for i, (pt1, pt2) in enumerate(zip(cam1latLons, cam2latLons)):
 	#	print i, (pt1, pt2)
 
-	
-
 	if 0:
 		#Project back for reconstruction error
 		pts2cam1 = cam1.Proj(cam2latLons)
@@ -79,9 +75,6 @@ if __name__=="__main__":
 			cam1errs.append(dist)
 		cam1errs = np.array(cam1errs)
 		print cam1errs.mean(), cam1errs.max()
-
-
-	exit(0)
 
 	outImg = np.zeros((1800/4, 3600/4, 3))
 	outPts = []

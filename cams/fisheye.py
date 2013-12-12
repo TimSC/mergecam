@@ -7,6 +7,7 @@ class InvertableFunc(object):
 		self.x0 = 1.
 		self.method = "Powell"
 		self.func = lambda x: x ** 2
+		self.xvals = None
 
 	def ErrEval(self, x, targety):
 		err = abs(self.func(x)-targety)
@@ -17,47 +18,56 @@ class InvertableFunc(object):
 		if verbose: print ret
 		return ret.x
 
-	def EvalPolyInv(self, comp, xvals, yvals):
-		total = np.zeros(len(xvals))
-		for i, c in enumerate(comp):
-			total += np.power(yvals, i) * c
-		err = np.abs(total - np.array(xvals))
-		toterr = err.sum()
-		print toterr
-		return toterr
+	def InvFuncByPiecewise(self, y):
+		candidates = []
+		for yv1, yv2, xv1, xv2 in zip(self.yvals[:-1], self.yvals[1:], self.xvals[:-1], self.xvals[1:]):
+			if yv1 <= y and yv2 > y:
+				rang = yv2 - yv1
+				if rang > 0.:
+					mix = (y - yv1) / rang
+				else:
+					mix = 0.
+				x = mix * (xv2 - xv1) + xv1
+				candidates.append(x)
 
-	def EstimatePolyInv(self, minx, maxx, numPoints = 1000, numComp=6):
-		xvals = np.linspace(minx, maxx, numPoints)
-		yvals = []
-		prevy = None
-		for x in xvals:
+		if len(candidates)>0:
+			return candidates
+		else:
+			return None
+
+	def InvFunc(self, y):
+		if self.xvals == None:
+			self.EstimatePiecewiseInv(0., 2.)
+		xcands = self.InvFuncByPiecewise(y)
+		if xcands is not None:
+			return xcands[0]
+		return None #No root found
+
+	def EstimatePiecewiseInv(self, minx, maxx, numPoints = 100):
+		self.xvals = np.linspace(minx, maxx, numPoints)
+		self.yvals = []
+		for x in self.xvals:
 			y = self.func(x)
-			if prevy is not None or y >= prevy:
-				yvals.append(y)
-			else:
-				break
-			prevy = y
+			self.yvals.append(y)
 
 		#import matplotlib.pyplot as plt
 		#plt.plot(xvals, yvals)
 		#plt.show()
 
-		comp = np.ones(numComp)
-		ret = optimize.minimize(self.EvalPolyInv, comp, args=(xvals, yvals), method=self.method)
-		print ret
+		if 0:
+			ytest = np.linspace(min(self.yvals), max(self.yvals), numPoints)
+			xtest = []
+			for y in ytest:
+				xcands = self.InvFuncByPiecewise(y)
+				if ycand is not None:
+					xtest.append(xcands[0])
+				else:
+					xtest.append(None)
 
-		ytest = np.linspace(min(yvals), max(yvals), numPoints)
-		xtest = []
-		for y in ytest:
-			tot = 0.
-			for i, c in enumerate(ret.x):
-				tot += (y ** i) * c
-			xtest.append(tot)
-
-		import matplotlib.pyplot as plt
-		plt.plot(yvals, xvals)
-		plt.plot(ytest, xtest)
-		plt.show()
+			#import matplotlib.pyplot as plt
+			#plt.plot(self.yvals, self.xvals)
+			#plt.plot(ytest, xtest)
+			#plt.show()
 
 	def __call__(self, x):
 		return self.func(x)
@@ -68,15 +78,33 @@ class FishEye(object):
 	def __init__(self):
 		self.imgW = 1280
 		self.imgH = 1024
-		self.a = 0.02694
-		self.b = 0.20635
-		self.c = -0.02845
+		self._a = 0.02694
+		self._b = 0.20635
+		self._c = -0.02845
 		self.d = +18. / 1280.
 		self.e = -0.8 / 1024.
 		self.hfov = 118.75
 		self.halfVfov = self.imgH * math.radians(self.hfov / 2.) / self.imgW
 		self.cLat = 0.
 		self.cLon = 0.
+
+		self.correctionFunc = InvertableFunc()
+		self.paramsChanged = True
+
+	def UpdateCorrectionFunc(self):
+		dval = 1 - (self._a + self._b + self._c)
+		self.correctionFunc.func = lambda x: (x ** 4) * self._a + (x ** 3) * self._b + (x ** 2) * self._c + x * dval
+		self.paramsChanged = False
+
+	def SetCorrectionParams(self, ain, bin, cin):
+		self._a = ain
+		self._b = bin
+		self._c = cin
+		self.paramsChanged = True
+
+	def PrepareForPickle(self):
+		self.correctionFunc.func = None
+		self.paramsChanged = True
 
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
 		out = []
@@ -91,24 +119,20 @@ class FishEye(object):
 			radius = (screenX ** 2. + screenY ** 2.) ** 0.5
 			R = math.atan2(radius, math.tan(self.halfVfov)) / math.atan(1.)
 			
-			print "a1", ang, R
+			#print "a1", ang, R
 
 			#Apply camera lens adjustment
-			dval = 1 - (self.a + self.b + self.c)
-			correctionFunc = InvertableFunc()
-			correctionFunc.func = lambda x: (x ** 4) * self.a + (x ** 3) * self.b + (x ** 2) * self.c + x * dval
-			#correctionFunc = lambda x: (x ** 4) * self.a + (x ** 3) * self.b + (x ** 2) * self.c + x * dval
-			correctionFunc.EstimatePolyInv(0.,3.)
-			exit(0)
-			Rcorrected = correctionFunc.InvFunc(R)
+			if self.paramsChanged:
+				self.UpdateCorrectionFunc()
+			Rcorrected = self.correctionFunc.InvFunc(R)
 
-			print "a2", Rcorrected
+			#print "a2", Rcorrected
 
 			#Calc centred image positions
 			centImgX = Rcorrected * math.sin(ang) * (self.imgH / 2.)
 			centImgY = Rcorrected * math.cos(ang) * (self.imgH / 2.)
 
-			print "a3", centImgX, centImgY
+			#print "a3", centImgX, centImgY
 
 			#Calc final position
 			x = centImgX + (self.imgW / 2.) - self.d * self.imgW
@@ -126,7 +150,7 @@ class FishEye(object):
 			centImgX = pt[0] - (self.imgW / 2.) + self.d * self.imgW
 			centImgY = pt[1] - (self.imgH / 2.) + self.e * self.imgH
 
-			print "b3", centImgX, centImgY
+			#print "b3", centImgX, centImgY
 
 			#Normalise positions
 			centImgX2 = centImgX / (self.imgH / 2.)
@@ -136,16 +160,14 @@ class FishEye(object):
 			R = (centImgX2 ** 2. + centImgY2 ** 2.) ** 0.5
 			ang = math.atan2(centImgX2, centImgY2)
 			
-			print "b2", R
+			#print "b2", R
 
 			#Apply lens correction function
-			dval = 1 - (self.a + self.b + self.c)
-			#correctionFunc = InvertableFunc()
-			#correctionFunc.func = lambda x: (x ** 4) * self.a + (x ** 3) * self.b + (x ** 2) * self.c + x * dval
-			correctionFunc = lambda x: (x ** 4) * self.a + (x ** 3) * self.b + (x ** 2) * self.c + x * dval
-			Rcorrected = correctionFunc(R)
+			if self.paramsChanged:
+				self.UpdateCorrectionFunc()
+			Rcorrected = self.correctionFunc(R)
 
-			print "b1", ang, Rcorrected
+			#print "b1", ang, Rcorrected
 
 			#Calculate x and y in screen plane
 			radius = math.tan(Rcorrected * math.atan(1.)) * math.tan(self.halfVfov)
