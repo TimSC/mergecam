@@ -145,7 +145,7 @@ class MainWindow(QtGui.QMainWindow):
 			for outDevName in self.outputDeviceToWidgetDict:
 				outWidget = self.outputDeviceToWidgetDict[outDevName]
 				if frameCopy is None:
-					frameCopy = copy.deepcopy(frame)
+					frameCopy = copy.deepcopy(frame) #Suspect this is an incomplete solution to crash
 				outWidget.SendFrame(frameCopy, meta, devName)
 
 	def IdleEvent(self):

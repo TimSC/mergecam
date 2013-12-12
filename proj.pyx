@@ -176,6 +176,7 @@ class InvertableFunc(object):
 		self.method = "Powell"
 		self.func = lambda x: x ** 2
 		self.xvals = None
+		self.yvals = None
 
 	def ErrEval(self, x, targety):
 		err = abs(self.func(x)-targety)
@@ -188,7 +189,9 @@ class InvertableFunc(object):
 
 	def InvFuncByPiecewise(self, y, singleRoot = False):
 		candidates = []
-		for yv1, yv2, xv1, xv2 in zip(self.yvals[:-1], self.yvals[1:], self.xvals[:-1], self.xvals[1:]):
+		xlen = len(self.yvals)
+		ylen = len(self.yvals)
+		for yv1, yv2, xv1, xv2 in zip(self.yvals[:ylen-1], self.yvals[1:], self.xvals[:xlen-1], self.xvals[1:]):
 			if min([yv1, yv2]) <= y and max([yv1, yv2]) > y:
 				rang = yv2 - yv1
 				if rang > 0.:
@@ -203,8 +206,8 @@ class InvertableFunc(object):
 			return candidates
 		#print "yvals", min(self.yvals), max(self.yvals), len(self.yvals)
 		#print "xvals", min(self.xvals), max(self.xvals), len(self.xvals)
-		if y >= self.yvals[0] or y < self.yvals[-1]:
-			raise Exception("Error in inverse func at " +str(y))
+		#if y >= self.yvals[0] or y < self.yvals[-1]:
+		#	raise Exception("Error in inverse func at " +str(y))
 		#print self.xvals
 		#print self.yvals
 		return None
@@ -284,7 +287,6 @@ class FishEye(object):
 
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
 		out = []
-		print "Fisheye Proj"
 
 		for pt in ptsLatLon:
 
@@ -306,14 +308,20 @@ class FishEye(object):
 			radius = (screenX ** 2. + screenY ** 2.) ** 0.5
 			R = math.atan2(radius, math.tan(self.halfVfov)) / math.atan(1.)
 			
-			#print "a1", ang, R
+			print "a1", ang, R
 
 			#Apply camera lens adjustment
 			if self.paramsChanged:
 				self.UpdateCorrectionFunc()
-			Rcorrected = self.correctionFunc.InvFunc(R)
+			try:
+				self.correctionFunc.verbose = self.verbose
+				Rcorrected = self.correctionFunc.InvFunc(R)
+			except Exception as err:
+				print err
+				out.append((None, None))
+				continue
 
-			#print "a2", Rcorrected
+			print "a2", Rcorrected
 			if Rcorrected is None:
 				out.append((None, None))
 				if self.verbose:
@@ -324,7 +332,7 @@ class FishEye(object):
 			centImgX = Rcorrected * math.sin(ang) * (self.imgH / 2.)
 			centImgY = Rcorrected * math.cos(ang) * (self.imgH / 2.)
 
-			#print "a3", centImgX, centImgY
+			print "a3", centImgX, centImgY
 
 			#Calc rotation
 			x1 = centImgX * math.cos(self.rot) - centImgY * math.sin(self.rot)
@@ -352,7 +360,6 @@ class FishEye(object):
 
 			out.append((x, y))
 
-		print "Fisheye Proj Done"
 		return out
 
 	def UnProj(self, ptsPix): #Image px to Lat, lon radians
