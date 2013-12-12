@@ -265,7 +265,6 @@ class FishEye(object):
 		self.cLat = 0.
 		self.cLon = 0.
 		self.rot = 0.
-		self.verbose = 0
 
 		self.correctionFunc = InvertableFunc()
 		self.paramsChanged = True
@@ -294,8 +293,6 @@ class FishEye(object):
 			londiff = (pt[1] - self.cLon + math.pi) % (2. * math.pi) - math.pi
 			if londiff < -math.pi * 0.5 or londiff >= math.pi * 0.5:
 				out.append((None, None))
-				if self.verbose:
-					print "Proj(0)", pt, (None, None)
 				continue
 			latdiff = (pt[0] - self.cLat + math.pi * 0.5) % (math.pi) - (0.5 * math.pi)
 
@@ -308,31 +305,28 @@ class FishEye(object):
 			radius = (screenX ** 2. + screenY ** 2.) ** 0.5
 			R = math.atan2(radius, math.tan(self.halfVfov)) / math.atan(1.)
 			
-			print "a1", ang, R
+			#print "a1", ang, R
 
 			#Apply camera lens adjustment
 			if self.paramsChanged:
 				self.UpdateCorrectionFunc()
 			try:
-				self.correctionFunc.verbose = self.verbose
 				Rcorrected = self.correctionFunc.InvFunc(R)
 			except Exception as err:
 				print err
 				out.append((None, None))
 				continue
 
-			print "a2", Rcorrected
+			#print "a2", Rcorrected
 			if Rcorrected is None:
 				out.append((None, None))
-				if self.verbose:
-					print "Proj(1)", pt, (None, None), R, Rcorrected
 				continue
 
 			#Calc centred image positions
 			centImgX = Rcorrected * math.sin(ang) * (self.imgH / 2.)
 			centImgY = Rcorrected * math.cos(ang) * (self.imgH / 2.)
 
-			print "a3", centImgX, centImgY
+			#print "a3", centImgX, centImgY
 
 			#Calc rotation
 			x1 = centImgX * math.cos(self.rot) - centImgY * math.sin(self.rot)
@@ -346,26 +340,16 @@ class FishEye(object):
 
 			if x < 0. or x >= self.imgW:
 				out.append((None, None))
-				if self.verbose:
-					print "Proj(2)", pt, (None, None)
 				continue
 			if y < 0. or y >= self.imgH:
 				out.append((None, None))
-				if self.verbose:
-					print "Proj(3)", pt, (None, None)
 				continue
-
-			if self.verbose:
-				print "Proj", pt, (x, y)
 
 			out.append((x, y))
 
 		return out
 
 	def UnProj(self, ptsPix): #Image px to Lat, lon radians
-
-		if self.verbose:
-			print "UnProj"
 
 		out = [] 
 		for pt in ptsPix:
@@ -406,9 +390,6 @@ class FishEye(object):
 			lon = math.atan(screenX) + self.cLon
 			lat = math.atan2(screenY, screenDistOnGnd) + self.cLat
 			out.append((lat, lon))
-
-			if self.verbose:
-				print "UnProj", pt, (lat, lon)
 
 		return out
 
