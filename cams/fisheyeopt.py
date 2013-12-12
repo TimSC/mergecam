@@ -42,8 +42,9 @@ if __name__=="__main__":
 
 	if 1:
 		ret = optimize.minimize(ErrEval, x0, args=(cam1, cam2, cam1Pts, cam2Pts), method="Powell")
-		print ret.x
+		print "Model", ret.x
 		SetCamVariables(cam1, cam2, ret.x)
+		#SetCamVariables(cam1, cam2, x0)
 		cam1.PrepareForPickle()
 		cam2.PrepareForPickle()
 		pickle.dump(cam1, open("cam1.dat", "wb"), protocol = -1)
@@ -54,10 +55,10 @@ if __name__=="__main__":
 
 	cam1latLons = cam1.UnProj(cam1Pts)
 
-	for pt in cam1Pts:
-		pt2 = cam1.UnProj([pt])
-		rpt = cam1.Proj(pt2)
-		print "chk", pt, rpt[0]
+	#for pt in cam1Pts:
+	#	pt2 = cam1.UnProj([pt])
+	#	rpt = cam1.Proj(pt2)
+	#	print "chk", pt, rpt[0]
 
 	cam2latLons = cam2.UnProj(cam2Pts)
 	#for i, (pt1, pt2) in enumerate(zip(cam1latLons, cam2latLons)):

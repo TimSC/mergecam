@@ -79,9 +79,9 @@ class FishEye(object):
 	def __init__(self):
 		self.imgW = 1280
 		self.imgH = 1024
-		self._a = 0.02694
-		self._b = 0.20635
-		self._c = -0.02845
+		self._a = 0.
+		self._b = 0.
+		self._c = 0.
 		self.d = 0. / 1280.
 		self.e = 0. / 1024.
 		self.hfov = 118.75
