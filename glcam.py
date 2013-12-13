@@ -5,7 +5,7 @@ All rights reserved.
 import sys, time, os, random, copy
 from PyQt4 import QtGui, QtCore
 import videolive
-import vidinput, vidoutput, vidstack, vidpano
+import vidinput, vidoutput, vidstack, vidpano, vidwriter
 import numpy as np
 
 class MainWindow(QtGui.QMainWindow):
@@ -126,6 +126,8 @@ class MainWindow(QtGui.QMainWindow):
 			widget = vidoutput.VideoOutWidget(fina, self.vidOut)
 			self.sourceList.addWidget(widget)
 			self.outputDeviceToWidgetDict[fina] = widget
+
+		self.sourceList.addWidget(vidwriter.VideoWriterWidget())
 
 	def ProcessFrame(self, frame, meta, devName):
 		if 0: #Debug code
