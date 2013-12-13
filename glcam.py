@@ -2,7 +2,7 @@
 Copyright (c) 2013, Tim Sheerman-Chase
 All rights reserved.
 '''
-import sys, time, os, random
+import sys, time, os, random, copy
 from PyQt4 import QtGui, QtCore
 import videolive
 import vidinput, vidoutput, vidstack, vidpano
@@ -128,7 +128,7 @@ class MainWindow(QtGui.QMainWindow):
 
 	def ProcessFrame(self, frame, meta, devName):
 
-		if 0: #Debug code
+		if 1: #Debug code
 			self.frameTestStore.append(frame)
 			self.metaTestStore.append(meta)
 			while len(self.frameTestStore)>100:
@@ -137,12 +137,12 @@ class MainWindow(QtGui.QMainWindow):
 			ri = random.randint(0, len(self.frameTestStore)-1)
 			randomFrame = self.frameTestStore[ri]
 			randomMeta = self.metaTestStore[ri]
-			print len(randomFrame), randomMeta['height']*randomMeta['width']*3, type(randomFrame), randomMeta
+			#print len(randomFrame), randomMeta['height']*randomMeta['width']*3, type(randomFrame), randomMeta
 			arr = np.array(randomFrame, dtype=np.uint8)
 			source = arr.reshape((randomMeta['height'], randomMeta['width'], 3))
 			rx = random.randint(0, source.shape[1]-1)
 			ry = random.randint(0, source.shape[0]-1)
-			print "random pixel value", source[ry, rx]
+			#print "random pixel value", source[ry, rx]
 
 		#Send frames to processing widgets
 		for devId in self.processingWidgets:

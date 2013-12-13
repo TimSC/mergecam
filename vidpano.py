@@ -348,7 +348,7 @@ class PanoWidget(QtGui.QFrame):
 		selectedProj = self.projectionType.currentText()
 		camProjFactory = None
 		if selectedProj == "Rectilinear":
-			camProjFactory = proj.RectilinearCam
+			camProjFactory = proj.Rectilinear
 			projParams = {}
 		if selectedProj == "Fisheye":
 			camProjFactory = proj.FishEye
@@ -410,7 +410,7 @@ class PanoWidget(QtGui.QFrame):
 
 		#Calibrate cameras
 		self.cameraArrangement = CameraArrangement(self.framePairs[0])
-		visobj = visualise.VisualiseArrangement()
+		#visobj = visualise.VisualiseArrangement()
 		bestPair = 1	
 
 		while bestPair is not None:# and len(self.cameraArrangement.addedPhotos) < 5:
