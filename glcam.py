@@ -108,7 +108,9 @@ class MainWindow(QtGui.QMainWindow):
                         if len(devInfo) >= 2:
                                friendlyName = devInfo[1]
 
-			widget = vidinput.SourceWidget(fina, self.devManager, friendlyName)
+			#widget = vidinput.SourceWidget(fina, self.devManager, friendlyName)
+			widget = vidinput.EmulateFixedRateVideoSource(fina, self.devManager, friendlyName)
+
 			QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
 			QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
 			self.sourceList.addWidget(widget)
@@ -150,10 +152,10 @@ class MainWindow(QtGui.QMainWindow):
 		if devName not in self.rxTimes:
 			self.rxTimes[devName] = []
 		timeNow = time.time()
-		self.rxTimes[devName].append(timeNow)
-		if timeNow - self.rxTimes[devName][0] > 1.:
-			print devName, len(self.rxTimes[devName]) / (self.rxTimes[devName][-1] - self.rxTimes[devName][0]), "hz"
+		if len(self.rxTimes[devName]) >= 2 and timeNow - self.rxTimes[devName][0] > 1.:
+			print devName, (len(self.rxTimes[devName])-1) / (self.rxTimes[devName][-1] - self.rxTimes[devName][0]), "hz"
 			self.rxTimes[devName] = []
+		self.rxTimes[devName].append(timeNow)
 
 		#Send frames to processing widgets
 		for devId in self.processingWidgets:

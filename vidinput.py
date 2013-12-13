@@ -1,5 +1,6 @@
 
 from PyQt4 import QtGui, QtCore
+import time
 
 class SourceWidget(QtGui.QFrame):
 	def __init__(self, devId, devManager, friendlyName):
@@ -92,3 +93,26 @@ class SourceWidget(QtGui.QFrame):
 
 	def IsChecked(self):
 		return self.checkbox.isChecked()
+
+class EmulateFixedRateVideoSource(SourceWidget):
+	def __init__(self, devId, devManager, friendlyName):
+		SourceWidget.__init__(self, devId, devManager, friendlyName)
+		self.currentFrame = None
+		self.currentMeta = None
+		self.lastSendTime = None
+
+	def Update(self):
+		if self.cameraOn:
+			data = self.devManager.get_frame(self.devId)
+
+			if data is not None:
+				self.UpdatePreview(data[0], data[1])
+				self.currentFrame = data[0]
+				self.currentMeta = data[1]
+
+			timeNow = time.time()
+			if self.lastSendTime is None or timeNow - self.lastSendTime > (1./30.):
+				if self.currentFrame is not None:
+					self.emit(QtCore.SIGNAL('webcam_frame'), self.currentFrame, self.currentMeta, self.devId)
+					self.lastSendTime = timeNow
+
