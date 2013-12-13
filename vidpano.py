@@ -39,13 +39,15 @@ def DetectAcrossImage(img, detector, targetPatchSize = 100.):
 
 
 def GetKeypointsAndDescriptors(im1):
-	print GetKeypointsAndDescriptors
+	print "Convert to grey"
+	grey1 = cv2.cvtColor(im1,cv2.COLOR_BGR2GRAY)
+	print "Conversion done"
+
+	print "GetKeypointsAndDescriptors"
 	detector = cv2.FeatureDetector_create("ORB")
 	#print detector.getParams()
 	detector.setInt("nFeatures", 50)
 	descriptor = cv2.DescriptorExtractor_create("BRIEF")
-
-	grey1 = cv2.cvtColor(im1,cv2.COLOR_BGR2GRAY)
 
 	#print "Extracting points of interest 1"
 	#keypoints1 = detector.detect(grey1)

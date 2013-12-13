@@ -99,20 +99,30 @@ class EmulateFixedRateVideoSource(SourceWidget):
 		SourceWidget.__init__(self, devId, devManager, friendlyName)
 		self.currentFrame = None
 		self.currentMeta = None
-		self.lastSendTime = None
+		self.frameTimes = []
 
 	def Update(self):
 		if self.cameraOn:
 			data = self.devManager.get_frame(self.devId)
 
 			if data is not None:
-				self.UpdatePreview(data[0], data[1])
 				self.currentFrame = data[0]
 				self.currentMeta = data[1]
 
 			timeNow = time.time()
-			if self.lastSendTime is None or timeNow - self.lastSendTime > (1./30.):
-				if self.currentFrame is not None:
+			if self.currentFrame is not None:
+				send = False
+				if len(self.frameTimes) < 2:
+					send = True
+				else:
+					rate = len(self.frameTimes) / (timeNow - self.frameTimes[0])
+					if rate < 30:
+						send = True
+
+				if send:
+					self.UpdatePreview(self.currentFrame, self.currentMeta)
 					self.emit(QtCore.SIGNAL('webcam_frame'), self.currentFrame, self.currentMeta, self.devId)
-					self.lastSendTime = timeNow
+					self.frameTimes.append(timeNow)
+					while len(self.frameTimes) > 50:
+						self.frameTimes.pop(0)
 
