@@ -39,6 +39,7 @@ def DetectAcrossImage(img, detector, targetPatchSize = 100.):
 
 
 def GetKeypointsAndDescriptors(im1):
+	print GetKeypointsAndDescriptors
 	detector = cv2.FeatureDetector_create("ORB")
 	#print detector.getParams()
 	detector.setInt("nFeatures", 50)
@@ -51,6 +52,7 @@ def GetKeypointsAndDescriptors(im1):
 	keypoints1 = DetectAcrossImage(grey1, detector)
 	#VisualiseKeypoints(grey1, keypoints1)
 	(keypoints1, descriptors1) = descriptor.compute(grey1, keypoints1)
+	print "Done"
 	return (keypoints1, descriptors1)
 
 def CalcHomographyForImagePair(keypoints1, descriptors1, keypoints2, descriptors2):

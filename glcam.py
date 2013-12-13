@@ -18,6 +18,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.currentSrcId = None
 		self.frameTestStore = []
 		self.metaTestStore = []
+		self.rxTimes = {}
 
 		self.vidOut = videolive.Video_out_manager()
 		self.devManager = videolive.Video_in_manager()
@@ -128,7 +129,7 @@ class MainWindow(QtGui.QMainWindow):
 
 	def ProcessFrame(self, frame, meta, devName):
 
-		if 1: #Debug code
+		if 0: #Debug code
 			self.frameTestStore.append(frame)
 			self.metaTestStore.append(meta)
 			while len(self.frameTestStore)>100:
@@ -143,6 +144,15 @@ class MainWindow(QtGui.QMainWindow):
 			rx = random.randint(0, source.shape[1]-1)
 			ry = random.randint(0, source.shape[0]-1)
 			#print "random pixel value", source[ry, rx]
+
+		#Estimate frame rates
+		if devName not in self.rxTimes:
+			self.rxTimes[devName] = []
+		timeNow = time.time()
+		self.rxTimes[devName].append(timeNow)
+		if timeNow - self.rxTimes[devName][0] > 1.:
+			print devName, len(self.rxTimes), len(self.rxTimes) / (self.rxTimes[devName][-1] - self.rxTimes[devName][0]), "hz"
+			self.rxTimes[devName] = []
 
 		#Send frames to processing widgets
 		for devId in self.processingWidgets:
