@@ -128,7 +128,7 @@ class MainWindow(QtGui.QMainWindow):
 
 	def ProcessFrame(self, frame, meta, devName):
 
-		if 1: #Debug code
+		if 0: #Debug code
 			self.frameTestStore.append(frame)
 			self.metaTestStore.append(meta)
 			while len(self.frameTestStore)>100:

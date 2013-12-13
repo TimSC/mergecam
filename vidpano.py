@@ -451,6 +451,10 @@ class PanoWidget(QtGui.QFrame):
 				photo = self.cameraArrangement.addedPhotos[photoId]
 				print photoId, photo.cLat, photo.cLon
 				#print "Proj test", photo.Proj([(0.,0.)])
+				hfov = photo.UnProj([(0., photo.imgH * 0.5), (photo.imgW, photo.imgH * 0.5)])
+				vfov = photo.UnProj([(photo.imgW * 0.5, 0.), (photo.imgW * 0.5, photo.imgH)])
+				print "HFOV", math.degrees(hfov[1][1] - hfov[0][1])
+				print "VFOV", math.degrees(vfov[1][0] - vfov[0][0])
 
 			if 0:
 				vis = visobj.Vis(self.calibrationFrames[0], self.calibrationMeta[0], self.framePairs[0], self.cameraArrangement)
