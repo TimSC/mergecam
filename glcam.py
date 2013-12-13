@@ -128,7 +128,6 @@ class MainWindow(QtGui.QMainWindow):
 			self.outputDeviceToWidgetDict[fina] = widget
 
 	def ProcessFrame(self, frame, meta, devName):
-
 		if 0: #Debug code
 			self.frameTestStore.append(frame)
 			self.metaTestStore.append(meta)
@@ -151,7 +150,7 @@ class MainWindow(QtGui.QMainWindow):
 		timeNow = time.time()
 		self.rxTimes[devName].append(timeNow)
 		if timeNow - self.rxTimes[devName][0] > 1.:
-			print devName, len(self.rxTimes), len(self.rxTimes) / (self.rxTimes[devName][-1] - self.rxTimes[devName][0]), "hz"
+			print devName, len(self.rxTimes[devName]) / (self.rxTimes[devName][-1] - self.rxTimes[devName][0]), "hz"
 			self.rxTimes[devName] = []
 
 		#Send frames to processing widgets
