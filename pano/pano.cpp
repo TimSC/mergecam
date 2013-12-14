@@ -46,6 +46,7 @@ double GetPyTime(PyObject *timeFunc)
 	double t = PyFloat_AsDouble(pyTime);
 	if(pyTime!=NULL) Py_DECREF(pyTime);
 	Py_DECREF(args);
+	std::cout << "GetPyTime " << t << std::endl;
 	return t;
 }
 
