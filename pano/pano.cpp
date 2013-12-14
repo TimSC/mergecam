@@ -305,6 +305,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
  		Py_RETURN_NONE;
 	}
 
+	double time1 = double(clock()) / CLOCKS_PER_SEC;
+	std::cout << "Time1 " << time1 - startTime << std::endl;
+
 	//Get source buffers and meta
 	std::vector<unsigned char *> srcBuffs;
 	std::vector<PyObject *> srcObjs;
@@ -356,15 +359,14 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		}
 	}
 
+	double time2 = double(clock()) / CLOCKS_PER_SEC;
+	std::cout << "Time2 " << time2 - startTime << std::endl;
+
 	//Initialize output image colour
-	for(long y=0; y < self->outImgH; y++)
-	for(long x=0; x < self->outImgW; x++)
-	{
-		unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
-		dstRgbTuple[0] = 0;
-		dstRgbTuple[1] = 0;
-		dstRgbTuple[2] = 0;
-	}
+	memset(pxOutRaw, 0x00, pxOutSize);
+
+	double time3 = double(clock()) / CLOCKS_PER_SEC;
+	std::cout << "Time3 " << time3 - startTime << std::endl;
 
 	//Resize weight sum structure if necessary
 	while(self->weightSum.size() < self->outImgW)
@@ -390,24 +392,19 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		self->imageCount[x].push_back(0);
 	}
 	
-	//Initialise weights and count to zero
-	for(long y=0; y < self->outImgH; y++)
-	for(long x=0; x < self->outImgW; x++)
-	{
-		self->weightSum[x][y] = 0.f;
-		self->imageCount[x][y] = 0;
-	}
-
-	double time1 = double(clock()) / CLOCKS_PER_SEC;
-	std::cout << "Time1 " << time1 - startTime << std::endl;
+	double time4 = double(clock()) / CLOCKS_PER_SEC;
+	std::cout << "Time4 " << time4 - startTime << std::endl;
 
 	//Transfer source images to output buffer
 	int count = 0;
-	for(long y=0; y < self->outImgH; y++)
 	for(long x=0; x < self->outImgW; x++)
 	{
+	std::vector<std::vector<class PxInfo> > &mappingCol = mapping[x];
+
+	for(long y=0; y < self->outImgH; y++)
+	{
 		unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
-		std::vector<class PxInfo> &sources = mapping[x][y];
+		std::vector<class PxInfo> &sources = mappingCol[y];
 
 		//Copy pixels
 		for(unsigned srcNum = 0; srcNum <sources.size(); srcNum++)
@@ -430,6 +427,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			unsigned char *srcRgbTuple = (unsigned char *)&srcBuff[tupleOffset];
 
 			//Calculate alpha opacity
+			//TODO save alpha values to avoid recomputing it repeatedly
 			float fx = pxInfo.x / sw;
 			float fy = pxInfo.y / sh;
 			float featherExp = 2.0;
@@ -457,10 +455,11 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			count += 1;
 		}
 	}
+	}
 	//std::cout << count << std::endl;
 
-	double time2 = double(clock()) / CLOCKS_PER_SEC;
-	std::cout << "Time2 " << time2 - startTime << std::endl;
+	double time6 = double(clock()) / CLOCKS_PER_SEC;
+	std::cout << "Time6 " << time6 - startTime << std::endl;
 
 	//PyObject *pxOut = PyByteArray_FromStringAndSize(pxOutRaw, pxOutSize);
 	//PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
