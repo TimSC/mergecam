@@ -13,6 +13,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <map>
 #include <vector>
 #include <stdexcept>
@@ -26,12 +27,26 @@ public:
 	std::vector<std::vector<float> > weightSum;
 	std::vector<std::vector<unsigned> > imageCount;
 	long outImgW, outImgH;
+	PyObject *timeModule;
+	PyObject *timeFunc;
 };
 typedef PanoView_cl PanoView;
 
 static PyObject *TestFunc(PyObject *self, PyObject *args)
 {
 	Py_RETURN_NONE;
+}
+
+double GetPyTime(PyObject *timeFunc)
+{
+	if(timeFunc==NULL)
+		throw std::runtime_error("timeFunc ptr is null");
+	PyObject *args = PyTuple_New(1);
+	PyObject *pyTime = PyObject_Call(timeFunc, args, NULL);
+	double t = PyFloat_AsDouble(pyTime);
+	if(pyTime!=NULL) Py_DECREF(pyTime);
+	Py_DECREF(args);
+	return t;
 }
 
 // **********************************************************************
@@ -66,6 +81,8 @@ public:
 
 static void PanoView_dealloc(PanoView *self)
 {
+	if(self->timeModule != NULL) Py_DECREF(self->timeModule);
+	if(self->timeFunc != NULL) Py_DECREF(self->timeFunc);
 
 	if(self->mapping) delete self->mapping;
 	self->mapping = NULL;
@@ -76,6 +93,9 @@ static void PanoView_dealloc(PanoView *self)
 static int PanoView_init(PanoView *self, PyObject *args,
 		PyObject *kwargs)
 {
+	self->timeModule = PyImport_ImportModule("time");
+	self->timeFunc = PyObject_GetAttrString(self->timeModule, "time");
+
 	self->mapping = new std::vector<std::vector<std::vector<class PxInfo> > >;
 
 	if(PyTuple_Size(args) < 2)
@@ -274,6 +294,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		PyErr_Format(PyExc_RuntimeError, "Two arguments required.");
  		Py_RETURN_NONE;
 	}
+
+	double startTime = GetPyTime(self->timeFunc);
 
 	PyObject *images = PyTuple_GetItem(args, 0);
 	PyObject *metas = PyTuple_GetItem(args, 1);
@@ -479,6 +501,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	srcObjs.clear();
 	Py_DECREF(images);
 	Py_DECREF(metas);
+
+	std::cout << "PanoView_Vis " << GetPyTime(self->timeFunc) - startTime << std::endl;
 
 	//Py_RETURN_NONE;
 	return out;
