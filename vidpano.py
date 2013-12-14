@@ -43,18 +43,20 @@ def GetKeypointsAndDescriptors(im1):
 	grey1 = cv2.cvtColor(im1,cv2.COLOR_BGR2GRAY)
 	print "Conversion done"
 
-	print "GetKeypointsAndDescriptors"
+	print "GetKeypoints"
 	detector = cv2.FeatureDetector_create("ORB")
 	#print detector.getParams()
 	detector.setInt("nFeatures", 50)
 	descriptor = cv2.DescriptorExtractor_create("BRIEF")
+	print "GetKeypoints done"
 
+	print "Get descriptors"
 	#print "Extracting points of interest 1"
 	#keypoints1 = detector.detect(grey1)
 	keypoints1 = DetectAcrossImage(grey1, detector)
 	#VisualiseKeypoints(grey1, keypoints1)
 	(keypoints1, descriptors1) = descriptor.compute(grey1, keypoints1)
-	print "Done"
+	print "Get descriptors done"
 	return (keypoints1, descriptors1)
 
 def CalcHomographyForImagePair(keypoints1, descriptors1, keypoints2, descriptors2):

@@ -363,7 +363,15 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	std::cout << "Time2 " << time2 - startTime << std::endl;
 
 	//Initialize output image colour
-	memset(pxOutRaw, 0x00, pxOutSize);
+	for(long y=0; y < self->outImgH; y++)
+	for(long x=0; x < self->outImgW; x++)
+	{
+		unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
+		dstRgbTuple[0] = 0;
+		dstRgbTuple[1] = 0;
+		dstRgbTuple[2] = 0;
+	}
+	//memset(pxOutRaw, 0x00, pxOutSize);
 
 	double time3 = double(clock()) / CLOCKS_PER_SEC;
 	std::cout << "Time3 " << time3 - startTime << std::endl;
@@ -395,11 +403,29 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	double time4 = double(clock()) / CLOCKS_PER_SEC;
 	std::cout << "Time4 " << time4 - startTime << std::endl;
 
+	//Initialise weights and count to zero
+	for(long x=0; x < self->outImgW; x++)
+	{
+		std::vector<float> &weightSumCol = self->weightSum[x];
+		std::vector<unsigned> &imageCountCol = self->imageCount[x];
+
+		for(long y=0; y < self->outImgH; y++)
+		{
+			weightSumCol[y] = 0.f;
+			imageCountCol[y] = 0;
+		}
+	}
+
+	double time5 = double(clock()) / CLOCKS_PER_SEC;
+	std::cout << "Time5 " << time5 - startTime << std::endl;
+
 	//Transfer source images to output buffer
 	int count = 0;
 	for(long x=0; x < self->outImgW; x++)
 	{
 	std::vector<std::vector<class PxInfo> > &mappingCol = mapping[x];
+	std::vector<float> &weightSumCol = self->weightSum[x];
+	std::vector<unsigned> &imageCountCol = self->imageCount[x];
 
 	for(long y=0; y < self->outImgH; y++)
 	{
@@ -427,7 +453,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			unsigned char *srcRgbTuple = (unsigned char *)&srcBuff[tupleOffset];
 
 			//Calculate alpha opacity
-			//TODO save alpha values to avoid recomputing it repeatedly
 			float fx = pxInfo.x / sw;
 			float fy = pxInfo.y / sh;
 			float featherExp = 2.0;
@@ -436,13 +461,13 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			//std::cout << fx << "," << fy << "," << alpha << std::endl;
 
 			//Calculate colour mix
-			float pxWeightSum = self->weightSum[x][y];
-			unsigned pxImageCount = self->imageCount[x][y];
+			float pxWeightSum = weightSumCol[y];
+			unsigned pxImageCount = imageCountCol[y];
 
 			float mixFraction1 = alpha / (alpha + pxWeightSum * pxImageCount);
 			float mixFraction2 = 1.f - mixFraction1;
-			self->weightSum[x][y] = (pxWeightSum * pxImageCount + alpha) / (pxImageCount + 1);
-			self->imageCount[x][y] ++;
+			weightSumCol[y] = (pxWeightSum * pxImageCount + alpha) / (pxImageCount + 1);
+			imageCountCol[y] ++;
 
 			//Copy pixel
 			dstRgbTuple[0] = srcRgbTuple[0] * mixFraction1 + dstRgbTuple[0] * mixFraction2;
