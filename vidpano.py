@@ -1,7 +1,7 @@
 
 from PyQt4 import QtGui, QtCore
 import uuid
-import cv2, cv, proj, math, random
+import cv2, cv, proj, math, random, time
 import numpy as np
 import scipy.optimize as optimize
 import visualise, pano
@@ -491,7 +491,9 @@ class PanoWidget(QtGui.QFrame):
 					self.outBuffer.append([vis.tostring(), metaOut])
 				if 1:
 					#print len(self.currentFrame), self.currentMeta
+					startTime = time.time()
 					visPixOut, visMetaOut = self.visobj.Vis(self.currentFrame.values(), self.currentMeta.values())
+					print "Generated panorama in",time.time()-startTime,"sec"
 					#self.visobj.Vis(self.currentFrame.values(), self.currentMeta.values())
 
 					#visPixOut = bytearray([128 for i in range(800 * 600 * 3)])
