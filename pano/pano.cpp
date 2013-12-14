@@ -398,6 +398,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		self->imageCount[x][y] = 0;
 	}
 
+	double time1 = double(clock()) / CLOCKS_PER_SEC;
+	std::cout << "Time1 " << time1 - startTime << std::endl;
+
 	//Transfer source images to output buffer
 	int count = 0;
 	for(long y=0; y < self->outImgH; y++)
@@ -455,6 +458,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		}
 	}
 	//std::cout << count << std::endl;
+
+	double time2 = double(clock()) / CLOCKS_PER_SEC;
+	std::cout << "Time2 " << time2 - startTime << std::endl;
 
 	//PyObject *pxOut = PyByteArray_FromStringAndSize(pxOutRaw, pxOutSize);
 	//PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
