@@ -424,10 +424,10 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	//Normalise mix coefficients
 	for(long x=0; x < self->outImgW; x++)
 	{
-		std::vector<std::vector<float> > &srcWeightsCol = self->srcWeights[x];
-		float total = 0.f;
+		std::vector<std::vector<float> > &srcWeightsCol = self->srcWeights[x];		
 		for(long y=0; y < self->outImgH; y++)
 		{
+			float total = 0.f;
 			std::vector<float> &pxSrcWeights = srcWeightsCol[y];
 			for(unsigned srcNum = 0; srcNum < pxSrcWeights.size(); srcNum++)
 				total += pxSrcWeights[srcNum];
@@ -472,9 +472,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 			//Copy pixel
 			float mix = pxSrcWeights[srcNum];
-			dstRgbTuple[0] = srcRgbTuple[0] * mix;
-			dstRgbTuple[1] = srcRgbTuple[1] * mix;
-			dstRgbTuple[2] = srcRgbTuple[2] * mix;
+			dstRgbTuple[0] += srcRgbTuple[0] * mix;
+			dstRgbTuple[1] += srcRgbTuple[1] * mix;
+			dstRgbTuple[2] += srcRgbTuple[2] * mix;
 
 			count += 1;
 		}
