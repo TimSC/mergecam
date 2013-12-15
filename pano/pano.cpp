@@ -25,8 +25,7 @@ public:
 	PyObject_HEAD
 
 	std::vector<std::vector<std::vector<class PxInfo> > > *mapping;
-	std::vector<std::vector<float> > weightSum;
-	std::vector<std::vector<unsigned> > imageCount;
+	std::vector<std::vector<std::vector<float> > > srcWeights;
 	long outImgW, outImgH;
 	PyObject *timeModule;
 	PyObject *timeFunc;
@@ -376,61 +375,80 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	double time3 = double(clock()) / CLOCKS_PER_SEC;
 	std::cout << "Time3 " << time3 - startTime << std::endl;
 
-	//Resize weight sum structure if necessary
-	while(self->weightSum.size() < self->outImgW)
-	{
-		std::vector<float> temp;	
-		self->weightSum.push_back(temp);
-	}
-	for(long x=0; x < self->outImgW; x++)
-	while(self->weightSum[x].size() < self->outImgH)
-	{
-		self->weightSum[x].push_back(0.f);
-	}
-	
-	//Resize image count structure if necessary
-	while(self->imageCount.size() < self->outImgW)
-	{
-		std::vector<unsigned> temp;	
-		self->imageCount.push_back(temp);
-	}
-	for(long x=0; x < self->outImgW; x++)
-	while(self->imageCount[x].size() < self->outImgH)
-	{
-		self->imageCount[x].push_back(0);
-	}
-	
-	double time4 = double(clock()) / CLOCKS_PER_SEC;
-	std::cout << "Time4 " << time4 - startTime << std::endl;
-
-	//Initialise weights and count to zero
-	for(long x=0; x < self->outImgW; x++)
-	{
-		std::vector<float> &weightSumCol = self->weightSum[x];
-		std::vector<unsigned> &imageCountCol = self->imageCount[x];
-
-		for(long y=0; y < self->outImgH; y++)
-		{
-			weightSumCol[y] = 0.f;
-			imageCountCol[y] = 0;
-		}
-	}
-
-	double time5 = double(clock()) / CLOCKS_PER_SEC;
-	std::cout << "Time5 " << time5 - startTime << std::endl;
-
-	//Transfer source images to output buffer
+	//Calculate source image mix ratios
 	int count = 0;
+	self->srcWeights.clear();
 	for(long x=0; x < self->outImgW; x++)
 	{
 	std::vector<std::vector<class PxInfo> > &mappingCol = mapping[x];
-	std::vector<float> &weightSumCol = self->weightSum[x];
-	std::vector<unsigned> &imageCountCol = self->imageCount[x];
+	std::vector<std::vector<float> > srcWeightsCol;
+
+	for(long y=0; y < self->outImgH; y++)
+	{
+		std::vector<class PxInfo> &sources = mappingCol[y];
+
+		//Copy pixels
+		std::vector<float> pxSrcWeights;
+		for(unsigned srcNum = 0; srcNum <sources.size(); srcNum++)
+		{ 
+			class PxInfo &pxInfo = sources[srcNum];
+			long sw = srcWidth[pxInfo.camId];
+			long sh = srcHeight[pxInfo.camId];
+
+			//Nearest neighbour pixel
+			long srx = (int)(pxInfo.x+0.5);
+			long sry = (int)(pxInfo.y+0.5);
+
+			if(srx<0 || srx >= sw) continue;
+			if(sry<0 || sry >= sh) continue;
+
+			unsigned tupleOffset = srx*3 + sry*3*sw;
+			if(tupleOffset < 0 || tupleOffset+3 >= srcBuffLen[pxInfo.camId])
+				continue; //Protect against buffer overrun
+
+			//Calculate alpha opacity
+			float fx = pxInfo.x / sw;
+			float fy = pxInfo.y / sh;
+			float featherExp = 2.0;
+			float alpha = pow(1.f - 2.f * fabs(0.5 - fx), featherExp) * pow(1.f - 2.f * fabs(0.5 - fy), featherExp);
+			if(alpha < 0.) alpha = 0.;
+			pxSrcWeights.push_back(alpha);
+
+			count += 1;
+		}
+		srcWeightsCol.push_back(pxSrcWeights);
+	}
+	self->srcWeights.push_back(srcWeightsCol);
+	}
+
+	//Normalise mix coefficients
+	for(long x=0; x < self->outImgW; x++)
+	{
+		std::vector<std::vector<float> > &srcWeightsCol = self->srcWeights[x];
+		float total = 0.f;
+		for(long y=0; y < self->outImgH; y++)
+		{
+			std::vector<float> &pxSrcWeights = srcWeightsCol[y];
+			for(unsigned srcNum = 0; srcNum < pxSrcWeights.size(); srcNum++)
+				total += pxSrcWeights[srcNum];
+
+			for(unsigned srcNum = 0; srcNum < pxSrcWeights.size(); srcNum++)
+				pxSrcWeights[srcNum] /= total;
+		}
+	}
+
+	//Transfer source images to output buffer
+	count = 0;
+	for(long x=0; x < self->outImgW; x++)
+	{
+	std::vector<std::vector<class PxInfo> > &mappingCol = mapping[x];
+	std::vector<std::vector<float> > &srcWeightsCol = self->srcWeights[x];
 
 	for(long y=0; y < self->outImgH; y++)
 	{
 		unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
 		std::vector<class PxInfo> &sources = mappingCol[y];
+		std::vector<float> &pxSrcWeights = srcWeightsCol[y];
 
 		//Copy pixels
 		for(unsigned srcNum = 0; srcNum <sources.size(); srcNum++)
@@ -452,30 +470,11 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				continue; //Protect against buffer overrun
 			unsigned char *srcRgbTuple = (unsigned char *)&srcBuff[tupleOffset];
 
-			//Calculate alpha opacity
-			float fx = pxInfo.x / sw;
-			float fy = pxInfo.y / sh;
-			float featherExp = 2.0;
-			float alpha = pow(1.f - 2.f * fabs(0.5 - fx), featherExp) * pow(1.f - 2.f * fabs(0.5 - fy), featherExp);
-			if(alpha < 0.) alpha = 0.;
-			//std::cout << fx << "," << fy << "," << alpha << std::endl;
-
-			//Calculate colour mix
-			float pxWeightSum = weightSumCol[y];
-			unsigned pxImageCount = imageCountCol[y];
-
-			float mixFraction1 = alpha / (alpha + pxWeightSum * pxImageCount);
-			float mixFraction2 = 1.f - mixFraction1;
-			weightSumCol[y] = (pxWeightSum * pxImageCount + alpha) / (pxImageCount + 1);
-			imageCountCol[y] ++;
-
 			//Copy pixel
-			dstRgbTuple[0] = srcRgbTuple[0] * mixFraction1 + dstRgbTuple[0] * mixFraction2;
-			dstRgbTuple[1] = srcRgbTuple[1] * mixFraction1 + dstRgbTuple[1] * mixFraction2;
-			dstRgbTuple[2] = srcRgbTuple[2] * mixFraction1 + dstRgbTuple[2] * mixFraction2;
-			//dstRgbTuple[0] = srcRgbTuple[0];
-			//dstRgbTuple[1] = srcRgbTuple[1];
-			//dstRgbTuple[2] = srcRgbTuple[2];
+			float mix = pxSrcWeights[srcNum];
+			dstRgbTuple[0] = srcRgbTuple[0] * mix;
+			dstRgbTuple[1] = srcRgbTuple[1] * mix;
+			dstRgbTuple[2] = srcRgbTuple[2] * mix;
 
 			count += 1;
 		}
