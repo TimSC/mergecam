@@ -362,22 +362,24 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	std::cout << "Time2 " << time2 - startTime << std::endl;
 
 	//Initialize output image colour
-	for(long y=0; y < self->outImgH; y++)
+	/*for(long y=0; y < self->outImgH; y++)
 	for(long x=0; x < self->outImgW; x++)
 	{
 		unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
 		dstRgbTuple[0] = 0;
 		dstRgbTuple[1] = 0;
 		dstRgbTuple[2] = 0;
-	}
-	//memset(pxOutRaw, 0x00, pxOutSize);
+	}*/
+	memset(pxOutRaw, 0x00, pxOutSize);
 
 	double time3 = double(clock()) / CLOCKS_PER_SEC;
 	std::cout << "Time3 " << time3 - startTime << std::endl;
 
 	//Calculate source image mix ratios
 	int count = 0;
-	self->srcWeights.clear();
+	if(self->srcWeights.size() == 0)
+	{
+	//self->srcWeights.clear();
 	for(long x=0; x < self->outImgW; x++)
 	{
 	std::vector<std::vector<class PxInfo> > &mappingCol = mapping[x];
@@ -436,6 +438,10 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				pxSrcWeights[srcNum] /= total;
 		}
 	}
+	}
+
+	double time4 = double(clock()) / CLOCKS_PER_SEC;
+	std::cout << "Time4 " << time4 - startTime << std::endl;
 
 	//Transfer source images to output buffer
 	count = 0;
