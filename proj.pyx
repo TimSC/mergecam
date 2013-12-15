@@ -145,9 +145,9 @@ class BaseCam(object):
 		self.paramsChanged = False
 
 	def SetCorrectionParams(self, ain, bin, cin):
-		self._a = ain
-		self._b = bin
-		self._c = cin
+		if ain is not None: self._a = ain
+		if bin is not None: self._b = bin
+		if cin is not None: self._c = cin
 		self.paramsChanged = True
 
 	def PrepareForPickle(self):

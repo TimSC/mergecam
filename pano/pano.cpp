@@ -279,7 +279,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
  		Py_RETURN_NONE;
 	}
 
-	double startTime = double(clock()) / CLOCKS_PER_SEC;
+	//double startTime = double(clock()) / CLOCKS_PER_SEC;
 
 	PyObject *images = PyTuple_GetItem(args, 0);
 	PyObject *metas = PyTuple_GetItem(args, 1);
@@ -304,8 +304,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
  		Py_RETURN_NONE;
 	}
 
-	double time1 = double(clock()) / CLOCKS_PER_SEC;
-	std::cout << "Time1 " << time1 - startTime << std::endl;
+	//double time1 = double(clock()) / CLOCKS_PER_SEC;
+	//std::cout << "Time1 " << time1 - startTime << std::endl;
 
 	//Get source buffers and meta
 	std::vector<unsigned char *> srcBuffs;
@@ -358,22 +358,14 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		}
 	}
 
-	double time2 = double(clock()) / CLOCKS_PER_SEC;
-	std::cout << "Time2 " << time2 - startTime << std::endl;
+	//double time2 = double(clock()) / CLOCKS_PER_SEC;
+	//std::cout << "Time2 " << time2 - startTime << std::endl;
 
 	//Initialize output image colour
-	/*for(long y=0; y < self->outImgH; y++)
-	for(long x=0; x < self->outImgW; x++)
-	{
-		unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
-		dstRgbTuple[0] = 0;
-		dstRgbTuple[1] = 0;
-		dstRgbTuple[2] = 0;
-	}*/
 	memset(pxOutRaw, 0x00, pxOutSize);
 
-	double time3 = double(clock()) / CLOCKS_PER_SEC;
-	std::cout << "Time3 " << time3 - startTime << std::endl;
+	//double time3 = double(clock()) / CLOCKS_PER_SEC;
+	//std::cout << "Time3 " << time3 - startTime << std::endl;
 
 	//Calculate source image mix ratios
 	int count = 0;
@@ -440,8 +432,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	}
 	}
 
-	double time4 = double(clock()) / CLOCKS_PER_SEC;
-	std::cout << "Time4 " << time4 - startTime << std::endl;
+	//double time4 = double(clock()) / CLOCKS_PER_SEC;
+	//std::cout << "Time4 " << time4 - startTime << std::endl;
 
 	//Transfer source images to output buffer
 	count = 0;
@@ -488,8 +480,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	}
 	//std::cout << count << std::endl;
 
-	double time6 = double(clock()) / CLOCKS_PER_SEC;
-	std::cout << "Time6 " << time6 - startTime << std::endl;
+	//double time6 = double(clock()) / CLOCKS_PER_SEC;
+	//std::cout << "Time6 " << time6 - startTime << std::endl;
 
 	//PyObject *pxOut = PyByteArray_FromStringAndSize(pxOutRaw, pxOutSize);
 	//PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
@@ -522,8 +514,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	Py_DECREF(images);
 	Py_DECREF(metas);
 
-	double endTime = double(clock()) / CLOCKS_PER_SEC;
-	std::cout << "PanoView_Vis " << endTime - startTime << std::endl;
+	//double endTime = double(clock()) / CLOCKS_PER_SEC;
+	//std::cout << "PanoView_Vis " << endTime - startTime << std::endl;
 
 	//Py_RETURN_NONE;
 	return out;

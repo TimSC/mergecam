@@ -145,7 +145,8 @@ class CameraArrangement(object):
 		self.addedPhotos[photoId] = camModel
 
 		x0 = [camModel.cLat, camModel.cLon, camModel.rot, 0., 0., 0., 0., 0.]
-		ret = optimize.minimize(self.Eval, x0, args=(photoId,), method="Powell")
+		for dof in range(1,len(x0)+1):
+			ret = optimize.minimize(self.Eval, x0[:dof], args=(photoId,), method="Powell")
 		
 		#Update camera parameters
 		xfinal = ret.x
@@ -162,14 +163,21 @@ class CameraArrangement(object):
 	def Eval(self, vals, photoId, vis=0):
 
 		camToOpt = self.addedPhotos[photoId]
-		camToOpt.cLat = vals[0]
-		camToOpt.cLon = vals[1]
-		camToOpt.rot = vals[2]
+		if len(vals)>0: camToOpt.cLat = vals[0]
+		if len(vals)>1: camToOpt.cLon = vals[1]
+		if len(vals)>2: camToOpt.rot = vals[2]
 
 		for cam in self.addedPhotos.values():
-			cam.SetCorrectionParams(vals[3], vals[4], vals[5])
-			cam.d = vals[6]
-			cam.e = vals[7]
+			cama = None
+			camb = None
+			camc = None
+			if len(vals)>3: cama = vals[3]
+			if len(vals)>4: camb = vals[4]
+			if len(vals)>5: camc = vals[5]
+
+			cam.SetCorrectionParams(cama, camb, camc)
+			if len(vals)>6: cam.d = vals[6]
+			if len(vals)>7: cam.e = vals[7]
 
 		err = 0.
 		for pair in self.imgPairs:
