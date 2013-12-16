@@ -147,6 +147,11 @@ class CameraArrangement(object):
 		x0 = [camModel.cLat, camModel.cLon, camModel.rot, 0., 0., 0., 0., 0.]
 		for dof in range(1,len(x0)+1):
 			ret = optimize.minimize(self.Eval, x0[:dof], args=(photoId,), method="Powell")
+                        if len(ret.x.shape) == 0:
+                                x0[0] = float(ret.x)
+                        else:
+                                for valNum, val in enumerate(list(ret.x)):
+                                        x0[valNum] = val
 		
 		#Update camera parameters
 		xfinal = ret.x
