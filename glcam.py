@@ -20,8 +20,8 @@ class MainWindow(QtGui.QMainWindow):
 		self.metaTestStore = []
 		self.rxTimes = {}
 
-		self.vidOut = videolive.Video_out_manager()
-		self.devManager = videolive.Video_in_manager()
+		self.vidOut = videolive.Video_out_stream_manager()
+		self.devManager = videolive.Video_in_stream_manager()
 	
 		self.resize(700, 550)
 		self.move(300, 300)
@@ -132,6 +132,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.sourceList.addWidget(vidwriter.VideoWriterWidget())
 
 	def ProcessFrame(self, frame, meta, devName):
+
 		if 0: #Debug code
 			self.frameTestStore.append(frame)
 			self.metaTestStore.append(meta)
@@ -180,12 +181,20 @@ class MainWindow(QtGui.QMainWindow):
 
 	def IdleEvent(self):
 		for fina in self.inputDeviceToWidgetDict:
+			print fina
 			camWidget = self.inputDeviceToWidgetDict[fina]
-			camWidget.Update()
+			try:
+				camWidget.Update()
+			except Exception as err:
+				print err
 
 		for fina in self.processingWidgets:
+			print fina
 			procWidget = self.processingWidgets[fina]
-			procWidget.Update()
+			try:
+				procWidget.Update()
+			except Exception as err:
+				print err
 
 	def ChangeVideoSource(self, srcId):
 		print "ChangeVideoSource", srcId

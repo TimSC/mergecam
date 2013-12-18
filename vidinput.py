@@ -102,9 +102,10 @@ class EmulateFixedRateVideoSource(SourceWidget):
 		self.frameTimes = []
 
 	def Update(self):
+		
 		if self.cameraOn:
 			data = self.devManager.get_frame(self.devId)
-
+			
 			if data is not None:
 				self.currentFrame = data[0]
 				self.currentMeta = data[1]
@@ -126,3 +127,4 @@ class EmulateFixedRateVideoSource(SourceWidget):
 					while len(self.frameTimes) > 50:
 						self.frameTimes.pop(0)
 
+			
