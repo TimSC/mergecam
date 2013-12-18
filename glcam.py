@@ -20,7 +20,8 @@ class MainWindow(QtGui.QMainWindow):
 		self.metaTestStore = []
 		self.rxTimes = {}
 
-		self.vidOut = videolive.Video_out_stream_manager()
+		self.outStreamsManager = videolive.Video_out_stream_manager()
+		self.outFilesManager = videolive.Video_out_file_manager()
 		self.devManager = videolive.Video_in_stream_manager()
 	
 		self.resize(700, 550)
@@ -123,13 +124,13 @@ class MainWindow(QtGui.QMainWindow):
 			self.sourceList.addWidget(widget)
 			self.processingWidgets[widget.devId] = widget
 
-		for fina in self.vidOut.list_devices():
+		for fina in self.outStreamsManager.list_devices():
 			
-			widget = vidoutput.VideoOutWidget(fina, self.vidOut)
+			widget = vidoutput.VideoOutWidget(fina, self.outStreamsManager)
 			self.sourceList.addWidget(widget)
 			self.outputDeviceToWidgetDict[fina] = widget
 
-		self.sourceList.addWidget(vidwriter.VideoWriterWidget())
+		self.sourceList.addWidget(vidwriter.VideoWriterWidget(self.outFilesManager))
 
 	def ProcessFrame(self, frame, meta, devName):
 
@@ -181,7 +182,6 @@ class MainWindow(QtGui.QMainWindow):
 
 	def IdleEvent(self):
 		for fina in self.inputDeviceToWidgetDict:
-			print fina
 			camWidget = self.inputDeviceToWidgetDict[fina]
 			try:
 				camWidget.Update()
@@ -189,7 +189,6 @@ class MainWindow(QtGui.QMainWindow):
 				print err
 
 		for fina in self.processingWidgets:
-			print fina
 			procWidget = self.processingWidgets[fina]
 			try:
 				procWidget.Update()

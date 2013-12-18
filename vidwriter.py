@@ -2,9 +2,10 @@
 from PyQt4 import QtGui, QtCore
 
 class VideoWriterWidget(QtGui.QFrame):
-	def __init__(self):
+	def __init__(self, outFilesManagerIn):
 		QtGui.QFrame.__init__(self)
 		self.devOn = False
+		self.outFilesManager = outFilesManagerIn
 
 		self.widgetLayout = QtGui.QVBoxLayout()
 		self.setLayout(self.widgetLayout)
@@ -24,17 +25,26 @@ class VideoWriterWidget(QtGui.QFrame):
 		self.onButton.setCheckable(True)
 		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedOn)
 
+		#Create text box for file name
+		self.filenameEntry = QtGui.QLineEdit()
+		self.filenameEntry.setText("out.mp4")
+		self.widgetLayout.addWidget(self.filenameEntry, 1)
+
 		self.setFrameStyle(QtGui.QFrame.Box)
 		self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
 
 	def ClickedOn(self):
 
 		if self.devOn:
+			#Switch off
 			self.devOn = False
-
+			self.filenameEntry.setReadOnly(False)
+			self.outFilesManager.close(self.filenameEntry.text)
 		else:
+			#Switch true
 			self.devOn = True
-
+			self.filenameEntry.setReadOnly(True)
+			self.outFilesManager.open(self.filenameEntry.text, 640, 480)
 
 		self.onButton.setChecked(self.devOn)
 
@@ -50,6 +60,8 @@ class VideoWriterWidget(QtGui.QFrame):
 		raw = img2.bits().asstring(img2.numBytes())
 		#Send frame to output
 		
+		outManager.send_frame(self.filenameEntry.text, raw, "RGB24", meta['width'], meta['height'])
+
 	def Update(self):
 
 		if self.cameraOn:

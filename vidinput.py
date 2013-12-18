@@ -48,7 +48,6 @@ class SourceWidget(QtGui.QFrame):
 		self.ClickedOn()
 	
 	def Update(self):
-
 		if self.cameraOn:
 			data = self.devManager.get_frame(self.devId)
 
