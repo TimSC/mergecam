@@ -39,12 +39,16 @@ class VideoWriterWidget(QtGui.QFrame):
 			#Switch off
 			self.devOn = False
 			self.filenameEntry.setReadOnly(False)
-			self.outFilesManager.close(self.filenameEntry.text)
+			self.outFilesManager.close(str(self.filenameEntry.text))
 		else:
 			#Switch true
 			self.devOn = True
 			self.filenameEntry.setReadOnly(True)
-			self.outFilesManager.open(self.filenameEntry.text, 640, 480)
+			try:
+
+				self.outFilesManager.open(str(self.filenameEntry.text), 640, 480)
+			except Exception as err:
+				print err
 
 		self.onButton.setChecked(self.devOn)
 
@@ -60,7 +64,7 @@ class VideoWriterWidget(QtGui.QFrame):
 		raw = img2.bits().asstring(img2.numBytes())
 		#Send frame to output
 		
-		outManager.send_frame(self.filenameEntry.text, raw, "RGB24", meta['width'], meta['height'])
+		self.outFilesManager.send_frame(str(self.filenameEntry.text), raw, "RGB24", meta['width'], meta['height'])
 
 	def Update(self):
 

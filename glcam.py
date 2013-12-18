@@ -130,7 +130,9 @@ class MainWindow(QtGui.QMainWindow):
 			self.sourceList.addWidget(widget)
 			self.outputDeviceToWidgetDict[fina] = widget
 
-		self.sourceList.addWidget(vidwriter.VideoWriterWidget(self.outFilesManager))
+		fileWriterWidget = vidwriter.VideoWriterWidget(self.outFilesManager)
+		self.sourceList.addWidget(fileWriterWidget)
+		self.outputDeviceToWidgetDict["filewriter"] = fileWriterWidget
 
 	def ProcessFrame(self, frame, meta, devName):
 
@@ -174,11 +176,10 @@ class MainWindow(QtGui.QMainWindow):
 			self.scene.addItem(gpm)
 
 		#Send frame to output device
-		frameCopy = None
 		if devName == self.currentSrcId:
 			for outDevName in self.outputDeviceToWidgetDict:
 				outWidget = self.outputDeviceToWidgetDict[outDevName]
-				outWidget.SendFrame(frameCopy, meta, devName)
+				outWidget.SendFrame(frame, meta, devName)
 
 	def IdleEvent(self):
 		for fina in self.inputDeviceToWidgetDict:
