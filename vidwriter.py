@@ -1,11 +1,13 @@
 
 from PyQt4 import QtGui, QtCore
+import time, math
 
 class VideoWriterWidget(QtGui.QFrame):
 	def __init__(self, outFilesManagerIn):
 		QtGui.QFrame.__init__(self)
 		self.devOn = False
 		self.outFilesManager = outFilesManagerIn
+		self.startTime = None
 
 		self.widgetLayout = QtGui.QVBoxLayout()
 		self.setLayout(self.widgetLayout)
@@ -66,7 +68,17 @@ class VideoWriterWidget(QtGui.QFrame):
 		raw = img2.bits().asstring(img2.numBytes())
 		#Send frame to output
 		
-		self.outFilesManager.send_frame(str(self.filenameEntry.text()), raw, "RGB24", meta['width'], meta['height'])
+		timeNow = time.time()
+		if self.startTime is None:
+			self.startTime = timeNow
+		elapseTime = timeNow - self.startTime
+		timeSec = int(math.floor(elapseTime))
+		timeUSec = (elapseTime - timeSec) * 1e6
+
+		self.outFilesManager.send_frame(str(self.filenameEntry.text()), 
+			raw, "RGB24", 
+			meta['width'], meta['height'],
+			timeSec, timeUSec)
 
 	def Update(self):
 
