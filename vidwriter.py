@@ -39,14 +39,16 @@ class VideoWriterWidget(QtGui.QFrame):
 			#Switch off
 			self.devOn = False
 			self.filenameEntry.setReadOnly(False)
-			self.outFilesManager.close(str(self.filenameEntry.text))
+			self.outFilesManager.close(str(self.filenameEntry.text()))
 		else:
 			#Switch true
 			self.devOn = True
 			self.filenameEntry.setReadOnly(True)
 			try:
-
-				self.outFilesManager.open(str(self.filenameEntry.text), 640, 480)
+				fina = str(self.filenameEntry.text())
+				self.outFilesManager.open(fina, 640, 480)
+				#self.outFilesManager.set_video_codec(fina, "H264", 800000)
+				#self.outFilesManager.enable_real_time_frame_rate(fina, True)
 			except Exception as err:
 				print err
 
@@ -64,7 +66,7 @@ class VideoWriterWidget(QtGui.QFrame):
 		raw = img2.bits().asstring(img2.numBytes())
 		#Send frame to output
 		
-		self.outFilesManager.send_frame(str(self.filenameEntry.text), raw, "RGB24", meta['width'], meta['height'])
+		self.outFilesManager.send_frame(str(self.filenameEntry.text()), raw, "RGB24", meta['width'], meta['height'])
 
 	def Update(self):
 
