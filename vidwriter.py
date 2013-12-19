@@ -61,7 +61,6 @@ class VideoWriterWidget(QtGui.QFrame):
 		if meta['format'] != "RGB24": return
 
 		print meta
-		print "a", len(frame), meta['width'], meta['height']
 		#im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
 		#pix = QtGui.QPixmap(im2)
 		#pixmap2 = pix.scaled(640, 480)
@@ -74,13 +73,11 @@ class VideoWriterWidget(QtGui.QFrame):
 		if self.startTime is None:
 			self.startTime = timeNow
 		elapseTime = timeNow - self.startTime
-		timeSec = int(math.floor(elapseTime))
-		timeUSec = (elapseTime - timeSec) * 1e6
 
 		self.outFilesManager.send_frame(str(self.filenameEntry.text()), 
 			frame, "RGB24", 
 			meta['width'], meta['height'],
-			timeSec, timeUSec)
+			elapseTime)
 
 	def Update(self):
 
