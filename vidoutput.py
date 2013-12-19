@@ -56,16 +56,16 @@ class VideoOutWidget(QtGui.QFrame):
 
 	def SendFrame(self, frame, meta, devName):
 		if not self.devOn: return
-		if meta['format'] != "RGB24": return
+		#if meta['format'] != "RGB24": return
 
-		im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
-		pix = QtGui.QPixmap(im2)
-		pixmap2 = pix.scaled(640, 480)
-		img = pixmap2.toImage()
-		img2 = img.convertToFormat(QtGui.QImage.Format_RGB888)
-		raw = img2.bits().asstring(img2.numBytes())
-		self.videoOutManager.send_frame(self.devId, str(raw), "RGB24", 
-			img2.width(), img2.height())
+		#im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
+		#pix = QtGui.QPixmap(im2)
+		#pixmap2 = pix.scaled(640, 480)
+		#img = pixmap2.toImage()
+		#img2 = img.convertToFormat(QtGui.QImage.Format_RGB888)
+		#raw = img2.bits().asstring(img2.numBytes())
+		self.videoOutManager.send_frame(self.devId, frame, "RGB24", 
+			meta['width'], meta['height'])
 
 	def Update(self):
 

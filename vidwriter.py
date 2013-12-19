@@ -48,7 +48,7 @@ class VideoWriterWidget(QtGui.QFrame):
 			self.filenameEntry.setReadOnly(True)
 			try:
 				fina = str(self.filenameEntry.text())
-				self.outFilesManager.open(fina, 640, 480)
+				self.outFilesManager.open(fina, 800, 600)
 				#self.outFilesManager.set_video_codec(fina, "H264", 800000)
 				#self.outFilesManager.enable_real_time_frame_rate(fina, True)
 			except Exception as err:
@@ -60,12 +60,14 @@ class VideoWriterWidget(QtGui.QFrame):
 		if not self.devOn: return
 		if meta['format'] != "RGB24": return
 
-		im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
-		pix = QtGui.QPixmap(im2)
-		pixmap2 = pix.scaled(640, 480)
-		img = pixmap2.toImage()
-		img2 = img.convertToFormat(QtGui.QImage.Format_RGB888)
-		raw = img2.bits().asstring(img2.numBytes())
+		print meta
+		print "a", len(frame), meta['width'], meta['height']
+		#im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
+		#pix = QtGui.QPixmap(im2)
+		#pixmap2 = pix.scaled(640, 480)
+		#img = pixmap2.toImage()
+		#img2 = img.convertToFormat(QtGui.QImage.Format_RGB888)
+		#raw = img2.bits().asstring(img2.numBytes())
 		#Send frame to output
 		
 		timeNow = time.time()
@@ -76,7 +78,7 @@ class VideoWriterWidget(QtGui.QFrame):
 		timeUSec = (elapseTime - timeSec) * 1e6
 
 		self.outFilesManager.send_frame(str(self.filenameEntry.text()), 
-			raw, "RGB24", 
+			frame, "RGB24", 
 			meta['width'], meta['height'],
 			timeSec, timeUSec)
 
