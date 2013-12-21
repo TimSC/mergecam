@@ -109,8 +109,8 @@ class MainWindow(QtGui.QMainWindow):
                         if len(devInfo) >= 2:
                                friendlyName = devInfo[1]
 
-			#widget = vidinput.SourceWidget(fina, self.devManager, friendlyName)
-			widget = vidinput.EmulateFixedRateVideoSource(fina, self.devManager, friendlyName)
+			widget = vidinput.SourceWidget(fina, self.devManager, friendlyName)
+			#widget = vidinput.EmulateFixedRateVideoSource(fina, self.devManager, friendlyName)
 
 			QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
 			QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
