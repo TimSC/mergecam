@@ -517,7 +517,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	}
 	self->textureIds.clear();
 
-
 	PrintGlErrors();
 	glReadBuffer(GL_BACK);
 	glReadPixels(0,0,self->outImgW,self->outImgH,GL_RGB,GL_UNSIGNED_BYTE,pxOutRaw);
