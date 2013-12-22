@@ -33,6 +33,7 @@ public:
 	PyObject *timeFunc;
 	PyObject *cameraArrangement;
 	PyObject *outProjection;
+	std::vector<GLuint> displayLists;
 };
 typedef PanoView_cl PanoView;
 
@@ -423,17 +424,12 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	PyObject *addedPhotosItems = PyDict_Items(addedPhotos);
 	if(addedPhotosItems==NULL) throw std::runtime_error("addedPhotosItems pointer is null");
 	Py_ssize_t numCams = PySequence_Size(addedPhotosItems);
-	
+
+	//Load textures into opengl
+	std::vector<GLuint> textureIds;
+	std::vector<int> openglTxWidthLi, openglTxHeightLi;
 	for(Py_ssize_t i=0; i<numCams; i++)
 	{
-		//Check positions in source image of world positions
-		PyObject *camDataTup = PySequence_GetItem(addedPhotosItems, i);
-		PyObject *camIdObj = PyTuple_GetItem(camDataTup, 0);
-		long camId = PyLong_AsLong(camIdObj);
-		PyObject *camData = PyTuple_GetItem(camDataTup, 1);
-
-		//PyObject_Print(camData, stdout, Py_PRINT_RAW); std::cout << std::endl;
-
 		//Get meta data from python objects
 		PyObject *pyImage = PySequence_GetItem(images, i);
 		if(pyImage==NULL) throw std::runtime_error("pyImage pointer is null");
@@ -469,6 +465,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			sourceWidth, sourceHeight, 
 			sourceFmt.c_str(), &openglTex, &openglTexLen,
 			&openglTxWidth, &openglTxHeight);
+		openglTxWidthLi.push_back(openglTxWidth);
+		openglTxHeightLi.push_back(openglTxHeight);
 
 		if(openglTex!=NULL)
 		{
@@ -486,6 +484,39 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			delete [] openglTex;
 			openglTex = NULL;
 		}
+
+		textureIds.push_back(texture);
+
+	}
+
+	//Create display lists of camera lens shapes
+	if(self->displayLists.size() == 0)
+	for(Py_ssize_t i=0; i<numCams; i++)
+	{
+		//Get meta data from python objects
+		PyObject *pyImage = PySequence_GetItem(images, i);
+		if(pyImage==NULL) throw std::runtime_error("pyImage pointer is null");
+		PyObject *metaObj = PySequence_GetItem(metas, i);
+		if(metaObj==NULL) throw std::runtime_error("metaObj pointer is null");
+
+		PyObject *widthObj = PyDict_GetItemString(metaObj, "width");
+		if(widthObj==NULL) throw std::runtime_error("widthObj pointer is null");
+		long sourceWidth = PyInt_AsLong(widthObj);
+		PyObject *heightObj = PyDict_GetItemString(metaObj, "height");
+		if(heightObj==NULL) throw std::runtime_error("heightObj pointer is null");
+		long sourceHeight = PyInt_AsLong(heightObj);
+
+		GLuint dl = glGenLists(1);
+		glNewList(dl,GL_COMPILE);
+		std::cout << "Generating display list " << dl << std::endl;
+
+		//Check positions in source image of world positions
+		PyObject *camDataTup = PySequence_GetItem(addedPhotosItems, i);
+		PyObject *camIdObj = PyTuple_GetItem(camDataTup, 0);
+		long camId = PyLong_AsLong(camIdObj);
+		PyObject *camData = PyTuple_GetItem(camDataTup, 1);
+
+		//PyObject_Print(camData, stdout, Py_PRINT_RAW); std::cout << std::endl;
 
 		/*
 		glColor3d(0.,1.,0.);
@@ -521,8 +552,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 				//Store normalised texture position
 				std::vector<double> txPt;
-				txPt.push_back(x / openglTxWidth);
-				txPt.push_back(y / openglTxHeight);
+				txPt.push_back(x / openglTxWidthLi[i]);
+				txPt.push_back(y / openglTxHeightLi[i]);
 				texPos.push_back(txPt);
 			}
 		}
@@ -566,7 +597,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		PyObject *dstPos = PyObject_Call(dstProj, projArgs, NULL);
 
 		//Draw images using opengl
-		glBindTexture(GL_TEXTURE_2D, texture);
+		glBindTexture(GL_TEXTURE_2D, textureIds[i]);
 		glColor3d(1.,1.,1.);
 		
 		for(unsigned sqNum = 0; sqNum < sqInd.size(); sqNum++)
@@ -604,12 +635,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			glVertex2f(0.,1.);
 			glEnd();*/
 		}
-		
-
-		//Delete opengl texture
-		GLuint texArr[1];
-		texArr[0] = texture;
-		glDeleteTextures(1, texArr);
 
 		Py_DECREF(dstProj);
 		Py_DECREF(worldPos);
@@ -618,8 +643,22 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		Py_DECREF(pyImage);
 		Py_DECREF(metaObj);
 		Py_DECREF(camDataTup);
+
+		glEndList();
+		self->displayLists.push_back(dl);
 	}
 
+	for(int i=0;i< self->displayLists.size(); i++)
+	{
+		glCallList(self->displayLists[i]);
+	}
+
+	for(int i=0;i<textureIds.size(); i++)
+	{
+		//Delete opengl texture
+		glDeleteTextures(1, &textureIds[i]);
+	}
+	textureIds.clear();
 
 	//double time1 = double(clock()) / CLOCKS_PER_SEC;
 	//std::cout << "Time1 " << time1 - startTime << std::endl;
