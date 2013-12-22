@@ -20,6 +20,7 @@
 #include <pthread.h>
 #include <time.h>
 #include <GL/glut.h>
+#include <GL/freeglut.h>
 
 class PanoView_cl{
 public:
@@ -299,6 +300,8 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	int glut_id = glutCreateWindow("VWGL");
 	//glutHideWindow();
 	delete [] arg1;
+
+	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
 
 	glClearColor(0,0,0,0);
 	glClear(GL_COLOR_BUFFER_BIT);
