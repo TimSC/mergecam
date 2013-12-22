@@ -180,171 +180,6 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	self->outImgH = outHeight;
 	Py_DECREF(outWidthObj);
 	Py_DECREF(outHeightObj);
-
-	/*
-	//Create list of screen coordinates
-	//std::cout << outWidth << "," << outHeight << std::endl;
-	PyObject *imgPix = PyList_New(0);
-	for(long x=0;x<outWidth;x++)
-	for(long y=0;y<outHeight;y++)
-	{
-		PyObject *tupleTemp = PyTuple_New(2);
-		PyTuple_SetItem(tupleTemp, 0, PyInt_FromLong(x));
-		PyTuple_SetItem(tupleTemp, 1, PyInt_FromLong(y));
-		PyList_Append(imgPix, tupleTemp);
-		Py_DECREF(tupleTemp);		
-	}
-
-	//Transform to world coordinates	
-	PyObject *outUnProj = PyObject_GetAttrString(outProj, "UnProj");
-	if(outUnProj==NULL)
-	{
-		PyErr_Format(PyExc_RuntimeError, "UnProj method not defined");
-		//TODO fix possible memory leaks?
- 		return 0;
-	}
-
-	PyObject *unProjArgs = PyTuple_New(1);
-	PyTuple_SetItem(unProjArgs, 0, imgPix);
-	Py_INCREF(imgPix);
-	PyObject *worldPix = PyObject_Call(outUnProj, unProjArgs, NULL);
-
-	PyObject *cameraArragement = PyTuple_GetItem(args, 0);
-	PyObject *addedPhotos = PyObject_GetAttrString(cameraArragement, "addedPhotos");
-	if(addedPhotos==NULL)
-	{
-		PyErr_Format(PyExc_RuntimeError, "addedPhotos dict not defined");
-		//TODO fix possible memory leaks?
- 		return 0;
-	}
-
-	PyObject *addedPhotosItems = PyDict_Items(addedPhotos);
-	Py_ssize_t numCams = PySequence_Size(addedPhotosItems);
-
-	//Initialise low level mapping structure
-	std::vector<std::vector<std::vector<class PxInfo> > > &mapping = *self->mapping;
-	mapping.clear();
-	std::vector<std::vector<class PxInfo> > col;
-	for(long y=0;y<outHeight;y++)
-	{
-		std::vector<class PxInfo> tmp;
-		col.push_back(tmp);
-	}
-	for(long x=0;x<outWidth;x++)
-		mapping.push_back(col);
-
-	//Iterate over cameras in arrangement
-	for(Py_ssize_t i=0; i<numCams; i++)
-	{
-		//Check positions in source image of world positions
-		PyObject *camDataTup = PySequence_GetItem(addedPhotosItems, i);
-		PyObject *camIdObj = PyTuple_GetItem(camDataTup, 0);
-		long camId = PyLong_AsLong(camIdObj);
-		PyObject *camData = PyTuple_GetItem(camDataTup, 1);
-
-		//PyObject_Print(camData, stdout, Py_PRINT_RAW); std::cout << std::endl;
-
-		PyObject *camProj = PyObject_GetAttrString(camData, "Proj");
-		if(camProj==NULL)
-		{
-			PyErr_Format(PyExc_RuntimeError, "Proj method not defined");
-			//TODO fix possible memory leaks?
-	 		return 0;
-		}
-
-		PyObject *projArgs = PyTuple_New(1);
-		PyTuple_SetItem(projArgs, 0, worldPix);
-		Py_INCREF(projArgs);
-
-		PyObject *pixMapping = PyObject_Call(camProj, projArgs, NULL);
-
-		//Convert mapping into low level C structure for speed
-		if(pixMapping != NULL)
-		{
-			Py_ssize_t numPix = PySequence_Size(pixMapping);
-
-			if(numPix != PySequence_Size(imgPix))
-			{
-				PyErr_Format(PyExc_RuntimeError, "Proj function returned unexpected number of points");
-				//TODO fix possible memory leaks?
-		 		return 0;
-			}
-
-			for(Py_ssize_t j=0; j<numPix; j++)
-			{
-				PyObject *posSrc = PySequence_GetItem(pixMapping, j);
-				PyObject *posDst = PySequence_GetItem(imgPix, j);
-				//PyObject_Print(posSrc, stdout, Py_PRINT_RAW);
-				
-				Py_ssize_t numComp = PySequence_Size(posSrc);
-				int noValue = 0;
-				std::vector<double> posc;
-				for(Py_ssize_t c=0; c<numComp; c++)
-				{
-					PyObject *compObj = PySequence_GetItem(posSrc, c);
-					if(compObj == Py_None)
-					{	
-						noValue = 1;
-						posc.push_back(0.);
-						continue;
-					}
-					double comp = PyFloat_AsDouble(compObj);
-					posc.push_back(comp);
-					if(Py_IS_NAN(comp)) noValue = 1;
-					Py_DECREF(compObj);
-				}
-
-				if(!noValue)
-				{
-					//PyObject_Print(posDst, stdout, Py_PRINT_RAW);
-					PyObject *destXobj = PySequence_GetItem(posDst, 0);
-					PyObject *destYobj = PySequence_GetItem(posDst, 1);
-					if(destXobj == NULL || destYobj == NULL)
-					{
-						PyErr_Format(PyExc_RuntimeError, "Failed to convert position to PyObject");
-						//TODO fix possible memory leaks?
-				 		return 0;
-					}
-
-					long destX = PyLong_AsLong(destXobj);
-					long destY = PyLong_AsLong(destYobj);
-					class PxInfo pxInfo;
-					pxInfo.camId = camId;
-					pxInfo.x = posc[0];
-					pxInfo.y = posc[1];
-					mapping[destX][destY].push_back(pxInfo);
-
-					Py_DECREF(destXobj);
-					Py_DECREF(destYobj);
-				}
-
-				Py_DECREF(posSrc);
-				Py_DECREF(posDst);
-			}
-
-			Py_DECREF(pixMapping);
-		}
-		else
-		{
-			std::cout << "Warning: PyObject_Call to proj returned null" << std::endl;
-		}
-		Py_DECREF(projArgs);
-		Py_DECREF(camProj);
-		Py_DECREF(camData);
-	}
-
-
-	//Clean up	
-	if(worldPix != NULL) Py_DECREF(worldPix);
-	Py_DECREF(unProjArgs);
-	Py_DECREF(outUnProj);
-
-	Py_DECREF(imgPix);
-
-	Py_DECREF(addedPhotos);
-	Py_DECREF(addedPhotosItems);
-
-*/
 	
 	int argc = 1; 
 	char *arg1 = new char[9];
@@ -363,19 +198,6 @@ static int PanoView_init(PanoView *self, PyObject *args,
 
 	glClearColor(0,0,0,0);
 	glClear(GL_COLOR_BUFFER_BIT);
-
-	/*glBegin(GL_TRIANGLES);
-	{
-		glColor3f(1,0,0);
-		glVertex2f(0,0);
-
-		glColor3f(0,1,0);
-		glVertex2f(.5,0);
-
-		glColor3f(0,0,1);
-		glVertex2f(.5,.5);
-	}
-	glEnd();*/
 
 	glutSwapBuffers();
 	return 0;
@@ -516,22 +338,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		long camId = PyLong_AsLong(camIdObj);
 		PyObject *camData = PyTuple_GetItem(camDataTup, 1);
 
-		//PyObject_Print(camData, stdout, Py_PRINT_RAW); std::cout << std::endl;
-
-		/*
-		glColor3d(0.,1.,0.);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glBegin(GL_QUADS);
-		glTexCoord2d(0.0,0.0);
-		glVertex2f(-1,-1);
-		glTexCoord2d(1.0,0.0);
-		glVertex2f(1,-1);
-		glTexCoord2d(1.0,1.0);
-		glVertex2f(1,1);
-		glTexCoord2d(0.0,1.0);
-		glVertex2f(-1,1);
-		glEnd();*/
-
 		//Generate python list of source image positions
 		PyObject *imgPix = PyList_New(0);
 		std::vector<std::vector<double> > texPos;
@@ -659,61 +465,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		glDeleteTextures(1, &textureIds[i]);
 	}
 	textureIds.clear();
-
-	//double time1 = double(clock()) / CLOCKS_PER_SEC;
-	//std::cout << "Time1 " << time1 - startTime << std::endl;
-	/*
-	//Get source buffers and meta
-	std::vector<unsigned char *> srcBuffs;
-	std::vector<PyObject *> srcObjs;
-	std::vector<long> srcWidth, srcHeight, srcBuffLen;
-
-	for(Py_ssize_t i=0; i<numSources; i++)
-	{
-		int imageMetaErr = 0;
-		PyObject *srcObj = PySequence_GetItem(images, i);
-		PyObject *metaObj = PySequence_GetItem(metas, i);
-
-		srcObjs.push_back(srcObj);
-		srcBuffs.push_back((unsigned char *)PyByteArray_AsString(srcObj));
-		srcBuffLen.push_back(PyByteArray_Size(srcObj));
-		//PyObject_Print(metaObj, stdout, Py_PRINT_RAW);
-		
-		PyObject *widthObj = PyDict_GetItemString(metaObj, "width");
-		if(widthObj!=NULL)
-		{
-			srcWidth.push_back(PyInt_AsLong(widthObj));
-		}
-		else
-			imageMetaErr = 1;
-
-		PyObject *heightObj = PyDict_GetItemString(metaObj, "height");
-		if(heightObj != NULL)
-		{
-			srcHeight.push_back(PyInt_AsLong(heightObj));
-		}
-		else
-			imageMetaErr = 2;
-
-		PyObject *formatObj = PyDict_GetItemString(metaObj, "format");
-		if(formatObj != NULL)
-		{
-			if(strcmp(PyString_AsString(formatObj), "RGB24")!=0)
-				imageMetaErr = 4;
-		}
-		else
-			imageMetaErr = 3;
-
-		Py_DECREF(metaObj);
-	
-
-		if(imageMetaErr>0)
-		{
-			PyErr_Format(PyExc_RuntimeError, "Image source error.");
- 			Py_RETURN_NONE;
-		}
-	}
-*/
 
 	//Format meta data
 	PyObject *metaOut = PyDict_New();
