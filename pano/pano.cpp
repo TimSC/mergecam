@@ -95,6 +95,12 @@ void PrintGlErrors()
 	}
 }
 
+void GlutWindowCloseEvent()
+{
+	std::cout << "GlutWindowCloseEvent()" << std::endl;
+	exit(0);
+}
+
 // **********************************************************************
 
 class PxInfo
@@ -350,6 +356,8 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	//glutHideWindow();
 	delete [] arg1;
 
+	glutCloseFunc(GlutWindowCloseEvent);
+
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
 
 	glClearColor(0,0,0,0);
@@ -444,10 +452,11 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		if(imgRaw==NULL) throw std::runtime_error("imgRaw pointer is null");
 
 		glEnable(GL_TEXTURE_2D);
+		glEnable(GL_BLEND);
 		std::cout << "Enable texture " << std::endl; PrintGlErrors();
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		std::cout << "GL_TEXTURE_MAG_FILTER " << std::endl; PrintGlErrors();
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		std::cout << "GL_TEXTURE_MIN_FILTER " << std::endl; PrintGlErrors();
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		std::cout << "GL_TEXTURE_ENV_MODE " << std::endl; PrintGlErrors();
@@ -485,13 +494,14 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			}
 			delete [] openglTex;
 			openglTex = NULL;
-		}
-		
-		glDisable(GL_LIGHTING);
-		glDisable(GL_BLEND);
-		glEnable(GL_TEXTURE_2D);
+		}		
 
+		glDisable(GL_LIGHTING);
+		glEnable(GL_TEXTURE_2D);
+		glEnable(GL_BLEND);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
 		glClear(GL_COLOR_BUFFER_BIT);
 		glColor3d(1.,1.,1.);
 		glBindTexture(GL_TEXTURE_2D, texture);
