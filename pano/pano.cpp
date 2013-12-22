@@ -454,8 +454,22 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			openglTex = NULL;
 		}
 
-		/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+		glEnable(GL_TEXTURE);
+		glColor3d(1.,1.,1.);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glBegin(GL_QUADS);
+		glTexCoord2d(0.0,0.0);
+		glVertex2f(0,0);
+		glTexCoord2d(1.0,0.0);
+		glVertex2f(.5,0);
+		glTexCoord2d(1.0,1.0);
+		glVertex2f(.5,.5);
+		glTexCoord2d(0.0,1.0);
+		glVertex2f(0,.5);
+		glEnd();
 
 		//Draw to opengl
 		for(int xstep = 0; xstep < 10; xstep ++)
@@ -468,7 +482,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 
 			}
-		}*/
+		}
 
 		//Delete opengl texture
 		GLuint texArr[1];
@@ -571,6 +585,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	Py_DECREF(addedPhotos);
 	Py_DECREF(addedPhotosItems);
+
+	glutSwapBuffers();
 
 	//Py_RETURN_NONE;
 	return out;
