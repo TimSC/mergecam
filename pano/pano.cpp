@@ -480,7 +480,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, openglTxWidth, 
 					openglTxHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, openglTex);
 
-
 				std::cout << "Post-texture" << std::endl;
 				PrintGlErrors();
 
@@ -496,13 +495,13 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		glBindTexture(GL_TEXTURE_2D, texture);
 		glBegin(GL_QUADS);
 		glTexCoord2d(0.0,0.0);
-		glVertex2f(0,0);
+		glVertex2f(-1,-1);
 		glTexCoord2d(1.0,0.0);
-		glVertex2f(.5,0);
+		glVertex2f(1,-1);
 		glTexCoord2d(1.0,1.0);
-		glVertex2f(.5,.5);
+		glVertex2f(1,1);
 		glTexCoord2d(0.0,1.0);
-		glVertex2f(0,.5);
+		glVertex2f(-1,1);
 		glEnd();
 
 		//Draw to opengl
