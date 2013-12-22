@@ -400,7 +400,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	if(addedPhotosItems==NULL) throw std::runtime_error("addedPhotosItems pointer is null");
 	Py_ssize_t numCams = PySequence_Size(addedPhotosItems);
 	
-	for(Py_ssize_t i=0; i<numCams; i++)
+	for(Py_ssize_t i=0; i<0; i++)//numCams
 	{
 		//Check positions in source image of world positions
 		PyObject *camDataTup = PySequence_GetItem(addedPhotosItems, i);
@@ -430,12 +430,12 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		if(imgRaw==NULL) throw std::runtime_error("imgRaw pointer is null");
 
 		//Load image into opengl texture
-		GLuint texture;
+		/*GLuint texture;
 		glGenTextures(1, &texture);
-		glBindTexture(GL_TEXTURE_2D, texture);
+		glBindTexture(GL_TEXTURE_2D, texture);*/
 
 		//Convert to powers of two shape
-		unsigned char *openglTex = NULL;
+		/*unsigned char *openglTex = NULL;
 		unsigned openglTexLen = 0, openglTxWidth = 0, openglTxHeight = 0;
 		int texOk = ResizeToPowersOfTwo((unsigned char *)imgRaw, 
 			sourceWidth, sourceHeight, 
@@ -444,6 +444,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		std::cout << "texa " << sourceWidth << "," << sourceHeight << std::endl;
 		std::cout << "texb " << openglTxWidth << "," << openglTxHeight << std::endl;
+		std::cout << "texn " << texture << std::endl;
 
 		if(openglTex!=NULL)
 		{
@@ -452,9 +453,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 					openglTxHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, openglTex);
 			delete [] openglTex;
 			openglTex = NULL;
-		}
+		}*/
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 		glEnable(GL_TEXTURE);
@@ -469,7 +470,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		glVertex2f(.5,.5);
 		glTexCoord2d(0.0,1.0);
 		glVertex2f(0,.5);
-		glEnd();
+		glEnd();*/
 
 		//Draw to opengl
 		for(int xstep = 0; xstep < 10; xstep ++)
@@ -485,9 +486,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		}
 
 		//Delete opengl texture
-		GLuint texArr[1];
+		/*GLuint texArr[1];
 		texArr[0] = texture;
-		glDeleteTextures(1, texArr);
+		glDeleteTextures(1, texArr);*/
 
 		Py_DECREF(pyImage);
 		Py_DECREF(metaObj);
@@ -586,7 +587,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	Py_DECREF(addedPhotos);
 	Py_DECREF(addedPhotosItems);
 
-	glutSwapBuffers();
+	//glutSwapBuffers();
 
 	//Py_RETURN_NONE;
 	return out;
