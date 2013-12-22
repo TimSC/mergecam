@@ -35,6 +35,8 @@ public:
 	PyObject *outProjection;
 	std::vector<GLuint> displayLists;
 	int nonPowerTwoTexSupported;
+	std::vector<GLuint> textureIds;
+	std::vector<int> openglTxWidthLi, openglTxHeightLi;
 };
 typedef PanoView_cl PanoView;
 
@@ -282,8 +284,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	Py_ssize_t numCams = PySequence_Size(addedPhotosItems);
 
 	//Load textures into opengl
-	std::vector<GLuint> textureIds;
-	std::vector<int> openglTxWidthLi, openglTxHeightLi;
 	for(Py_ssize_t i=0; i<numCams; i++)
 	{
 		//Get meta data from python objects
@@ -317,8 +317,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		{
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, sourceWidth, 
 				sourceHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, imgRaw);
-			openglTxWidthLi.push_back(sourceWidth);
-			openglTxHeightLi.push_back(sourceHeight);
+			self->openglTxWidthLi.push_back(sourceWidth);
+			self->openglTxHeightLi.push_back(sourceHeight);
 		}
 		else
 		{
@@ -330,8 +330,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				sourceWidth, sourceHeight, 
 				sourceFmt.c_str(), &openglTex, &openglTexLen,
 				&openglTxWidth, &openglTxHeight);
-			openglTxWidthLi.push_back(openglTxWidth);
-			openglTxHeightLi.push_back(openglTxHeight);
+			self->openglTxWidthLi.push_back(openglTxWidth);
+			self->openglTxHeightLi.push_back(openglTxHeight);
 
 			if(openglTex!=NULL)
 			{
@@ -349,7 +349,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-		textureIds.push_back(texture);
+		self->textureIds.push_back(texture);
 
 	}
 
@@ -400,8 +400,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 				//Store normalised texture position
 				std::vector<double> txPt;
-				txPt.push_back(x / openglTxWidthLi[i]);
-				txPt.push_back(y / openglTxHeightLi[i]);
+				txPt.push_back(x / self->openglTxWidthLi[i]);
+				txPt.push_back(y / self->openglTxHeightLi[i]);
 				texPos.push_back(txPt);
 			}
 		}
@@ -445,7 +445,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		PyObject *dstPos = PyObject_Call(dstProj, projArgs, NULL);
 
 		//Draw images using opengl
-		glBindTexture(GL_TEXTURE_2D, textureIds[i]);
+		glBindTexture(GL_TEXTURE_2D, self->textureIds[i]);
 		glColor3d(1.,1.,1.);
 		
 		for(unsigned sqNum = 0; sqNum < sqInd.size(); sqNum++)
@@ -501,12 +501,12 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		glCallList(self->displayLists[i]);
 	}
 
-	for(int i=0;i<textureIds.size(); i++)
+	for(int i=0;i<self->textureIds.size(); i++)
 	{
 		//Delete opengl texture
-		glDeleteTextures(1, &textureIds[i]);
+		glDeleteTextures(1, &self->textureIds[i]);
 	}
-	textureIds.clear();
+	self->textureIds.clear();
 
 	//Format meta data
 	PyObject *metaOut = PyDict_New();
