@@ -316,29 +316,39 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		unsigned char *openglTex = NULL;
 		unsigned openglTexLen = 0, openglTxWidth = 0, openglTxHeight = 0;
 
-		int texOk = ResizeToPowersOfTwo((unsigned char *)imgRaw, 
-			sourceWidth, sourceHeight, 
-			sourceFmt.c_str(), &openglTex, &openglTexLen,
-			&openglTxWidth, &openglTxHeight);
-		openglTxWidthLi.push_back(openglTxWidth);
-		openglTxHeightLi.push_back(openglTxHeight);
-
-		if(openglTex!=NULL)
+		glBindTexture(GL_TEXTURE_2D, texture);
+		if(self->nonPowerTwoTexSupported)
 		{
-			glBindTexture(GL_TEXTURE_2D, texture);
-			if(texOk)
-			{
-				//Load texture into opengl
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, openglTxWidth, 
-					openglTxHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, openglTex);
-			}
-			delete [] openglTex;
-			openglTex = NULL;
-
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, sourceWidth, 
+				sourceHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, imgRaw);
+			openglTxWidthLi.push_back(sourceWidth);
+			openglTxHeightLi.push_back(sourceHeight);
 		}
-		
+		else
+		{
+			int texOk = ResizeToPowersOfTwo((unsigned char *)imgRaw, 
+				sourceWidth, sourceHeight, 
+				sourceFmt.c_str(), &openglTex, &openglTexLen,
+				&openglTxWidth, &openglTxHeight);
+			openglTxWidthLi.push_back(openglTxWidth);
+			openglTxHeightLi.push_back(openglTxHeight);
+
+			if(openglTex!=NULL)
+			{
+				if(texOk)
+				{
+					//Load texture into opengl
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, openglTxWidth, 
+						openglTxHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, openglTex);
+				}
+				delete [] openglTex;
+				openglTex = NULL;
+			}
+		}
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
 		textureIds.push_back(texture);
 
 	}
@@ -435,10 +445,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		PyObject *dstPos = PyObject_Call(dstProj, projArgs, NULL);
 
 		//Draw images using opengl
-		if(self->nonPowerTwoTexSupported)
-			glBindTexture(GL_ARB_texture_non_power_of_two, textureIds[i]);
-		else
-			glBindTexture(GL_TEXTURE_2D, textureIds[i]);
+		glBindTexture(GL_TEXTURE_2D, textureIds[i]);
 		glColor3d(1.,1.,1.);
 		
 		for(unsigned sqNum = 0; sqNum < sqInd.size(); sqNum++)
