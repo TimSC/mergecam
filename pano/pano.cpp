@@ -220,7 +220,7 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
 	glutInitWindowSize(outWidth, outHeight);
 	int glut_id = glutCreateWindow("VWGL");
-	int hideOpenGL = 0;
+	int hideOpenGL = 1;
 	if(hideOpenGL)
 	{
 		/*GLuint fbo, renderBuff;
