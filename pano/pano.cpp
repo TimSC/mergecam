@@ -487,9 +487,14 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			openglTex = NULL;
 		}
 		
+		glDisable(GL_LIGHTING);
+		glDisable(GL_BLEND);
+		glEnable(GL_TEXTURE_2D);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glClear(GL_COLOR_BUFFER_BIT);
 		glColor3d(1.,1.,1.);
 		glBindTexture(GL_TEXTURE_2D, texture);
-		glClear(GL_COLOR_BUFFER_BIT);
 		glBegin(GL_QUADS);
 		glTexCoord2d(0.0,0.0);
 		glVertex2f(0,0);
