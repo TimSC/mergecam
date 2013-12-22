@@ -550,6 +550,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		Py_INCREF(imgPix);
 
 		PyObject *worldPos = PyObject_Call(camUnProj, unprojArgs, NULL);
+		PyObject_Print(worldPos, stdout, Py_PRINT_RAW); std::cout << std::endl;
 
 		//Transform world positions to destination image
 		PyObject *dstProj = PyObject_GetAttrString(self->outProjection, "Proj");
@@ -557,7 +558,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			throw std::runtime_error("Proj method not defined");
 
 		PyObject *dstPos = PyObject_Call(dstProj, worldPos, NULL);
-
+		PyObject_Print(dstPos, stdout, Py_PRINT_RAW); std::cout << std::endl;
 		//Draw images using opengl
 		glBindTexture(GL_TEXTURE_2D, texture);
 		glBegin(GL_QUADS);
@@ -567,9 +568,11 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			std::vector<int> &singleSq = sqInd[sqNum];
 			for(unsigned c = 0; c < singleSq.size(); c++)
 			{
+
 				int ptInd = singleSq[c];
 				PyObject *dstPt = PySequence_GetItem(dstPos, ptInd);
 				//std::cout << singleSq[c] << ",";
+
 				if(PySequence_Size(dstPt)< 2) continue;
 				PyObject *pydstx = PySequence_GetItem(dstPt, 0);
 				PyObject *pydsty = PySequence_GetItem(dstPt, 1);
