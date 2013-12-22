@@ -19,6 +19,7 @@
 #include <stdexcept>
 #include <pthread.h>
 #include <time.h>
+#include <GL/glut.h>
 
 class PanoView_cl{
 public:
@@ -287,6 +288,17 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	Py_DECREF(addedPhotosItems);
 
 */
+	
+	int argc = 1; 
+	char *arg1 = new char[9];
+	strcpy(arg1, "pano.dll");
+	char **argv = &arg1;
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
+	glutInitWindowSize(1, 1);
+	int glut_id = glutCreateWindow("VWGL");
+	glutHideWindow();
+	delete [] arg1;
 
 	return 0;
 }

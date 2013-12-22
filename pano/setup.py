@@ -1,8 +1,9 @@
 #!/usr/bin/python
 #
 # 2013, Tim Sheerman-Chase
-
+import os
 from distutils.core import Extension, setup
+
 setup(
     name = "pano",
     version = "1.0",
@@ -16,5 +17,11 @@ setup(
         "License :: Proprietary",
         "Programming Language :: C++"],
     ext_modules = [
-        Extension("pano", ["pano.cpp"], libraries = ["pthread"])])
+        Extension("pano", ["pano.cpp"], 
+			libraries = ["pthread", "freeglut"],
+			include_dirs=['C:\\Dev\\Lib\\freeglut-2.8.1\\include'],
+			library_dirs=['C:\\Dev\\Lib\\freeglut-2.8.1\\lib'],
+			)
+		]
+)
 
