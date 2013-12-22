@@ -295,11 +295,28 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	char **argv = &arg1;
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
-	glutInitWindowSize(1, 1);
+	glutInitWindowSize(100, 100);
 	int glut_id = glutCreateWindow("VWGL");
-	glutHideWindow();
+	//glutHideWindow();
 	delete [] arg1;
 
+	glClearColor(0,0,0,0);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glBegin(GL_TRIANGLES);
+	{
+		glColor3f(1,0,0);
+		glVertex2f(0,0);
+
+		glColor3f(0,1,0);
+		glVertex2f(.5,0);
+
+		glColor3f(0,0,1);
+		glVertex2f(.5,.5);
+	}
+	glEnd();
+
+	glutSwapBuffers();
 	return 0;
 }
 

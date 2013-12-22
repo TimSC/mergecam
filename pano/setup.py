@@ -18,7 +18,7 @@ setup(
         "Programming Language :: C++"],
     ext_modules = [
         Extension("pano", ["pano.cpp"], 
-			libraries = ["pthread", "freeglut"],
+			libraries = ["pthread", "freeglut", "glu32", "opengl32"],
 			include_dirs=['C:\\Dev\\Lib\\freeglut-2.8.1\\include'],
 			library_dirs=['C:\\Dev\\Lib\\freeglut-2.8.1\\lib'],
 			)
