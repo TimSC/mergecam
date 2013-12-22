@@ -501,19 +501,42 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		//Generate python list of source image positions
 		PyObject *imgPix = PyList_New(0);
-		for(int xstep = 0; xstep < 10; xstep ++)
+		std::vector<std::vector<double> > texPos;
+		const int numSq = 10;
+		for(int xstep = 0; xstep < numSq; xstep ++)
 		{
-			for(int ystep = 0; ystep < 10; ystep ++)
+			for(int ystep = 0; ystep < numSq; ystep ++)
 			{
-				double x = sourceWidth * double(xstep) / 9.;
-				double y = sourceHeight * double(ystep) / 9.;
+				//Store image position
+				double x = sourceWidth * double(xstep) / (numSq-1.);
+				double y = sourceHeight * double(ystep) / (numSq-1.);
 
 				PyObject *tupleTemp = PyTuple_New(2);
 				PyTuple_SetItem(tupleTemp, 0, PyInt_FromLong(x));
 				PyTuple_SetItem(tupleTemp, 1, PyInt_FromLong(y));
 				PyList_Append(imgPix, tupleTemp);
-				Py_DECREF(tupleTemp);		
+				Py_DECREF(tupleTemp);
 
+				//Store normalised texture position
+				std::vector<double> txPt;
+				txPt.push_back(x * sourceWidth / openglTxWidth);
+				txPt.push_back(y * sourceHeight / openglTxHeight);
+				texPos.push_back(txPt);
+			}
+		}
+
+		//Generate indices for complete squares
+		std::vector<std::vector<int> > sqInd;
+		for(int x = 0; x < numSq-1; x ++)
+		{
+			for(int y = 0; y < numSq-1; y ++)
+			{
+				std::vector<int> singleSq;
+				singleSq.push_back(x + y * numSq);
+				singleSq.push_back((x + 1) + y * numSq);
+				singleSq.push_back(x + (y + 1) * numSq);
+				singleSq.push_back((x + 1) + (y + 1) * numSq);
+				sqInd.push_back(singleSq);
 			}
 		}
 
@@ -528,15 +551,48 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		PyObject *worldPos = PyObject_Call(camUnProj, unprojArgs, NULL);
 
-		
+		//Transform world positions to destination image
+		PyObject *dstProj = PyObject_GetAttrString(self->outProjection, "Proj");
+		if(dstProj==NULL)
+			throw std::runtime_error("Proj method not defined");
 
+		PyObject *dstPos = PyObject_Call(dstProj, worldPos, NULL);
 
+		//Draw images using opengl
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glBegin(GL_QUADS);
+
+		for(unsigned sqNum = 0; sqNum < sqInd.size(); sqNum++)
+		{
+			std::vector<int> &singleSq = sqInd[sqNum];
+			for(unsigned c = 0; c < singleSq.size(); c++)
+			{
+				int ptInd = singleSq[c];
+				PyObject *dstPt = PySequence_GetItem(dstPos, ptInd);
+				//std::cout << singleSq[c] << ",";
+				if(PySequence_Size(dstPt)< 2) continue;
+				PyObject *pydstx = PySequence_GetItem(dstPt, 0);
+				PyObject *pydsty = PySequence_GetItem(dstPt, 1);
+				double dstx = PyFloat_AsDouble(pydsty);
+				double dsty = PyFloat_AsDouble(pydsty);
+				std::cout << "yt " << texPos[ptInd][0] << texPos[ptInd][1] << std::endl;
+				std::cout << "pt " << 2.*(dstx / self->outImgW - 1.) << 2.*(dsty / self->outImgH - 1.) << std::endl;
+				glTexCoord2d(texPos[ptInd][0],texPos[ptInd][1]);
+				glVertex2f(2.*(dstx / self->outImgW - 1.),2.*(dsty / self->outImgH - 1.));
+				Py_DECREF(dstPt);
+				Py_DECREF(pydstx);
+				Py_DECREF(pydsty);
+			}
+			//std::cout << std::endl;
+		}
+		glEnd();
 
 		//Delete opengl texture
 		GLuint texArr[1];
 		texArr[0] = texture;
 		glDeleteTextures(1, texArr);
 
+		Py_DECREF(dstProj);
 		Py_DECREF(worldPos);
 		Py_DECREF(unprojArgs);
 		Py_DECREF(imgPix);
