@@ -146,7 +146,7 @@ class CameraArrangement(object):
 
 		x0 = [camModel.cLat, camModel.cLon, camModel.rot, 0., 0., 0., 0., 0.]
 		for dof in range(1,len(x0)+1):
-			ret = optimize.fmin_bfgs(self.Eval, x0[:dof], args=(photoId,), gtol = 20., full_output=1)
+			ret = optimize.fmin_bfgs(self.Eval, x0[:dof], args=(photoId,), gtol = 10., full_output=1)
 			print ret
 			if len(ret[0].shape) == 0:
 				x0[0] = float(ret[0])
