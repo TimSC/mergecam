@@ -363,7 +363,7 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	glClearColor(0,0,0,0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	glBegin(GL_TRIANGLES);
+	/*glBegin(GL_TRIANGLES);
 	{
 		glColor3f(1,0,0);
 		glVertex2f(0,0);
@@ -374,7 +374,7 @@ static int PanoView_init(PanoView *self, PyObject *args,
 		glColor3f(0,0,1);
 		glVertex2f(.5,.5);
 	}
-	glEnd();
+	glEnd();*/
 
 	glutSwapBuffers();
 	return 0;
@@ -414,6 +414,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	//Initialize output image colour
 	memset(pxOutRaw, 0x00, pxOutSize);
+
+	glClear(GL_COLOR_BUFFER_BIT);
 
 	//Iterate over cameras in arrangement
 	PyObject *addedPhotos = PyObject_GetAttrString(self->cameraArrangement, "addedPhotos");
@@ -485,7 +487,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			openglTex = NULL;
 		}
 
-		/*glClear(GL_COLOR_BUFFER_BIT);
+		/*
 		glColor3d(0.,1.,0.);
 		glBindTexture(GL_TEXTURE_2D, texture);
 		glBegin(GL_QUADS);
@@ -565,34 +567,11 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		//Draw images using opengl
 		glBindTexture(GL_TEXTURE_2D, texture);
-		glDisable(GL_TEXTURE_2D);
-		glColor3d(255.,255.,255.);
+		glColor3d(1.,1.,1.);
 		
 		for(unsigned sqNum = 0; sqNum < sqInd.size(); sqNum++)
 		{
 			std::vector<int> &singleSq = sqInd[sqNum];
-
-			glBegin(GL_LINE_LOOP);
-			for(int c = 0; c < singleSq.size(); c++)
-			{
-
-				int ptInd = singleSq[c];
-				PyObject *dstPt = PySequence_GetItem(dstPos, ptInd);
-				//std::cout << singleSq[c] << ",";
-
-				if(PySequence_Size(dstPt)< 2) continue;
-				PyObject *pydstx = PySequence_GetItem(dstPt, 0);
-				PyObject *pydsty = PySequence_GetItem(dstPt, 1);
-				double dstx = PyFloat_AsDouble(pydstx);
-				double dsty = PyFloat_AsDouble(pydsty);
-
-				glVertex2f((dstx / self->outImgW),(dsty / self->outImgH));
-				Py_DECREF(dstPt);
-				Py_DECREF(pydstx);
-				Py_DECREF(pydsty);
-
-			}
-			glEnd();
 
 			glBegin(GL_QUADS);
 			for(int c = 0; c < singleSq.size(); c++)
@@ -608,9 +587,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				double dstx = PyFloat_AsDouble(pydstx);
 				double dsty = PyFloat_AsDouble(pydsty);
 				//std::cout << "tex " << texPos[ptInd][0] <<","<< texPos[ptInd][1] << std::endl;
-				std::cout << "pt " << c << "," << (dstx / self->outImgW) <<","<< (dsty / self->outImgH) << std::endl;
-				//glTexCoord2d(texPos[ptInd][0],texPos[ptInd][1]);
-				glVertex2f((dstx / self->outImgW),(dsty / self->outImgH));
+				//std::cout << "pt " << c << "," << (dstx / self->outImgW) <<","<< (dsty / self->outImgH) << std::endl;
+				glTexCoord2d(texPos[ptInd][0],texPos[ptInd][1]);
+				glVertex2f((dstx / self->outImgW-0.5)*2.,-(dsty / self->outImgH-0.5)*2.);
 				Py_DECREF(dstPt);
 				Py_DECREF(pydstx);
 				Py_DECREF(pydsty);
