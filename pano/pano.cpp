@@ -43,12 +43,14 @@ static PyObject *TestFunc(PyObject *self, PyObject *args)
 int ResizeToPowersOfTwo(unsigned char *imgRaw, 
 	long sourceWidth, long sourceHeight, 
 	const char *sourceFmt, 
-	unsigned char *outBuff, unsigned *openglTexLen,
+	unsigned char **outBuff, unsigned *openglTexLen,
 	unsigned *openglTxWidth, unsigned *openglTxHeight)
 {
 	if(strcmp(sourceFmt, "RGB24") != 0 &&
 		strcmp(sourceFmt, "BGR24"))
 		return 0; //Unsupported format
+	if(outBuff == NULL || openglTexLen == NULL || openglTxWidth == NULL || openglTxHeight == NULL)
+		throw std::runtime_error("An output pointer is null");
 
 	int roundWidth = pow(2, (int)ceil(log2(sourceWidth)));
 	int roundHeight = pow(2, (int)ceil(log2(sourceHeight)));
@@ -58,13 +60,14 @@ int ResizeToPowersOfTwo(unsigned char *imgRaw,
 	*openglTxHeight = roundHeight;
 
 	//Establish output buffer
-	if(outBuff != NULL && requiredMem != *openglTexLen)
+	if(*outBuff != NULL && requiredMem != *openglTexLen)
 		throw std::runtime_error("Output buffer has incorrect size");
 	*openglTexLen = requiredMem;
-	if(outBuff==NULL)
-		outBuff = new unsigned char[requiredMem];
-
-	memset(outBuff, 0x00, requiredMem);
+	if(*outBuff==NULL)
+	{
+		*outBuff = new unsigned char[requiredMem];
+	}
+	memset(*outBuff, 0x00, requiredMem);
 
 	//Copy data to output buff
 	for(long x = 0 ; x < sourceWidth; x++)
@@ -74,7 +77,7 @@ int ResizeToPowersOfTwo(unsigned char *imgRaw,
 			int inputOffset = y * sourceWidth * 3 + x * 3;
 			int outputOffset = y * roundWidth * 3 + x * 3;
 			for(char ch = 0; ch < 3; ch++)
-				outBuff[outputOffset + ch] = imgRaw[inputOffset + ch];
+				(*outBuff)[outputOffset + ch] = imgRaw[inputOffset + ch];
 		}
 	}
 
@@ -400,7 +403,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	if(addedPhotosItems==NULL) throw std::runtime_error("addedPhotosItems pointer is null");
 	Py_ssize_t numCams = PySequence_Size(addedPhotosItems);
 	
-	for(Py_ssize_t i=0; i<0; i++)//numCams
+	for(Py_ssize_t i=0; i<numCams; i++)
 	{
 		//Check positions in source image of world positions
 		PyObject *camDataTup = PySequence_GetItem(addedPhotosItems, i);
@@ -430,17 +433,20 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		if(imgRaw==NULL) throw std::runtime_error("imgRaw pointer is null");
 
 		//Load image into opengl texture
-		/*GLuint texture;
+		GLuint texture;
 		glGenTextures(1, &texture);
-		glBindTexture(GL_TEXTURE_2D, texture);*/
+		glBindTexture(GL_TEXTURE_2D, texture);
 
 		//Convert to powers of two shape
-		/*unsigned char *openglTex = NULL;
+		unsigned char *openglTex = NULL;
 		unsigned openglTexLen = 0, openglTxWidth = 0, openglTxHeight = 0;
+
+		std::cout << "1" << std::endl;
 		int texOk = ResizeToPowersOfTwo((unsigned char *)imgRaw, 
 			sourceWidth, sourceHeight, 
-			sourceFmt.c_str(), openglTex, &openglTexLen,
+			sourceFmt.c_str(), &openglTex, &openglTexLen,
 			&openglTxWidth, &openglTxHeight);
+		std::cout << "2" << std::endl;
 
 		std::cout << "texa " << sourceWidth << "," << sourceHeight << std::endl;
 		std::cout << "texb " << openglTxWidth << "," << openglTxHeight << std::endl;
@@ -448,12 +454,16 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		if(openglTex!=NULL)
 		{
-			if(texOk)
+			/*if(texOk)
+			{
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, openglTxWidth, 
 					openglTxHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, openglTex);
+			}*/
+			std::cout << "a" << std::endl;
 			delete [] openglTex;
 			openglTex = NULL;
-		}*/
+			std::cout << "b" << std::endl;
+		}
 
 		/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -486,16 +496,13 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		}
 
 		//Delete opengl texture
-		/*GLuint texArr[1];
+		GLuint texArr[1];
 		texArr[0] = texture;
-		glDeleteTextures(1, texArr);*/
+		glDeleteTextures(1, texArr);
 
 		Py_DECREF(pyImage);
 		Py_DECREF(metaObj);
 		Py_DECREF(camDataTup);
-		Py_DECREF(widthObj);
-		Py_DECREF(heightObj);
-		Py_DECREF(formatObj);
 	}
 
 
