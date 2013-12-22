@@ -485,8 +485,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			openglTex = NULL;
 		}
 
-		glClear(GL_COLOR_BUFFER_BIT);
-		glColor3d(1.,1.,1.);
+		/*glClear(GL_COLOR_BUFFER_BIT);
+		glColor3d(0.,1.,0.);
 		glBindTexture(GL_TEXTURE_2D, texture);
 		glBegin(GL_QUADS);
 		glTexCoord2d(0.0,0.0);
@@ -497,7 +497,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		glVertex2f(1,1);
 		glTexCoord2d(0.0,1.0);
 		glVertex2f(-1,1);
-		glEnd();
+		glEnd();*/
 
 		//Generate python list of source image positions
 		PyObject *imgPix = PyList_New(0);
@@ -519,8 +519,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 				//Store normalised texture position
 				std::vector<double> txPt;
-				txPt.push_back(x * sourceWidth / openglTxWidth);
-				txPt.push_back(y * sourceHeight / openglTxHeight);
+				txPt.push_back(x / openglTxWidth);
+				txPt.push_back(y / openglTxHeight);
 				texPos.push_back(txPt);
 			}
 		}
@@ -534,8 +534,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				std::vector<int> singleSq;
 				singleSq.push_back(x + y * numSq);
 				singleSq.push_back((x + 1) + y * numSq);
-				singleSq.push_back(x + (y + 1) * numSq);
 				singleSq.push_back((x + 1) + (y + 1) * numSq);
+				singleSq.push_back(x + (y + 1) * numSq);
 				sqInd.push_back(singleSq);
 			}
 		}
@@ -550,23 +550,30 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		Py_INCREF(imgPix);
 
 		PyObject *worldPos = PyObject_Call(camUnProj, unprojArgs, NULL);
-		PyObject_Print(worldPos, stdout, Py_PRINT_RAW); std::cout << std::endl;
+		//PyObject_Print(worldPos, stdout, Py_PRINT_RAW); std::cout << std::endl;
 
 		//Transform world positions to destination image
 		PyObject *dstProj = PyObject_GetAttrString(self->outProjection, "Proj");
 		if(dstProj==NULL)
 			throw std::runtime_error("Proj method not defined");
 
-		PyObject *dstPos = PyObject_Call(dstProj, worldPos, NULL);
-		PyObject_Print(dstPos, stdout, Py_PRINT_RAW); std::cout << std::endl;
+		PyObject *projArgs = PyTuple_New(1);
+		PyTuple_SetItem(projArgs, 0, worldPos);
+		Py_INCREF(worldPos);
+
+		PyObject *dstPos = PyObject_Call(dstProj, projArgs, NULL);
+
 		//Draw images using opengl
 		glBindTexture(GL_TEXTURE_2D, texture);
-		glBegin(GL_QUADS);
-
+		glDisable(GL_TEXTURE_2D);
+		glColor3d(255.,255.,255.);
+		
 		for(unsigned sqNum = 0; sqNum < sqInd.size(); sqNum++)
 		{
 			std::vector<int> &singleSq = sqInd[sqNum];
-			for(unsigned c = 0; c < singleSq.size(); c++)
+
+			glBegin(GL_LINE_LOOP);
+			for(int c = 0; c < singleSq.size(); c++)
 			{
 
 				int ptInd = singleSq[c];
@@ -576,19 +583,49 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				if(PySequence_Size(dstPt)< 2) continue;
 				PyObject *pydstx = PySequence_GetItem(dstPt, 0);
 				PyObject *pydsty = PySequence_GetItem(dstPt, 1);
-				double dstx = PyFloat_AsDouble(pydsty);
+				double dstx = PyFloat_AsDouble(pydstx);
 				double dsty = PyFloat_AsDouble(pydsty);
-				std::cout << "yt " << texPos[ptInd][0] << texPos[ptInd][1] << std::endl;
-				std::cout << "pt " << 2.*(dstx / self->outImgW - 1.) << 2.*(dsty / self->outImgH - 1.) << std::endl;
-				glTexCoord2d(texPos[ptInd][0],texPos[ptInd][1]);
-				glVertex2f(2.*(dstx / self->outImgW - 1.),2.*(dsty / self->outImgH - 1.));
+
+				glVertex2f((dstx / self->outImgW),(dsty / self->outImgH));
+				Py_DECREF(dstPt);
+				Py_DECREF(pydstx);
+				Py_DECREF(pydsty);
+
+			}
+			glEnd();
+
+			glBegin(GL_QUADS);
+			for(int c = 0; c < singleSq.size(); c++)
+			{
+
+				int ptInd = singleSq[c];
+				PyObject *dstPt = PySequence_GetItem(dstPos, ptInd);
+				//std::cout << singleSq[c] << ",";
+
+				if(PySequence_Size(dstPt)< 2) continue;
+				PyObject *pydstx = PySequence_GetItem(dstPt, 0);
+				PyObject *pydsty = PySequence_GetItem(dstPt, 1);
+				double dstx = PyFloat_AsDouble(pydstx);
+				double dsty = PyFloat_AsDouble(pydsty);
+				//std::cout << "tex " << texPos[ptInd][0] <<","<< texPos[ptInd][1] << std::endl;
+				std::cout << "pt " << c << "," << (dstx / self->outImgW) <<","<< (dsty / self->outImgH) << std::endl;
+				//glTexCoord2d(texPos[ptInd][0],texPos[ptInd][1]);
+				glVertex2f((dstx / self->outImgW),(dsty / self->outImgH));
 				Py_DECREF(dstPt);
 				Py_DECREF(pydstx);
 				Py_DECREF(pydsty);
 			}
 			//std::cout << std::endl;
+			glEnd();
+
+			/*glBegin(GL_QUADS);
+			glVertex2f(0.,0.);
+			glVertex2f(1.,0.);
+			glVertex2f(1.,1.);
+			glVertex2f(0.,1.);
+			glEnd();*/
 		}
-		glEnd();
+		
 
 		//Delete opengl texture
 		GLuint texArr[1];
