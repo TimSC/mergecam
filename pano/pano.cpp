@@ -29,6 +29,8 @@ public:
 	long outImgW, outImgH;
 	PyObject *timeModule;
 	PyObject *timeFunc;
+	PyObject *cameraArrangement;
+	PyObject *outProjection;
 };
 typedef PanoView_cl PanoView;
 
@@ -69,6 +71,17 @@ public:
 
 static void PanoView_dealloc(PanoView *self)
 {
+	if(self->cameraArrangement != NULL)
+	{
+		Py_DECREF(self->cameraArrangement);
+		self->cameraArrangement = NULL;
+	}
+	
+	if(self->outProjection != NULL)
+	{
+		Py_DECREF(self->outProjection);
+		self->outProjection = NULL;
+	}
 
 	if(self->mapping) delete self->mapping;
 	self->mapping = NULL;
@@ -94,6 +107,12 @@ static int PanoView_init(PanoView *self, PyObject *args,
 		PyErr_Format(PyExc_RuntimeError, "imgH or imgW not set");
  		return 0;
 	}
+
+	//Store objects for later use
+	self->cameraArrangement = PyTuple_GetItem(args, 0);
+	Py_INCREF(self->cameraArrangement);
+	self->outProjection = PyTuple_GetItem(args, 1);
+	Py_INCREF(self->outProjection);
 
 	PyObject *outWidthObj = PyObject_GetAttrString(outProj, "imgW");
 	PyObject *outHeightObj = PyObject_GetAttrString(outProj, "imgH");
@@ -534,7 +553,7 @@ static PyTypeObject PanoView_type = {
 	PyObject_HEAD_INIT(NULL)
 			0, "pano.PanoView", sizeof(PanoView), 0,
 			(destructor)PanoView_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			0, Py_TPFLAGS_DEFAULT, "PanoView()\n\n", 0, 0, 0,
+			0, Py_TPFLAGS_DEFAULT, "PanoView(cameraArrangement, outProjection)\n\n", 0, 0, 0,
 			0, 0, 0, PanoView_methods, 0, 0, 0, 0, 0, 0, 0,
 			(initproc)PanoView_init
 };
