@@ -21,6 +21,7 @@
 #include <time.h>
 #include <math.h>
 #include <GL/glut.h>
+#include <GL/glu.h>
 #include <GL/freeglut.h>
 
 class PanoView_cl{
@@ -82,6 +83,16 @@ int ResizeToPowersOfTwo(unsigned char *imgRaw,
 	}
 
 	return 1;
+}
+
+void PrintGlErrors()
+{	
+	GLenum err = glGetError();
+	while(err!=GL_NO_ERROR)
+	{
+		std::cout << "opengl error: " << gluErrorString(err) << std::endl;
+		err = glGetError();
+	}
 }
 
 // **********************************************************************
@@ -432,44 +443,52 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		char *imgRaw = PyByteArray_AsString(pyImage);
 		if(imgRaw==NULL) throw std::runtime_error("imgRaw pointer is null");
 
+		glEnable(GL_TEXTURE_2D);
+		std::cout << "Enable texture " << std::endl; PrintGlErrors();
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		std::cout << "GL_TEXTURE_MAG_FILTER " << std::endl; PrintGlErrors();
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		std::cout << "GL_TEXTURE_MIN_FILTER " << std::endl; PrintGlErrors();
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		std::cout << "GL_TEXTURE_ENV_MODE " << std::endl; PrintGlErrors();
+
 		//Load image into opengl texture
 		GLuint texture;
 		glGenTextures(1, &texture);
+		std::cout << "glGenTextures " << std::endl; PrintGlErrors();
 		glBindTexture(GL_TEXTURE_2D, texture);
+		std::cout << "glBindTexture " << std::endl; PrintGlErrors();
 
 		//Convert to powers of two shape
 		unsigned char *openglTex = NULL;
 		unsigned openglTexLen = 0, openglTxWidth = 0, openglTxHeight = 0;
 
-		std::cout << "1" << std::endl;
 		int texOk = ResizeToPowersOfTwo((unsigned char *)imgRaw, 
 			sourceWidth, sourceHeight, 
 			sourceFmt.c_str(), &openglTex, &openglTexLen,
 			&openglTxWidth, &openglTxHeight);
-		std::cout << "2" << std::endl;
-
-		std::cout << "texa " << sourceWidth << "," << sourceHeight << std::endl;
-		std::cout << "texb " << openglTxWidth << "," << openglTxHeight << std::endl;
-		std::cout << "texn " << texture << std::endl;
 
 		if(openglTex!=NULL)
 		{
-			/*if(texOk)
+			std::cout << "Pre-texture" << std::endl;
+			PrintGlErrors();
+
+			if(texOk)
 			{
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, openglTxWidth, 
 					openglTxHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, openglTex);
-			}*/
-			std::cout << "a" << std::endl;
+
+
+				std::cout << "Post-texture" << std::endl;
+				PrintGlErrors();
+
+			}
 			delete [] openglTex;
 			openglTex = NULL;
-			std::cout << "b" << std::endl;
 		}
-
-		/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-		glEnable(GL_TEXTURE);
+		
 		glColor3d(1.,1.,1.);
+		glBindTexture(GL_TEXTURE_2D, texture);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glBegin(GL_QUADS);
 		glTexCoord2d(0.0,0.0);
@@ -480,7 +499,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		glVertex2f(.5,.5);
 		glTexCoord2d(0.0,1.0);
 		glVertex2f(0,.5);
-		glEnd();*/
+		glEnd();
 
 		//Draw to opengl
 		for(int xstep = 0; xstep < 10; xstep ++)
@@ -499,6 +518,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		GLuint texArr[1];
 		texArr[0] = texture;
 		glDeleteTextures(1, texArr);
+
+		std::cout << "Finish frame " << std::endl; PrintGlErrors();
 
 		Py_DECREF(pyImage);
 		Py_DECREF(metaObj);
@@ -594,7 +615,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	Py_DECREF(addedPhotos);
 	Py_DECREF(addedPhotosItems);
 
-	//glutSwapBuffers();
+	glutSwapBuffers();
 
 	//Py_RETURN_NONE;
 	return out;
