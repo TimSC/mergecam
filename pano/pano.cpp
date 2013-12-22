@@ -311,10 +311,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		//Get texture handle
 		GLuint texture;
 		glGenTextures(1, &texture);
-		
-		//Convert to powers of two shape
-		unsigned char *openglTex = NULL;
-		unsigned openglTexLen = 0, openglTxWidth = 0, openglTxHeight = 0;
 
 		glBindTexture(GL_TEXTURE_2D, texture);
 		if(self->nonPowerTwoTexSupported)
@@ -326,6 +322,10 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		}
 		else
 		{
+			//Convert to powers of two shape
+			unsigned char *openglTex = NULL;
+			unsigned openglTexLen = 0, openglTxWidth = 0, openglTxHeight = 0;
+
 			int texOk = ResizeToPowersOfTwo((unsigned char *)imgRaw, 
 				sourceWidth, sourceHeight, 
 				sourceFmt.c_str(), &openglTex, &openglTexLen,
