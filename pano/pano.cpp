@@ -34,6 +34,7 @@ public:
 	PyObject *cameraArrangement;
 	PyObject *outProjection;
 	std::vector<GLuint> displayLists;
+	int nonPowerTwoTexSupported;
 };
 typedef PanoView_cl PanoView;
 
@@ -100,6 +101,34 @@ void GlutWindowCloseEvent()
 {
 	std::cout << "GlutWindowCloseEvent()" << std::endl;
 	exit(0);
+}
+
+int FindStringInVector(const char *needle, std::vector<std::string> haystack)
+{
+	for(unsigned int i=0;i<haystack.size();i++)
+	{
+		int hit = haystack[i].compare(needle);
+		if(hit) return true;
+	}
+	return false;
+}
+
+//**************************************************************************
+//http://stackoverflow.com/a/236803
+
+std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        elems.push_back(item);
+    }
+    return elems;
+}
+
+std::vector<std::string> split(const std::string &s, char delim) {
+    std::vector<std::string> elems;
+    split(s, delim, elems);
+    return elems;
 }
 
 // **********************************************************************
@@ -199,6 +228,11 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	glClearColor(0,0,0,0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
+	std::string extensions = (const char *)glGetString(GL_EXTENSIONS);
+	std::vector<std::string> splitExt = ::split(extensions, ' ');
+
+	self->nonPowerTwoTexSupported = FindStringInVector("GL_ARB_texture_non_power_of_two", splitExt);
+
 	glutSwapBuffers();
 	return 0;
 }
@@ -277,8 +311,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		//Get texture handle
 		GLuint texture;
 		glGenTextures(1, &texture);
-		glBindTexture(GL_TEXTURE_2D, texture);
-
+		
 		//Convert to powers of two shape
 		unsigned char *openglTex = NULL;
 		unsigned openglTexLen = 0, openglTxWidth = 0, openglTxHeight = 0;
@@ -292,21 +325,20 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		if(openglTex!=NULL)
 		{
-
+			glBindTexture(GL_TEXTURE_2D, texture);
 			if(texOk)
 			{
 				//Load texture into opengl
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, openglTxWidth, 
 					openglTxHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, openglTex);
-
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
 			}
 			delete [] openglTex;
 			openglTex = NULL;
-		}
 
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		}
+		
 		textureIds.push_back(texture);
 
 	}
@@ -403,7 +435,10 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		PyObject *dstPos = PyObject_Call(dstProj, projArgs, NULL);
 
 		//Draw images using opengl
-		glBindTexture(GL_TEXTURE_2D, textureIds[i]);
+		if(self->nonPowerTwoTexSupported)
+			glBindTexture(GL_ARB_texture_non_power_of_two, textureIds[i]);
+		else
+			glBindTexture(GL_TEXTURE_2D, textureIds[i]);
 		glColor3d(1.,1.,1.);
 		
 		for(unsigned sqNum = 0; sqNum < sqInd.size(); sqNum++)
