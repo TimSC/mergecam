@@ -93,7 +93,7 @@ static int PanoView_init(PanoView *self, PyObject *args,
 		PyObject *kwargs)
 {
 
-	self->mapping = new std::vector<std::vector<std::vector<class PxInfo> > >;
+	self->mapping = NULL;
 
 	if(PyTuple_Size(args) < 2)
 	{
@@ -120,7 +120,10 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	long outHeight = PyInt_AsLong(outHeightObj);
 	self->outImgW = outWidth;
 	self->outImgH = outHeight;
-	
+	Py_DECREF(outWidthObj);
+	Py_DECREF(outHeightObj);
+
+	/*
 	//Create list of screen coordinates
 	//std::cout << outWidth << "," << outHeight << std::endl;
 	PyObject *imgPix = PyList_New(0);
@@ -283,8 +286,7 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	Py_DECREF(addedPhotos);
 	Py_DECREF(addedPhotosItems);
 
-	Py_DECREF(outWidthObj);
-	Py_DECREF(outHeightObj);
+*/
 
 	return 0;
 }
@@ -302,14 +304,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	PyObject *images = PyTuple_GetItem(args, 0);
 	PyObject *metas = PyTuple_GetItem(args, 1);
-	std::vector<std::vector<std::vector<class PxInfo> > > &mapping = *self->mapping;
-
-	//Create output image buffer
-	
-	unsigned pxOutSize = 3 * self->outImgH * self->outImgW;
-	PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
-	PyByteArray_Resize(pxOut, pxOutSize);
-	char *pxOutRaw = PyByteArray_AsString(pxOut);
+	//std::vector<std::vector<std::vector<class PxInfo> > > &mapping = *self->mapping;
 	
 	//char *pxOutRaw = new char[pxOutSize];
 
@@ -320,12 +315,21 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		PyErr_Format(PyExc_RuntimeError, "Number of sources and metas must match.");
 		Py_DECREF(images);
 		Py_DECREF(metas);
- 		Py_RETURN_NONE;
+ 		return NULL;
 	}
+
+	//Create output image buffer
+	unsigned pxOutSize = 3 * self->outImgH * self->outImgW;
+	PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
+	PyByteArray_Resize(pxOut, pxOutSize);
+	char *pxOutRaw = PyByteArray_AsString(pxOut);
+
+	//Initialize output image colour
+	memset(pxOutRaw, 0x00, pxOutSize);
 
 	//double time1 = double(clock()) / CLOCKS_PER_SEC;
 	//std::cout << "Time1 " << time1 - startTime << std::endl;
-
+	/*
 	//Get source buffers and meta
 	std::vector<unsigned char *> srcBuffs;
 	std::vector<PyObject *> srcObjs;
@@ -376,137 +380,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
  			Py_RETURN_NONE;
 		}
 	}
+*/
 
-	//double time2 = double(clock()) / CLOCKS_PER_SEC;
-	//std::cout << "Time2 " << time2 - startTime << std::endl;
 
-	//Initialize output image colour
-	memset(pxOutRaw, 0x00, pxOutSize);
-
-	//double time3 = double(clock()) / CLOCKS_PER_SEC;
-	//std::cout << "Time3 " << time3 - startTime << std::endl;
-
-	//Calculate source image mix ratios
-	int count = 0;
-	if(self->srcWeights.size() == 0)
-	{
-	//self->srcWeights.clear();
-	for(long x=0; x < self->outImgW; x++)
-	{
-	std::vector<std::vector<class PxInfo> > &mappingCol = mapping[x];
-	std::vector<std::vector<float> > srcWeightsCol;
-
-	for(long y=0; y < self->outImgH; y++)
-	{
-		std::vector<class PxInfo> &sources = mappingCol[y];
-
-		//Copy pixels
-		std::vector<float> pxSrcWeights;
-		for(unsigned srcNum = 0; srcNum <sources.size(); srcNum++)
-		{ 
-			class PxInfo &pxInfo = sources[srcNum];
-			long sw = srcWidth[pxInfo.camId];
-			long sh = srcHeight[pxInfo.camId];
-
-			//Nearest neighbour pixel
-			long srx = (int)(pxInfo.x+0.5);
-			long sry = (int)(pxInfo.y+0.5);
-
-			if(srx<0 || srx >= sw) continue;
-			if(sry<0 || sry >= sh) continue;
-
-			unsigned tupleOffset = srx*3 + sry*3*sw;
-			if(tupleOffset < 0 || tupleOffset+3 >= srcBuffLen[pxInfo.camId])
-				continue; //Protect against buffer overrun
-
-			//Calculate alpha opacity
-			float fx = pxInfo.x / sw;
-			float fy = pxInfo.y / sh;
-			float featherExp = 2.0;
-			float alpha = pow(1.f - 2.f * fabs(0.5 - fx), featherExp) * pow(1.f - 2.f * fabs(0.5 - fy), featherExp);
-			if(alpha < 0.) alpha = 0.;
-			pxSrcWeights.push_back(alpha);
-
-			count += 1;
-		}
-		srcWeightsCol.push_back(pxSrcWeights);
-	}
-	self->srcWeights.push_back(srcWeightsCol);
-	}
-
-	//Normalise mix coefficients
-	for(long x=0; x < self->outImgW; x++)
-	{
-		std::vector<std::vector<float> > &srcWeightsCol = self->srcWeights[x];		
-		for(long y=0; y < self->outImgH; y++)
-		{
-			float total = 0.f;
-			std::vector<float> &pxSrcWeights = srcWeightsCol[y];
-			for(unsigned srcNum = 0; srcNum < pxSrcWeights.size(); srcNum++)
-				total += pxSrcWeights[srcNum];
-
-			for(unsigned srcNum = 0; srcNum < pxSrcWeights.size(); srcNum++)
-				pxSrcWeights[srcNum] /= total;
-		}
-	}
-	}
-
-	//double time4 = double(clock()) / CLOCKS_PER_SEC;
-	//std::cout << "Time4 " << time4 - startTime << std::endl;
-
-	//Transfer source images to output buffer
-	count = 0;
-	for(long x=0; x < self->outImgW; x++)
-	{
-	std::vector<std::vector<class PxInfo> > &mappingCol = mapping[x];
-	std::vector<std::vector<float> > &srcWeightsCol = self->srcWeights[x];
-
-	for(long y=0; y < self->outImgH; y++)
-	{
-		unsigned char *dstRgbTuple = (unsigned char *)&pxOutRaw[x*3 + y*3*self->outImgW];
-		std::vector<class PxInfo> &sources = mappingCol[y];
-		std::vector<float> &pxSrcWeights = srcWeightsCol[y];
-
-		//Copy pixels
-		for(unsigned srcNum = 0; srcNum <sources.size(); srcNum++)
-		{ 
-			class PxInfo &pxInfo = sources[srcNum];
-			unsigned char *srcBuff = srcBuffs[pxInfo.camId];
-			long sw = srcWidth[pxInfo.camId];
-			long sh = srcHeight[pxInfo.camId];
-
-			//Nearest neighbour pixel
-			long srx = (int)(pxInfo.x+0.5);
-			long sry = (int)(pxInfo.y+0.5);
-
-			if(srx<0 || srx >= sw) continue;
-			if(sry<0 || sry >= sh) continue;
-
-			unsigned tupleOffset = srx*3 + sry*3*sw;
-			if(tupleOffset < 0 || tupleOffset+3 >= srcBuffLen[pxInfo.camId])
-				continue; //Protect against buffer overrun
-			unsigned char *srcRgbTuple = (unsigned char *)&srcBuff[tupleOffset];
-
-			//Copy pixel
-			float mix = pxSrcWeights[srcNum];
-			dstRgbTuple[0] += srcRgbTuple[0] * mix;
-			dstRgbTuple[1] += srcRgbTuple[1] * mix;
-			dstRgbTuple[2] += srcRgbTuple[2] * mix;
-
-			count += 1;
-		}
-	}
-	}
-	//std::cout << count << std::endl;
-
-	//double time6 = double(clock()) / CLOCKS_PER_SEC;
-	//std::cout << "Time6 " << time6 - startTime << std::endl;
-
-	//PyObject *pxOut = PyByteArray_FromStringAndSize(pxOutRaw, pxOutSize);
-	//PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
-	//PyByteArray_Resize(pxOut, pxOutSize);
-	//delete [] pxOutRaw;
-	//pxOutRaw = NULL;
 
 	//Format meta data
 	PyObject *metaOut = PyDict_New();
@@ -525,11 +401,11 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	PyTuple_SetItem(out, 1, metaOut);
 
 	//Free source objects
-	for(unsigned i=0; i<srcObjs.size(); i++)
+	/*for(unsigned i=0; i<srcObjs.size(); i++)
 	{
 		Py_DECREF(srcObjs[i]);
 	}
-	srcObjs.clear();
+	srcObjs.clear();*/
 	Py_DECREF(images);
 	Py_DECREF(metas);
 
