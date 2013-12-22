@@ -220,7 +220,19 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
 	glutInitWindowSize(outWidth, outHeight);
 	int glut_id = glutCreateWindow("VWGL");
-	//glutHideWindow();
+	int hideOpenGL = 0;
+	if(hideOpenGL)
+	{
+		/*GLuint fbo, renderBuff;
+		glGenFramebuffersEXT(1, &fbo);
+		glGenRenderbuffers(1, &renderBuff);
+		glBindRenderbuffer(fbo);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_BGRA8, outWidth, outHeight);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);*/
+
+		glutHideWindow();
+	}
+
 	delete [] arg1;
 
 	glutCloseFunc(GlutWindowCloseEvent);
@@ -235,7 +247,6 @@ static int PanoView_init(PanoView *self, PyObject *args,
 
 	self->nonPowerTwoTexSupported = FindStringInVector("GL_ARB_texture_non_power_of_two", splitExt);
 
-	glutSwapBuffers();
 	return 0;
 }
 
@@ -253,8 +264,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	PyObject *images = PyTuple_GetItem(args, 0);
 	PyObject *metas = PyTuple_GetItem(args, 1);
 	
-	//char *pxOutRaw = new char[pxOutSize];
-
 	Py_ssize_t numSources = PySequence_Size(images);
 	Py_ssize_t numMetas = PySequence_Size(metas);
 	if(numSources != numMetas)
@@ -508,6 +517,12 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	}
 	self->textureIds.clear();
 
+
+	PrintGlErrors();
+	glReadBuffer(GL_BACK);
+	glReadPixels(0,0,self->outImgW,self->outImgH,GL_RGB,GL_UNSIGNED_BYTE,pxOutRaw);
+	glutSwapBuffers();
+
 	//Format meta data
 	PyObject *metaOut = PyDict_New();
 	PyObject *widthObj = PyInt_FromLong(self->outImgW);
@@ -539,9 +554,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	Py_DECREF(addedPhotos);
 	Py_DECREF(addedPhotosItems);
-
-	glutSwapBuffers();
-	PrintGlErrors();
 
 	//Py_RETURN_NONE;
 	return out;
