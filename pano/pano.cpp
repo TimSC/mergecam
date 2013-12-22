@@ -454,12 +454,10 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_BLEND);
 
-		//Load image into opengl texture
+		//Get texture handle
 		GLuint texture;
 		glGenTextures(1, &texture);
-		std::cout << "glGenTextures " << std::endl; PrintGlErrors();
 		glBindTexture(GL_TEXTURE_2D, texture);
-		std::cout << "glBindTexture " << std::endl; PrintGlErrors();
 
 		//Convert to powers of two shape
 		unsigned char *openglTex = NULL;
@@ -472,23 +470,20 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		if(openglTex!=NULL)
 		{
-			std::cout << "Pre-texture" << std::endl;
-			PrintGlErrors();
 
 			if(texOk)
 			{
+				//Load texture into opengl
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, openglTxWidth, 
 					openglTxHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, openglTex);
 
-				std::cout << "Post-texture" << std::endl;
-				PrintGlErrors();
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 			}
 			delete [] openglTex;
 			openglTex = NULL;
 		}
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 		glClear(GL_COLOR_BUFFER_BIT);
 		glColor3d(1.,1.,1.);
@@ -504,7 +499,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		glVertex2f(-1,1);
 		glEnd();
 
-		//Draw to opengl
+		//Generate python list of source image positions
+		PyObject *imgPix = PyList_New(0);
 		for(int xstep = 0; xstep < 10; xstep ++)
 		{
 			for(int ystep = 0; ystep < 10; ystep ++)
@@ -512,18 +508,38 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				double x = sourceWidth * double(xstep) / 9.;
 				double y = sourceHeight * double(ystep) / 9.;
 
-
+				PyObject *tupleTemp = PyTuple_New(2);
+				PyTuple_SetItem(tupleTemp, 0, PyInt_FromLong(x));
+				PyTuple_SetItem(tupleTemp, 1, PyInt_FromLong(y));
+				PyList_Append(imgPix, tupleTemp);
+				Py_DECREF(tupleTemp);		
 
 			}
 		}
+
+		//Transfrom image source positions to world coordinates
+		PyObject *camUnProj = PyObject_GetAttrString(camData, "UnProj");
+		if(camUnProj==NULL)
+			throw std::runtime_error("UnProj method not defined");
+
+		PyObject *unprojArgs = PyTuple_New(1);
+		PyTuple_SetItem(unprojArgs, 0, imgPix);
+		Py_INCREF(imgPix);
+
+		PyObject *worldPos = PyObject_Call(camUnProj, unprojArgs, NULL);
+
+		
+
+
 
 		//Delete opengl texture
 		GLuint texArr[1];
 		texArr[0] = texture;
 		glDeleteTextures(1, texArr);
 
-		std::cout << "Finish frame " << std::endl; PrintGlErrors();
-
+		Py_DECREF(worldPos);
+		Py_DECREF(unprojArgs);
+		Py_DECREF(imgPix);
 		Py_DECREF(pyImage);
 		Py_DECREF(metaObj);
 		Py_DECREF(camDataTup);
@@ -585,8 +601,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	}
 */
 
-
-
 	//Format meta data
 	PyObject *metaOut = PyDict_New();
 	PyObject *widthObj = PyInt_FromLong(self->outImgW);
@@ -609,6 +623,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		Py_DECREF(srcObjs[i]);
 	}
 	srcObjs.clear();*/
+
 	Py_DECREF(images);
 	Py_DECREF(metas);
 
@@ -619,6 +634,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	Py_DECREF(addedPhotosItems);
 
 	glutSwapBuffers();
+	PrintGlErrors();
 
 	//Py_RETURN_NONE;
 	return out;
