@@ -19,6 +19,7 @@
 #include <stdexcept>
 #include <pthread.h>
 #include <time.h>
+#include <math.h>
 #include <GL/glut.h>
 #include <GL/freeglut.h>
 
@@ -26,8 +27,6 @@ class PanoView_cl{
 public:
 	PyObject_HEAD
 
-	std::vector<std::vector<std::vector<class PxInfo> > > *mapping;
-	std::vector<std::vector<std::vector<float> > > srcWeights;
 	long outImgW, outImgH;
 	PyObject *timeModule;
 	PyObject *timeFunc;
@@ -39,6 +38,47 @@ typedef PanoView_cl PanoView;
 static PyObject *TestFunc(PyObject *self, PyObject *args)
 {
 	Py_RETURN_NONE;
+}
+
+int ResizeToPowersOfTwo(unsigned char *imgRaw, 
+	long sourceWidth, long sourceHeight, 
+	const char *sourceFmt, 
+	unsigned char *outBuff, unsigned *openglTexLen,
+	unsigned *openglTxWidth, unsigned *openglTxHeight)
+{
+	if(strcmp(sourceFmt, "RGB24") != 0 &&
+		strcmp(sourceFmt, "BGR24"))
+		return 0; //Unsupported format
+
+	int roundWidth = pow(2, (int)ceil(log2(sourceWidth)));
+	int roundHeight = pow(2, (int)ceil(log2(sourceHeight)));
+	int requiredMem = roundWidth * roundHeight * 3;
+
+	*openglTxWidth = roundWidth;
+	*openglTxHeight = roundHeight;
+
+	//Establish output buffer
+	if(outBuff != NULL && requiredMem != *openglTexLen)
+		throw std::runtime_error("Output buffer has incorrect size");
+	*openglTexLen = requiredMem;
+	if(outBuff==NULL)
+		outBuff = new unsigned char[requiredMem];
+
+	memset(outBuff, 0x00, requiredMem);
+
+	//Copy data to output buff
+	for(long x = 0 ; x < sourceWidth; x++)
+	{
+		for(long y = 0; y < sourceHeight; y++)
+		{
+			int inputOffset = y * sourceWidth * 3 + x * 3;
+			int outputOffset = y * roundWidth * 3 + x * 3;
+			for(char ch = 0; ch < 3; ch++)
+				outBuff[outputOffset + ch] = imgRaw[inputOffset + ch];
+		}
+	}
+
+	return 1;
 }
 
 // **********************************************************************
@@ -85,17 +125,12 @@ static void PanoView_dealloc(PanoView *self)
 		self->outProjection = NULL;
 	}
 
-	if(self->mapping) delete self->mapping;
-	self->mapping = NULL;
-
 	self->ob_type->tp_free((PyObject *)self);
 }
 
 static int PanoView_init(PanoView *self, PyObject *args,
 		PyObject *kwargs)
 {
-
-	self->mapping = NULL;
 
 	if(PyTuple_Size(args) < 2)
 	{
@@ -296,7 +331,7 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	char **argv = &arg1;
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
-	glutInitWindowSize(100, 100);
+	glutInitWindowSize(outWidth, outHeight);
 	int glut_id = glutCreateWindow("VWGL");
 	//glutHideWindow();
 	delete [] arg1;
@@ -336,7 +371,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	PyObject *images = PyTuple_GetItem(args, 0);
 	PyObject *metas = PyTuple_GetItem(args, 1);
-	//std::vector<std::vector<std::vector<class PxInfo> > > &mapping = *self->mapping;
 	
 	//char *pxOutRaw = new char[pxOutSize];
 
@@ -358,6 +392,97 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	//Initialize output image colour
 	memset(pxOutRaw, 0x00, pxOutSize);
+
+	//Iterate over cameras in arrangement
+	PyObject *addedPhotos = PyObject_GetAttrString(self->cameraArrangement, "addedPhotos");
+	if(addedPhotos==NULL) throw std::runtime_error("addedPhotos pointer is null");
+	PyObject *addedPhotosItems = PyDict_Items(addedPhotos);
+	if(addedPhotosItems==NULL) throw std::runtime_error("addedPhotosItems pointer is null");
+	Py_ssize_t numCams = PySequence_Size(addedPhotosItems);
+	
+	for(Py_ssize_t i=0; i<numCams; i++)
+	{
+		//Check positions in source image of world positions
+		PyObject *camDataTup = PySequence_GetItem(addedPhotosItems, i);
+		PyObject *camIdObj = PyTuple_GetItem(camDataTup, 0);
+		long camId = PyLong_AsLong(camIdObj);
+		PyObject *camData = PyTuple_GetItem(camDataTup, 1);
+
+		//PyObject_Print(camData, stdout, Py_PRINT_RAW); std::cout << std::endl;
+
+		//Get meta data from python objects
+		PyObject *pyImage = PySequence_GetItem(images, i);
+		if(pyImage==NULL) throw std::runtime_error("pyImage pointer is null");
+		PyObject *metaObj = PySequence_GetItem(metas, i);
+		if(metaObj==NULL) throw std::runtime_error("metaObj pointer is null");
+
+		PyObject *widthObj = PyDict_GetItemString(metaObj, "width");
+		if(widthObj==NULL) throw std::runtime_error("widthObj pointer is null");
+		long sourceWidth = PyInt_AsLong(widthObj);
+		PyObject *heightObj = PyDict_GetItemString(metaObj, "height");
+		if(heightObj==NULL) throw std::runtime_error("heightObj pointer is null");
+		long sourceHeight = PyInt_AsLong(heightObj);
+
+		PyObject *formatObj = PyDict_GetItemString(metaObj, "format");
+		std::string sourceFmt = PyString_AsString(formatObj);
+
+		char *imgRaw = PyByteArray_AsString(pyImage);
+		if(imgRaw==NULL) throw std::runtime_error("imgRaw pointer is null");
+
+		//Load image into opengl texture
+		GLuint texture;
+		glGenTextures(1, &texture);
+		glBindTexture(GL_TEXTURE_2D, texture);
+
+		//Convert to powers of two shape
+		unsigned char *openglTex = NULL;
+		unsigned openglTexLen = 0, openglTxWidth = 0, openglTxHeight = 0;
+		int texOk = ResizeToPowersOfTwo((unsigned char *)imgRaw, 
+			sourceWidth, sourceHeight, 
+			sourceFmt.c_str(), openglTex, &openglTexLen,
+			&openglTxWidth, &openglTxHeight);
+
+		std::cout << "texa " << sourceWidth << "," << sourceHeight << std::endl;
+		std::cout << "texb " << openglTxWidth << "," << openglTxHeight << std::endl;
+
+		if(openglTex!=NULL)
+		{
+			if(texOk)
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, openglTxWidth, 
+					openglTxHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, openglTex);
+			delete [] openglTex;
+			openglTex = NULL;
+		}
+
+		/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+		//Draw to opengl
+		for(int xstep = 0; xstep < 10; xstep ++)
+		{
+			for(int ystep = 0; ystep < 10; ystep ++)
+			{
+				double x = sourceWidth * double(xstep) / 9.;
+				double y = sourceHeight * double(ystep) / 9.;
+
+
+
+			}
+		}*/
+
+		//Delete opengl texture
+		GLuint texArr[1];
+		texArr[0] = texture;
+		glDeleteTextures(1, texArr);
+
+		Py_DECREF(pyImage);
+		Py_DECREF(metaObj);
+		Py_DECREF(camDataTup);
+		Py_DECREF(widthObj);
+		Py_DECREF(heightObj);
+		Py_DECREF(formatObj);
+	}
+
 
 	//double time1 = double(clock()) / CLOCKS_PER_SEC;
 	//std::cout << "Time1 " << time1 - startTime << std::endl;
@@ -443,6 +568,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	//double endTime = double(clock()) / CLOCKS_PER_SEC;
 	//std::cout << "PanoView_Vis " << endTime - startTime << std::endl;
+
+	Py_DECREF(addedPhotos);
+	Py_DECREF(addedPhotosItems);
 
 	//Py_RETURN_NONE;
 	return out;
