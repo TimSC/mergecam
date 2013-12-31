@@ -37,6 +37,9 @@ public:
 	int nonPowerTwoTexSupported;
 	std::vector<GLuint> textureIds;
 	std::vector<int> openglTxWidthLi, openglTxHeightLi;
+	int dstXRangeSet, dstYRangeSet;
+	double dstXMin, dstXMax;
+	double dstYMin, dstYMax;
 };
 typedef PanoView_cl PanoView;
 
@@ -183,6 +186,12 @@ static void PanoView_dealloc(PanoView *self)
 static int PanoView_init(PanoView *self, PyObject *args,
 		PyObject *kwargs)
 {
+	self->dstXRangeSet = 0;
+	self->dstYRangeSet = 0;
+	self->dstXMin = 0.;
+	self->dstXMax = 0.;
+	self->dstYMin = 0.;
+	self->dstYMax = 0.;
 
 	if(PyTuple_Size(args) < 2)
 	{
@@ -365,6 +374,10 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	//Create display lists of camera lens shapes
 	if(self->displayLists.size() == 0)
+	{
+	self->dstXRangeSet = 0;
+	self->dstYRangeSet = 0;
+
 	for(Py_ssize_t i=0; i<numCams; i++)
 	{
 		//Get meta data from python objects
@@ -380,6 +393,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		if(heightObj==NULL) throw std::runtime_error("heightObj pointer is null");
 		long sourceHeight = PyInt_AsLong(heightObj);
 
+
 		GLuint dl = glGenLists(1);
 		glNewList(dl,GL_COMPILE);
 		std::cout << "Generating display list " << dl << std::endl;
@@ -393,7 +407,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		//Generate python list of source image positions
 		PyObject *imgPix = PyList_New(0);
 		std::vector<std::vector<double> > texPos;
-		const int numSq = 10;
+		const int numSq = 20;
 		for(int xstep = 0; xstep < numSq; xstep ++)
 		{
 			for(int ystep = 0; ystep < numSq; ystep ++)
@@ -483,16 +497,36 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				Py_DECREF(dstPt);
 				Py_DECREF(pydstx);
 				Py_DECREF(pydsty);
+
+				//Update ranges
+				if(!self->dstXRangeSet)
+				{
+					self->dstXMin = dstx;
+					self->dstXMax = dstx;
+					self->dstXRangeSet = 1;
+				}
+				else
+				{
+					if(dstx < self->dstXMin) self->dstXMin = dstx;
+					if(dstx > self->dstXMax) self->dstXMax = dstx;
+				}
+			
+				if(!self->dstYRangeSet)
+				{
+					self->dstYMin = dsty;
+					self->dstYMax = dsty;
+					self->dstYRangeSet = 1;
+				}
+				else
+				{
+					if(dsty < self->dstYMin) self->dstYMin = dsty;
+					if(dsty > self->dstYMax) self->dstYMax = dsty;
+				}
+
 			}
 			//std::cout << std::endl;
 			glEnd();
 
-			/*glBegin(GL_QUADS);
-			glVertex2f(0.,0.);
-			glVertex2f(1.,0.);
-			glVertex2f(1.,1.);
-			glVertex2f(0.,1.);
-			glEnd();*/
 		}
 
 		Py_DECREF(dstProj);
@@ -506,12 +540,31 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		glEndList();
 		self->displayLists.push_back(dl);
 	}
+	}
 
 	//Scale display area to fit
 	glLoadIdentity();
-	glTranslated(-1.0, -1.0, 0.);
-	glScaled(2./self->outImgW, 2./self->outImgH, 1.);
+	int showEntire = 0;
+	if(showEntire || !self->dstXRangeSet)
+	{
+		glTranslated(-1.0, -1.0, 0.);
+		glScaled(2./self->outImgW, 2./self->outImgH, 1.);
+	}
+	else
+	{
+		//Determine area to show
+		double xrange = self->dstXMax - self->dstXMin;
+		double yrange = self->dstYMax - self->dstYMin;
+		double avx = 0.5*(self->dstXMax + self->dstXMin);
+		double avy = 0.5*(self->dstYMax + self->dstYMin);
+
+		std::cout << self->dstXMax << "," << self->dstXMin << "," << xrange << std::endl;
+		std::cout << self->dstYMax << "," << self->dstYMin << "," << yrange << std::endl;
+		glScaled(2./xrange, 2./yrange, 1.);
+		glTranslated(-avx, -avy, 0.);
+	}
 	
+	//Perform actual drawing
 	for(int i=0;i< self->displayLists.size(); i++)
 	{
 		glCallList(self->displayLists[i]);
