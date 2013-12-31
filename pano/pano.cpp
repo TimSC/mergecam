@@ -316,6 +316,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_DST_COLOR);
 
 		//Get texture handle
 		GLuint texture;
@@ -477,7 +478,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				//std::cout << "tex " << texPos[ptInd][0] <<","<< texPos[ptInd][1] << std::endl;
 				//std::cout << "pt " << c << "," << (dstx / self->outImgW) <<","<< (dsty / self->outImgH) << std::endl;
 				glTexCoord2d(texPos[ptInd][0],texPos[ptInd][1]);
-				glVertex2f((dstx / self->outImgW-0.5)*2.,-(dsty / self->outImgH-0.5)*2.);
+				glColor4d(1., 1., 1., 0.5);
+				glVertex2f((dstx / self->outImgW-0.5)*2.,(dsty / self->outImgH-0.5)*2.);
 				Py_DECREF(dstPt);
 				Py_DECREF(pydstx);
 				Py_DECREF(pydsty);
