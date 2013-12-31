@@ -479,7 +479,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				//std::cout << "pt " << c << "," << (dstx / self->outImgW) <<","<< (dsty / self->outImgH) << std::endl;
 				glTexCoord2d(texPos[ptInd][0],texPos[ptInd][1]);
 				glColor4d(1., 1., 1., 0.5);
-				glVertex2f((dstx / self->outImgW-0.5)*2.,(dsty / self->outImgH-0.5)*2.);
+				glVertex2f(dstx,dsty);
 				Py_DECREF(dstPt);
 				Py_DECREF(pydstx);
 				Py_DECREF(pydsty);
@@ -507,6 +507,11 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		self->displayLists.push_back(dl);
 	}
 
+	//Scale display area to fit
+	glLoadIdentity();
+	glTranslated(-1.0, -1.0, 0.);
+	glScaled(2./self->outImgW, 2./self->outImgH, 1.);
+	
 	for(int i=0;i< self->displayLists.size(); i++)
 	{
 		glCallList(self->displayLists[i]);
