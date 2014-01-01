@@ -269,9 +269,6 @@ class PanoWidget(QtGui.QFrame):
 		self.toolbar = QtGui.QHBoxLayout()
 		self.widgetLayout.addLayout(self.toolbar)
 
-		self.checkbox = QtGui.QCheckBox()
-		self.toolbar.addWidget(self.checkbox, 0)
-
 		label = QtGui.QLabel("Panorama")
 		self.toolbar.addWidget(label, 1)
 
@@ -312,30 +309,7 @@ class PanoWidget(QtGui.QFrame):
 		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedCalibrate)
 
 		#Create view controls
-
-		self.viewControls = QtGui.QHBoxLayout()
-		self.widgetLayout.addLayout(self.viewControls)
-
-		self.onButton = QtGui.QPushButton("On")
-		self.viewControls.addWidget(self.onButton, 0)
-		self.onButton.setCheckable(True)
-		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedOn)
-
-		self.useButton = QtGui.QPushButton("Use")
-		self.viewControls.addWidget(self.useButton, 0)
-		QtCore.QObject.connect(self.useButton, QtCore.SIGNAL('clicked()'), self.ClickedUse)
-
-		self.setFrameStyle(QtGui.QFrame.Box)
 		self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
-
-	def ClickedOn(self):
-
-		if self.devOn:
-			self.devOn = False
-		else:
-			self.devOn = True
-		print self.devOn
-		self.onButton.setChecked(self.devOn)
 
 	def ClickedStoreCalibration(self):
 
@@ -529,12 +503,4 @@ class PanoWidget(QtGui.QFrame):
 			self.emit(QtCore.SIGNAL('webcam_frame'), result[0], result[1], self.devId)
 		self.outBuffer = []
 
-	def ClickedUse(self):
-		if not self.devOn:
-			self.ClickedOn()
-
-		self.emit(QtCore.SIGNAL('use_source_clicked'), self.devId)
-
-	def IsChecked(self):
-		return self.checkbox.isChecked()
 
