@@ -254,13 +254,9 @@ class PanoWidget(QtGui.QFrame):
 		#self.canvas = QtGui.QImage(640*2, 480*2, QtGui.QImage.Format_RGB888)
 		self.currentFrame = {}
 		self.currentMeta = {}
-		self.calibrationFrames = []
-		self.calibrationMeta = []
 		self.outBuffer = []
 		self.framesRcvSinceOutput = set()
 		self.framePairs = None
-		self.cameraArrangement = None
-		self.visobj = None
 
 		self.widgetLayout = QtGui.QVBoxLayout()
 		self.setLayout(self.widgetLayout)
@@ -281,6 +277,7 @@ class PanoWidget(QtGui.QFrame):
 		self.presetCombo = QtGui.QComboBox()
 		for presetId in self.presets:
 			self.presetCombo.addItem(presetId)
+		self.presetCombo.addItem("Custom")
 		QtCore.QObject.connect(self.presetCombo, QtCore.SIGNAL('activated(const QString&)'), self.PresetActivated)
 		self.widgetLayout.addWidget(self.presetCombo, 0)
 
@@ -374,6 +371,11 @@ class PanoWidget(QtGui.QFrame):
 		self.lensC.setText(str(selectedPreset['c']))
 		self.lensD.setText(str(selectedPreset['d']))
 		self.lensE.setText(str(selectedPreset['e']))
+
+	def ClickedSimpleCalibrate(self):
+		self.emit(QtCore.SIGNAL('calibrate'))
+
+class TempClass(object):
 
 	def ClickedStoreCalibration(self):
 

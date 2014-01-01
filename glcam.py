@@ -178,7 +178,7 @@ class MainWindow(QtGui.QMainWindow):
 		#	outWidget = self.outputDeviceToWidgetDict[outDevName]
 		#	outWidget.SendFrame(frame, meta, devName)
 
-		self.pano.SendFrame(frame, meta, devName)
+		#self.pano.SendFrame(frame, meta, devName)
 
 	def IdleEvent(self):
 		for fina in self.inputDeviceToWidgetDict:
