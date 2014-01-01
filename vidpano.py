@@ -304,11 +304,17 @@ class PanoWidget(QtGui.QFrame):
 		self.paramLayout.addWidget(QtGui.QLabel("Lens e"), 5, 0)
 
 		self.fovEdit = QtGui.QLineEdit()
+		QtCore.QObject.connect(self.fovEdit, QtCore.SIGNAL('textEdited(const QString&)'), self.EditCustomButton)
 		self.lensA = QtGui.QLineEdit()
+		QtCore.QObject.connect(self.lensA, QtCore.SIGNAL('textEdited(const QString&)'), self.EditCustomButton)
 		self.lensB = QtGui.QLineEdit()
+		QtCore.QObject.connect(self.lensB, QtCore.SIGNAL('textEdited(const QString&)'), self.EditCustomButton)
 		self.lensC = QtGui.QLineEdit()
+		QtCore.QObject.connect(self.lensC, QtCore.SIGNAL('textEdited(const QString&)'), self.EditCustomButton)
 		self.lensD = QtGui.QLineEdit()
+		QtCore.QObject.connect(self.lensD, QtCore.SIGNAL('textEdited(const QString&)'), self.EditCustomButton)
 		self.lensE = QtGui.QLineEdit()
+		QtCore.QObject.connect(self.lensE, QtCore.SIGNAL('textEdited(const QString&)'), self.EditCustomButton)
 
 		self.paramLayout.addWidget(self.fovEdit, 0, 1)
 		self.paramLayout.addWidget(self.lensA, 1, 1)
@@ -374,6 +380,11 @@ class PanoWidget(QtGui.QFrame):
 
 	def ClickedSimpleCalibrate(self):
 		self.emit(QtCore.SIGNAL('calibrate'))
+
+	def EditCustomButton(self):
+		ind = self.presetCombo.findText("Custom")
+		if ind >= 0:
+			self.presetCombo.setCurrentIndex(ind)
 
 class TempClass(object):
 
