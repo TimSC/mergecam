@@ -320,21 +320,34 @@ class PanoWidget(QtGui.QFrame):
 		self.paramLayout.addWidget(self.lensD, 4, 1)
 		self.paramLayout.addWidget(self.lensE, 5, 1)
 		
+		self.reviewCorrespondLayout = QtGui.QHBoxLayout()
+		self.widgetLayout.addLayout(self.reviewCorrespondLayout, 0)
+		self.reviewCorrespondCheckbox = QtGui.QCheckBox()
+		self.reviewCorrespondLayout.addWidget(self.reviewCorrespondCheckbox, 0)
+		self.reviewCorrespondLabel = QtGui.QLabel("Review correspondences before estimating cameras")
+		self.reviewCorrespondLabel.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+		self.reviewCorrespondLayout.addWidget(self.reviewCorrespondLabel, 0)
+
 		self.calibrateControls = QtGui.QHBoxLayout()
 		self.widgetLayout.addLayout(self.calibrateControls)	
 
-		self.onButton = QtGui.QPushButton("Store Calibration Frames")
+		if 0:
+			#Separate storage of calibration frames and optimisation
+			self.onButton = QtGui.QPushButton("Store Calibration Frames")
+			self.calibrateControls.addWidget(self.onButton, 0)
+			QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedStoreCalibration)
+
+			self.calibrationCount = QtGui.QLabel("0")
+			self.calibrateControls.addWidget(self.calibrationCount, 1)
+
+			self.onButton = QtGui.QPushButton("Cal")
+			self.calibrateControls.addWidget(self.onButton, 0)
+			QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedCalibrate)
+
+		self.onButton = QtGui.QPushButton("Calibrate")
 		self.calibrateControls.addWidget(self.onButton, 0)
-		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedStoreCalibration)
+		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedSimpleCalibrate)
 
-		self.calibrationCount = QtGui.QLabel("0")
-		self.calibrateControls.addWidget(self.calibrationCount, 1)
-
-		self.onButton = QtGui.QPushButton("Cal")
-		self.calibrateControls.addWidget(self.onButton, 0)
-		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedCalibrate)
-
-		#Create view controls
 		self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
 
 		#Initialise parameters
@@ -384,9 +397,9 @@ class PanoWidget(QtGui.QFrame):
 		self.calibrationMeta.append(metaSet)
 
 		#Update GUI
-		self.calibrationCount.setText(str(len(self.calibrationFrames)))
+		#self.calibrationCount.setText(str(len(self.calibrationFrames)))
 
-	def ClickedCalibrate(self):
+	def FindCorrespondences(self):
 		self.keypDescs = []
 
 		#Get projection from gui
@@ -453,6 +466,8 @@ class PanoWidget(QtGui.QFrame):
 
 		assert len(self.framePairs) == 1
 
+	def OptimiseCameraPositions(self):
+
 		#Calibrate cameras
 		self.cameraArrangement = CameraArrangement(self.framePairs[0])
 		#visobj = visualise.VisualiseArrangement()
@@ -476,7 +491,7 @@ class PanoWidget(QtGui.QFrame):
 				print "Adding", bestPair[2]
 				photosToAdd.append(bestPair[2])
 				photosMetaToAdd.append(bestPair[6])
-				
+			
 			if 1:
 				if self.cameraArrangement.NumPhotos() == 0 and len(photosToAdd) > 0:
 					newCam = camProjFactory()
@@ -511,6 +526,14 @@ class PanoWidget(QtGui.QFrame):
 		outProj.imgH = 600
 		self.visobj = pano.PanoView(self.cameraArrangement, outProj)
 		print "Done"
+
+	def ClickedSimpleCalibrate(self):
+		self.calibrationFrames = []
+		self.calibrationMeta = []
+		self.ClickedStoreCalibration()
+		self.FindCorrespondences()
+		if not self.reviewCorrespondCheckbox.checkState():
+			self.OptimiseCameraPositions()
 
 	def SendFrame(self, frame, meta, devName):
 		if devName not in self.devInputs: return
