@@ -402,17 +402,6 @@ class PanoWidget(QtGui.QFrame):
 	def FindCorrespondences(self):
 		self.keypDescs = []
 
-		#Get projection from gui
-		selectedProj = self.projectionType.currentText()
-		camProjFactory = None
-		if selectedProj == "Rectilinear":
-			camProjFactory = proj.Rectilinear
-			projParams = {}
-		if selectedProj == "Fisheye":
-			camProjFactory = proj.FishEye
-			projParams = {}
-		assert camProjFactory is not None
-
 		#Extract interest points
 		for photoSet, metaSet in zip(self.calibrationFrames, self.calibrationMeta):
 			keypDescsSet = []
@@ -467,6 +456,17 @@ class PanoWidget(QtGui.QFrame):
 		assert len(self.framePairs) == 1
 
 	def OptimiseCameraPositions(self):
+
+		#Get projection from gui
+		selectedProj = self.projectionType.currentText()
+		camProjFactory = None
+		if selectedProj == "Rectilinear":
+			camProjFactory = proj.Rectilinear
+			projParams = {}
+		if selectedProj == "Fisheye":
+			camProjFactory = proj.FishEye
+			projParams = {}
+		assert camProjFactory is not None
 
 		#Calibrate cameras
 		self.cameraArrangement = CameraArrangement(self.framePairs[0])

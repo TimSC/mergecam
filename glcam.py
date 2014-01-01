@@ -26,8 +26,24 @@ class MainWindow(QtGui.QMainWindow):
 		self.resize(700, 550)
 		self.move(300, 300)
 		self.setWindowTitle('Qt Webcam Demo')
+		self.mainLayout = QtGui.QVBoxLayout()
 
-		self.mainLayout = QtGui.QHBoxLayout()
+		#Main toolbar
+		self.mainToolbarLayout = QtGui.QHBoxLayout()
+		self.mainLayout.addLayout(self.mainToolbarLayout)
+		self.viewSourcesButton = QtGui.QPushButton("Sources")
+		QtCore.QObject.connect(self.viewSourcesButton, QtCore.SIGNAL("pressed()"), self.ViewSourcesButtonPressed)
+		self.correspondencesButton = QtGui.QPushButton("Correspondences")
+		QtCore.QObject.connect(self.correspondencesButton, QtCore.SIGNAL("pressed()"), self.ViewCorrespondencesButtonPressed)
+		self.panoramaButton = QtGui.QPushButton("Panorama")
+		QtCore.QObject.connect(self.panoramaButton, QtCore.SIGNAL("pressed()"), self.ViewPanoramaButtonPressed)
+		self.mainToolbarLayout.addWidget(self.viewSourcesButton)
+		self.mainToolbarLayout.addWidget(self.correspondencesButton)
+		self.mainToolbarLayout.addWidget(self.panoramaButton)
+
+		self.selectInputsWidget = QtGui.QFrame()
+		self.selectInputsLayout = QtGui.QHBoxLayout()
+		self.selectInputsWidget.setLayout(self.selectInputsLayout)
 
 		#Sources column
 		self.sourcesColumn = QtGui.QVBoxLayout()
@@ -51,7 +67,7 @@ class MainWindow(QtGui.QMainWindow):
 
 		self.sourcesColumn.addWidget(self.sourceScrollArea, 1)
 
-		self.mainLayout.addLayout(self.sourcesColumn)
+		self.selectInputsLayout.addLayout(self.sourcesColumn)
 
 		#And right area
 		activeSources = []
@@ -61,10 +77,11 @@ class MainWindow(QtGui.QMainWindow):
 				activeSources.append(fina)
 
 		self.pano = vidpano.PanoWidget(activeSources)
-		self.mainLayout.addWidget(self.pano, 1)
-		#self.mainLayout.addWidget(self.view, 1)
+		self.selectInputsLayout.addWidget(self.pano, 1)
+		#self.selectInputsLayout.addWidget(self.view, 1)
 
 		centralWidget = QtGui.QWidget()
+		self.mainLayout.addWidget(self.selectInputsWidget, 1)
 		centralWidget.setLayout(self.mainLayout)
 		self.setCentralWidget(centralWidget)
 		
@@ -87,6 +104,15 @@ class MainWindow(QtGui.QMainWindow):
 		self.timer.start(10)
 
 		self.show()
+
+	def ViewSourcesButtonPressed(self):
+		self.selectInputsWidget.setShown(1)
+
+	def ViewCorrespondencesButtonPressed(self):
+		self.selectInputsWidget.setShown(0)
+
+	def ViewPanoramaButtonPressed(self):
+		self.selectInputsWidget.setShown(0)
 
 	def UpdateSourceList(self):
 		print "UpdateSourceList"
