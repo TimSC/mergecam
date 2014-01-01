@@ -6,6 +6,7 @@ import sys, time, os, random, copy
 from PyQt4 import QtGui, QtCore
 import guisources
 import numpy as np
+import videolive
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self):
@@ -18,6 +19,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.metaTestStore = []
 		self.rxTimes = {}
 
+		self.devManager = videolive.Video_in_stream_manager()
 		#self.outStreamsManager = videolive.Video_out_stream_manager()
 		#self.outFilesManager = videolive.Video_out_file_manager()
 	
@@ -39,10 +41,11 @@ class MainWindow(QtGui.QMainWindow):
 		self.mainToolbarLayout.addWidget(self.correspondencesButton)
 		self.mainToolbarLayout.addWidget(self.panoramaButton)
 
-		self.guiSources = guisources.GuiSources()
+		self.guiSources = guisources.GuiSources(self.devManager)
+		#del self.guiSources
+		#self.mainLayout.addWidget(self.guiSources, 1)
 
 		centralWidget = QtGui.QWidget()
-		self.mainLayout.addWidget(self.guiSources, 1)
 		centralWidget.setLayout(self.mainLayout)
 		self.setCentralWidget(centralWidget)
 
@@ -50,6 +53,7 @@ class MainWindow(QtGui.QMainWindow):
 
 	def __del__(self):
 		print "Shutting down"
+		del self.guiSources
 
 	def ViewSourcesButtonPressed(self):
 		self.guiSources.setShown(1)

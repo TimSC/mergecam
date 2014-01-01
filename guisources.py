@@ -2,13 +2,13 @@ from PyQt4 import QtGui, QtCore
 import videolive, vidinput, vidpano, time
 
 class GuiSources(QtGui.QFrame):
-	def __init__(self):
+	def __init__(self, devManager):
 		QtGui.QFrame.__init__(self)
 
 		self.inputDeviceToWidgetDict = {}
 		self.processingWidgets = {}
 		self.rxTimes = {}
-		self.devManager = videolive.Video_in_stream_manager()
+		self.devManager = devManager
 
 		self.selectInputsLayout = QtGui.QHBoxLayout()
 		self.setLayout(self.selectInputsLayout)
@@ -66,6 +66,12 @@ class GuiSources(QtGui.QFrame):
 		self.timer.timeout.connect(self.IdleEvent)
 		self.timer.start(10)
 
+	def __del__(self):
+		print "GuiSources shutting down"
+		self.timer.stop()
+		self.close()
+		del self.devManager
+		print "done"
 
 	def UpdateSourceList(self):
 		print "UpdateSourceList"
