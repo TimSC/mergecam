@@ -251,7 +251,7 @@ class PanoWidget(QtGui.QFrame):
 		self.devOn = True
 		self.devId = uuid.uuid4()
 		self.devInputs = devInputs
-		self.canvas = QtGui.QImage(640*2, 480*2, QtGui.QImage.Format_RGB888)
+		#self.canvas = QtGui.QImage(640*2, 480*2, QtGui.QImage.Format_RGB888)
 		self.currentFrame = {}
 		self.currentMeta = {}
 		self.calibrationFrames = []
@@ -265,12 +265,13 @@ class PanoWidget(QtGui.QFrame):
 		self.widgetLayout = QtGui.QVBoxLayout()
 		self.setLayout(self.widgetLayout)
 
-		#Create toolbar
-		self.toolbar = QtGui.QHBoxLayout()
-		self.widgetLayout.addLayout(self.toolbar)
-
 		label = QtGui.QLabel("Panorama")
-		self.toolbar.addWidget(label, 1)
+		label.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+		self.widgetLayout.addWidget(label, stretch = 0)
+
+		#Create toolbar
+		#self.toolbar = QtGui.QHBoxLayout()
+		#self.widgetLayout.addLayout(self.toolbar, stretch = 0)
 
 		#Create calibration controls
 
@@ -309,7 +310,7 @@ class PanoWidget(QtGui.QFrame):
 		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedCalibrate)
 
 		#Create view controls
-		self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
+		#self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
 
 	def ClickedStoreCalibration(self):
 
