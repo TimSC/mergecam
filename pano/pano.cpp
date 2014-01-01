@@ -558,8 +558,16 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		double avx = 0.5*(self->dstXMax + self->dstXMin);
 		double avy = 0.5*(self->dstYMax + self->dstYMin);
 
-		std::cout << self->dstXMax << "," << self->dstXMin << "," << xrange << std::endl;
-		std::cout << self->dstYMax << "," << self->dstYMin << "," << yrange << std::endl;
+		double aspectRatio = self->outImgW / self->outImgH;
+
+		//Check if we are too wide for aspect
+		double maxWidth = yrange / aspectRatio;
+		if(maxWidth > xrange) xrange = maxWidth;
+
+		//Check if we are too tall for aspect
+		double maxHeight = xrange * aspectRatio;
+		if(maxHeight > yrange) yrange = maxHeight;
+
 		glScaled(2./xrange, 2./yrange, 1.);
 		glTranslated(-avx, -avy, 0.);
 	}
