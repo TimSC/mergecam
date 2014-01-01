@@ -20,18 +20,15 @@ class SourceWidget(QtGui.QFrame):
 
 		self.checkbox = QtGui.QCheckBox()
 		self.toolbar.addWidget(self.checkbox, 0)
+		QtCore.QObject.connect(self.checkbox, QtCore.SIGNAL('clicked()'), self.ClickedCheckBox)
 
 		label = QtGui.QLabel(friendlyName)
 		self.toolbar.addWidget(label, 1)
 
-		self.onButton = QtGui.QPushButton("On")
-		self.toolbar.addWidget(self.onButton, 0)
-		self.onButton.setCheckable(True)
-		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedOn)
-
-		self.useButton = QtGui.QPushButton("Use")
-		self.toolbar.addWidget(self.useButton, 0)
-		QtCore.QObject.connect(self.useButton, QtCore.SIGNAL('clicked()'), self.ClickedUse)
+		#self.onButton = QtGui.QPushButton("On")
+		#self.toolbar.addWidget(self.onButton, 0)
+		#self.onButton.setCheckable(True)
+		#QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedOn)
 
 		#Create video preview
 		img = QtGui.QImage(300, 200, QtGui.QImage.Format_RGB888)
@@ -82,13 +79,10 @@ class SourceWidget(QtGui.QFrame):
 			self.devManager.set_format(self.devId, 640, 480, "MJPEG")
 			self.devManager.start(self.devId)
 		
-		self.onButton.setChecked(self.cameraOn)
+		#self.onButton.setChecked(self.cameraOn)
 
-	def ClickedUse(self):
-		if not self.cameraOn:
-			self.ClickedOn()
-
-		self.emit(QtCore.SIGNAL('use_source_clicked'), self.devId)
+	def ClickedCheckBox(self):
+		print "ClickedCheckBox"
 
 	def IsChecked(self):
 		return self.checkbox.isChecked()

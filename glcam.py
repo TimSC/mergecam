@@ -1,5 +1,5 @@
 '''
-Copyright (c) 2013, Tim Sheerman-Chase
+Copyright (c) 2013-2014, Tim Sheerman-Chase
 All rights reserved.
 '''
 import sys, time, os, random, copy
@@ -28,8 +28,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.move(300, 300)
 		self.setWindowTitle('Qt Webcam Demo')
 
-		self.scene = QtGui.QGraphicsScene(self)
-		self.view  = QtGui.QGraphicsView(self.scene)
+		self.pano = vidpano.PanoWidget(self)
 
 		self.mainLayout = QtGui.QHBoxLayout()
 
@@ -55,29 +54,18 @@ class MainWindow(QtGui.QMainWindow):
 
 		self.sourcesColumn.addWidget(self.sourceScrollArea, 1)
 
-		#Source add buttons
-		self.sourceAddButtons = QtGui.QHBoxLayout()
-		self.sourcesColumn.addLayout(self.sourceAddButtons, 0)
-
-		self.addStackButton = QtGui.QPushButton("Add Stack")
-		QtCore.QObject.connect(self.addStackButton, QtCore.SIGNAL("clicked()"), self.AddStackPressed)
-		self.sourceAddButtons.addWidget(self.addStackButton)
-
-		self.addStackButton = QtGui.QPushButton("Panorama")
-		QtCore.QObject.connect(self.addStackButton, QtCore.SIGNAL("clicked()"), self.AddPanoramaPressed)
-		self.sourceAddButtons.addWidget(self.addStackButton)
-
 		self.mainLayout.addLayout(self.sourcesColumn)
 
 		#And main view area
-		self.mainLayout.addWidget(self.view, 1)
+		self.mainLayout.addWidget(self.pano, 1)
+		#self.mainLayout.addWidget(self.view, 1)
 
 		centralWidget = QtGui.QWidget()
 		centralWidget.setLayout(self.mainLayout)
 		self.setCentralWidget(centralWidget)
 		
-		#self.vidOut.open("/dev/video4", "YUYV", 640, 480)
-		#self.vidOut.open("/dev/video4", "UYVY", 640*2, 480*2)
+		#self.scene = QtGui.QGraphicsScene(self)
+		#self.view  = QtGui.QGraphicsView(self.scene)
 
 		time.sleep(1.)
 
@@ -124,16 +112,6 @@ class MainWindow(QtGui.QMainWindow):
 			self.sourceList.addWidget(widget)
 			self.processingWidgets[widget.devId] = widget
 
-		for fina in self.outStreamsManager.list_devices():
-			
-			widget = vidoutput.VideoOutWidget(fina, self.outStreamsManager)
-			self.sourceList.addWidget(widget)
-			self.outputDeviceToWidgetDict[fina] = widget
-
-		fileWriterWidget = vidwriter.VideoWriterWidget(self.outFilesManager)
-		self.sourceList.addWidget(fileWriterWidget)
-		self.outputDeviceToWidgetDict["filewriter"] = fileWriterWidget
-
 	def ProcessFrame(self, frame, meta, devName):
 
 		if 0: #Debug code
@@ -167,13 +145,13 @@ class MainWindow(QtGui.QMainWindow):
 			procWidget.SendFrame(frame, meta, devName)
 
 		#Update GUI with new frame
-		if devName == self.currentSrcId and meta['format'] == "RGB24":
-			self.scene.clear()
-			im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
-			pix = QtGui.QPixmap(im2)
+		#if devName == self.currentSrcId and meta['format'] == "RGB24":
+		#	self.scene.clear()
+		#	im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
+		#	pix = QtGui.QPixmap(im2)
 		
-			gpm = QtGui.QGraphicsPixmapItem(pix)
-			self.scene.addItem(gpm)
+		#	gpm = QtGui.QGraphicsPixmapItem(pix)
+		#	self.scene.addItem(gpm)
 
 		#Send frame to output device
 		if devName == self.currentSrcId:
@@ -199,56 +177,6 @@ class MainWindow(QtGui.QMainWindow):
 	def ChangeVideoSource(self, srcId):
 		print "ChangeVideoSource", srcId
 		self.currentSrcId = srcId
-
-	def AddStackPressed(self):
-
-		#Get list of devices that are selected
-		selectedDevs = []
-		for devId in self.inputDeviceToWidgetDict:
-			dev = self.inputDeviceToWidgetDict[devId]
-			if dev.IsChecked():
-				selectedDevs.append(devId)
-
-		if len(selectedDevs) < 2:
-			print "Only", len(selectedDevs), "inputs selected"
-			return
-
-		#Create a processing widget
-		widget = vidstack.GridStackWidget(selectedDevs)
-		QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
-		QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
-
-		self.sourceFrame.setShown(0)
-		self.sourceList.addWidget(widget)
-		self.sourceFrame.adjustSize()
-		self.sourceFrame.setShown(1)
-
-		self.processingWidgets[widget.devId] = widget
-
-	def AddPanoramaPressed(self):
-
-		#Get list of devices that are selected
-		selectedDevs = []
-		for devId in self.inputDeviceToWidgetDict:
-			dev = self.inputDeviceToWidgetDict[devId]
-			if dev.IsChecked():
-				selectedDevs.append(devId)
-
-		if len(selectedDevs) < 2:
-			print "Only", len(selectedDevs), "inputs selected"
-			return
-
-		#Create a processing widget
-		widget = vidpano.PanoWidget(selectedDevs)
-		QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
-		QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
-
-		self.sourceFrame.setShown(0)
-		self.sourceList.addWidget(widget)
-		self.sourceFrame.adjustSize()
-		self.sourceFrame.setShown(1)
-
-		self.processingWidgets[widget.devId] = widget
 
 
 if __name__ == '__main__':
