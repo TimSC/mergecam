@@ -27,8 +27,6 @@ class MainWindow(QtGui.QMainWindow):
 		self.move(300, 300)
 		self.setWindowTitle('Qt Webcam Demo')
 
-		self.pano = vidpano.PanoWidget([])
-
 		self.mainLayout = QtGui.QHBoxLayout()
 
 		#Sources column
@@ -55,7 +53,14 @@ class MainWindow(QtGui.QMainWindow):
 
 		self.mainLayout.addLayout(self.sourcesColumn)
 
-		#And main view area
+		#And right area
+		activeSources = []
+		for fina in self.inputDeviceToWidgetDict:
+			srcWidget = self.inputDeviceToWidgetDict[fina]
+			if srcWidget.IsChecked():
+				activeSources.append(fina)
+
+		self.pano = vidpano.PanoWidget(activeSources)
 		self.mainLayout.addWidget(self.pano, 1)
 		#self.mainLayout.addWidget(self.view, 1)
 

@@ -19,6 +19,7 @@ class SourceWidget(QtGui.QFrame):
 		self.widgetLayout.addLayout(self.toolbar)
 
 		self.checkbox = QtGui.QCheckBox()
+		self.checkbox.setCheckState(QtCore.Qt.Checked)
 		self.toolbar.addWidget(self.checkbox, 0)
 		QtCore.QObject.connect(self.checkbox, QtCore.SIGNAL('clicked()'), self.ClickedCheckBox)
 
