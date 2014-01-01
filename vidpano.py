@@ -248,6 +248,7 @@ def GetStrongestLinkForPhotoId(imgPairs, photoId):
 class PanoWidget(QtGui.QFrame):
 	def __init__(self, devInputs):
 		QtGui.QFrame.__init__(self)
+
 		self.devOn = True
 		self.devId = uuid.uuid4()
 		self.devInputs = devInputs

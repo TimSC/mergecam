@@ -42,8 +42,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.mainToolbarLayout.addWidget(self.panoramaButton)
 
 		self.guiSources = guisources.GuiSources(self.devManager)
-		#del self.guiSources
-		#self.mainLayout.addWidget(self.guiSources, 1)
+		self.mainLayout.addWidget(self.guiSources, 1)
 
 		centralWidget = QtGui.QWidget()
 		centralWidget.setLayout(self.mainLayout)
@@ -53,7 +52,6 @@ class MainWindow(QtGui.QMainWindow):
 
 	def __del__(self):
 		print "Shutting down"
-		del self.guiSources
 
 	def ViewSourcesButtonPressed(self):
 		self.guiSources.setShown(1)

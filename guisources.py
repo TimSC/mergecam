@@ -5,6 +5,8 @@ class GuiSources(QtGui.QFrame):
 	def __init__(self, devManager):
 		QtGui.QFrame.__init__(self)
 
+		
+
 		self.inputDeviceToWidgetDict = {}
 		self.processingWidgets = {}
 		self.rxTimes = {}
@@ -29,6 +31,8 @@ class GuiSources(QtGui.QFrame):
 		self.sourceList.setContentsMargins(0, 0, 0, 0)
 		self.sourceFrame.setLayout(self.sourceList)
 
+		time.sleep(1.)
+		
 		self.UpdateSourceList()
 
 		self.sourceScrollArea.setWidget(self.sourceFrame)
@@ -36,23 +40,21 @@ class GuiSources(QtGui.QFrame):
 		self.sourcesColumn.addWidget(self.sourceScrollArea, 1)
 
 		self.selectInputsLayout.addLayout(self.sourcesColumn)
-
+		
 		#And right area
 		activeSources = []
 		for fina in self.inputDeviceToWidgetDict:
 			srcWidget = self.inputDeviceToWidgetDict[fina]
 			if srcWidget.IsChecked():
 				activeSources.append(fina)
-
+		
 		self.pano = vidpano.PanoWidget(activeSources)
 		self.selectInputsLayout.addWidget(self.pano, 1)
 		#self.selectInputsLayout.addWidget(self.view, 1)
 
 		#self.scene = QtGui.QGraphicsScene(self)
 		#self.view  = QtGui.QGraphicsView(self.scene)
-
-		time.sleep(1.)
-
+		
 		#self.devNames = self.devManager.list_devices()
 		#for fina in self.devNames[:]:
 		#	self.devManager.open(fina)
@@ -60,7 +62,7 @@ class GuiSources(QtGui.QFrame):
 			#self.devManager.set_format(fina, 800, 600, "MJPEG");
 		#	self.devManager.set_format(fina, 640, 480, "MJPEG");
 		#	self.devManager.start(fina)
-
+		
 		# Create idle timer
 		self.timer = QtCore.QTimer()
 		self.timer.timeout.connect(self.IdleEvent)
@@ -68,10 +70,9 @@ class GuiSources(QtGui.QFrame):
 
 	def __del__(self):
 		print "GuiSources shutting down"
-		self.timer.stop()
-		self.close()
-		del self.devManager
-		print "done"
+		#self.timer.stop()
+		#self.close()
+		#del self.devManager
 
 	def UpdateSourceList(self):
 		print "UpdateSourceList"
@@ -92,7 +93,7 @@ class GuiSources(QtGui.QFrame):
 			self.inputDeviceToWidgetDict[fina] = widget
 
 	def ProcessFrame(self, frame, meta, devName):
-
+		
 		if 0: #Debug code
 			self.frameTestStore.append(frame)
 			self.metaTestStore.append(meta)
