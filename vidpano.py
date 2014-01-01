@@ -248,7 +248,7 @@ def GetStrongestLinkForPhotoId(imgPairs, photoId):
 class PanoWidget(QtGui.QFrame):
 	def __init__(self, devInputs):
 		QtGui.QFrame.__init__(self)
-		self.devOn = False
+		self.devOn = True
 		self.devId = uuid.uuid4()
 		self.devInputs = devInputs
 		self.canvas = QtGui.QImage(640*2, 480*2, QtGui.QImage.Format_RGB888)
@@ -313,15 +313,13 @@ class PanoWidget(QtGui.QFrame):
 
 	def ClickedStoreCalibration(self):
 
-		if not self.devOn:
-			self.ClickedOn()
-
 		#Check frames from each camera are stored
 		framesReady = True
 		for devIn in self.devInputs:
 			if devIn not in self.currentFrame:
 				framesReady = False
 		if not framesReady:
+			print "Frames not ready"
 			return
 		
 		#Store frame set for calibration use
@@ -464,7 +462,6 @@ class PanoWidget(QtGui.QFrame):
 		print "Done"
 
 	def SendFrame(self, frame, meta, devName):
-
 		if devName not in self.devInputs: return
 		self.currentFrame[devName] = frame
 		self.currentMeta[devName] = meta
@@ -503,4 +500,16 @@ class PanoWidget(QtGui.QFrame):
 			self.emit(QtCore.SIGNAL('webcam_frame'), result[0], result[1], self.devId)
 		self.outBuffer = []
 
+	def AddSource(self, devId):
+		if devId not in self.devInputs:
+			self.devInputs.append(devId)
+		print self.devInputs
+		self.currentFrame = {}
+		self.currentMeta = {}
 
+	def RemoveSource(self, devId):
+		if devId in self.devInputs:
+			self.devInputs.remove(devId)
+		print self.devInputs
+		self.currentFrame = {}
+		self.currentMeta = {}

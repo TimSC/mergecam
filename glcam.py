@@ -27,7 +27,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.move(300, 300)
 		self.setWindowTitle('Qt Webcam Demo')
 
-		self.pano = vidpano.PanoWidget(self)
+		self.pano = vidpano.PanoWidget([])
 
 		self.mainLayout = QtGui.QHBoxLayout()
 
@@ -147,6 +147,8 @@ class MainWindow(QtGui.QMainWindow):
 		#	outWidget = self.outputDeviceToWidgetDict[outDevName]
 		#	outWidget.SendFrame(frame, meta, devName)
 
+		self.pano.SendFrame(frame, meta, devName)
+
 	def IdleEvent(self):
 		for fina in self.inputDeviceToWidgetDict:
 			camWidget = self.inputDeviceToWidgetDict[fina]
@@ -164,7 +166,10 @@ class MainWindow(QtGui.QMainWindow):
 
 	def VideoSourceToggleEvent(self, srcId, srcStatus):
 		print "VideoSourceToggleEvent", srcId, srcStatus
-
+		if srcStatus:
+			self.pano.AddSource(srcId)
+		else:
+			self.pano.RemoveSource(srcId)
 
 if __name__ == '__main__':
 
