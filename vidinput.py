@@ -82,7 +82,7 @@ class SourceWidget(QtGui.QFrame):
 		#self.onButton.setChecked(self.cameraOn)
 
 	def ClickedCheckBox(self):
-		print "ClickedCheckBox"
+		self.emit(QtCore.SIGNAL('source_toggled'), self.devId, self.checkbox.isChecked())
 
 	def IsChecked(self):
 		return self.checkbox.isChecked()

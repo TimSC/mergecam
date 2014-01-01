@@ -15,7 +15,6 @@ class MainWindow(QtGui.QMainWindow):
 		self.inputDeviceToWidgetDict = {}
 		self.outputDeviceToWidgetDict = {}
 		self.processingWidgets = {}
-		self.currentSrcId = None
 		self.frameTestStore = []
 		self.metaTestStore = []
 		self.rxTimes = {}
@@ -90,27 +89,17 @@ class MainWindow(QtGui.QMainWindow):
 
 		for devInfo in self.devNames[:]:
 
-                        fina = devInfo[0]
-			if self.currentSrcId is None:
-				self.currentSrcId = fina
-                        friendlyName = devInfo[0]
-                        if len(devInfo) >= 2:
-                               friendlyName = devInfo[1]
-
+			fina = devInfo[0]
+			friendlyName = devInfo[0]
+			if len(devInfo) >= 2:
+				friendlyName = devInfo[1]
 			widget = vidinput.SourceWidget(fina, self.devManager, friendlyName)
 			#widget = vidinput.EmulateFixedRateVideoSource(fina, self.devManager, friendlyName)
 
 			QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
-			QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
+			QtCore.QObject.connect(widget, QtCore.SIGNAL("source_toggled"), self.VideoSourceToggleEvent)
 			self.sourceList.addWidget(widget)
 			self.inputDeviceToWidgetDict[fina] = widget
-
-		if 0:
-			widget = vidstack.GridStackWidget(self.devNames)
-			QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
-			QtCore.QObject.connect(widget, QtCore.SIGNAL("use_source_clicked"), self.ChangeVideoSource)
-			self.sourceList.addWidget(widget)
-			self.processingWidgets[widget.devId] = widget
 
 	def ProcessFrame(self, frame, meta, devName):
 
@@ -154,10 +143,9 @@ class MainWindow(QtGui.QMainWindow):
 		#	self.scene.addItem(gpm)
 
 		#Send frame to output device
-		if devName == self.currentSrcId:
-			for outDevName in self.outputDeviceToWidgetDict:
-				outWidget = self.outputDeviceToWidgetDict[outDevName]
-				outWidget.SendFrame(frame, meta, devName)
+		#for outDevName in self.outputDeviceToWidgetDict:
+		#	outWidget = self.outputDeviceToWidgetDict[outDevName]
+		#	outWidget.SendFrame(frame, meta, devName)
 
 	def IdleEvent(self):
 		for fina in self.inputDeviceToWidgetDict:
@@ -174,9 +162,8 @@ class MainWindow(QtGui.QMainWindow):
 			except Exception as err:
 				print err
 
-	def ChangeVideoSource(self, srcId):
-		print "ChangeVideoSource", srcId
-		self.currentSrcId = srcId
+	def VideoSourceToggleEvent(self, srcId, srcStatus):
+		print "VideoSourceToggleEvent", srcId, srcStatus
 
 
 if __name__ == '__main__':
