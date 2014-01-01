@@ -273,28 +273,53 @@ class PanoWidget(QtGui.QFrame):
 		#self.toolbar = QtGui.QHBoxLayout()
 		#self.widgetLayout.addLayout(self.toolbar, stretch = 0)
 
+		self.presets = {"Generic Rectilinear": {"proj": "rectilinear", "hfov": 60., "a": 0., "b": 0., "c": 0., "d": 0., "e": 0.},
+			"Generic Fisheye": {"proj": "fisheye", "hfov": 120., "a": 0., "b": 0., "c": 0., "d": 0., "e": 0.},
+			"Genius Widecam 1050": {"proj": "fisheye", "hfov": 120., "a": 0.1, "b": 0.2, "c": 0.3, "d": 0.4, "e": 0.5},}
+
 		#Create calibration controls
+		self.presetCombo = QtGui.QComboBox()
+		for presetId in self.presets:
+			self.presetCombo.addItem(presetId)
+		QtCore.QObject.connect(self.presetCombo, QtCore.SIGNAL('activated(const QString&)'), self.PresetActivated)
+		self.widgetLayout.addWidget(self.presetCombo, 0)
+
+		self.presetLayout = QtGui.QVBoxLayout()
+		self.presetWidget = QtGui.QFrame()
+		self.presetWidget.setFrameStyle(QtGui.QFrame.Box)
+		self.presetWidget.setLayout(self.presetLayout)
+		
+		self.widgetLayout.addWidget(self.presetWidget, 0)
 
 		self.projectionType = QtGui.QComboBox()
 		self.projectionType.addItem("Rectilinear")
 		self.projectionType.addItem("Fisheye")
-		self.widgetLayout.addWidget(self.projectionType, 0)
+		self.presetLayout.addWidget(self.projectionType, 0)
 
-		self.projectionParamLayout = QtGui.QHBoxLayout()
-		self.widgetLayout.addLayout(self.projectionParamLayout)	
+		self.paramLayout = QtGui.QGridLayout()
+		self.presetLayout.addLayout(self.paramLayout)
 
-		self.projFlabel = QtGui.QLabel("F=")
-		self.projectionParamLayout.addWidget(self.projFlabel, 0)
+		self.paramLayout.addWidget(QtGui.QLabel("Horizontal FOV"), 0, 0)
+		self.paramLayout.addWidget(QtGui.QLabel("Lens a"), 1, 0)
+		self.paramLayout.addWidget(QtGui.QLabel("Lens b"), 2, 0)
+		self.paramLayout.addWidget(QtGui.QLabel("Lens c"), 3, 0)
+		self.paramLayout.addWidget(QtGui.QLabel("Lens d"), 4, 0)
+		self.paramLayout.addWidget(QtGui.QLabel("Lens e"), 5, 0)
 
-		self.projF = QtGui.QLineEdit()
-		self.projectionParamLayout.addWidget(self.projF, 1)
+		self.fovEdit = QtGui.QLineEdit()
+		self.lensA = QtGui.QLineEdit()
+		self.lensB = QtGui.QLineEdit()
+		self.lensC = QtGui.QLineEdit()
+		self.lensD = QtGui.QLineEdit()
+		self.lensE = QtGui.QLineEdit()
 
-		self.projKlabel = QtGui.QLabel("K=")
-		self.projectionParamLayout.addWidget(self.projKlabel, 0)
-
-		self.projK = QtGui.QLineEdit()
-		self.projectionParamLayout.addWidget(self.projK, 1)
-
+		self.paramLayout.addWidget(self.fovEdit, 0, 1)
+		self.paramLayout.addWidget(self.lensA, 1, 1)
+		self.paramLayout.addWidget(self.lensB, 2, 1)
+		self.paramLayout.addWidget(self.lensC, 3, 1)
+		self.paramLayout.addWidget(self.lensD, 4, 1)
+		self.paramLayout.addWidget(self.lensE, 5, 1)
+		
 		self.calibrateControls = QtGui.QHBoxLayout()
 		self.widgetLayout.addLayout(self.calibrateControls)	
 
@@ -311,6 +336,31 @@ class PanoWidget(QtGui.QFrame):
 
 		#Create view controls
 		self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
+
+		#Initialise parameters
+		ind = self.presetCombo.currentIndex()
+		if ind >= 0:
+			self.PresetActivated(self.presetCombo.itemText(ind))
+
+	def PresetActivated(self, arg):
+		arg = str(arg)
+		print "PresetActivated", arg
+		if arg not in self.presets: return
+
+		selectedPreset = self.presets[arg]
+		print selectedPreset
+
+		#Update gui
+		projInd = self.projectionType.findText(selectedPreset['proj'].capitalize())
+		if projInd >= 0:
+			self.projectionType.setCurrentIndex(projInd)
+
+		self.fovEdit.setText(str(selectedPreset['hfov']))
+		self.lensA.setText(str(selectedPreset['a']))
+		self.lensB.setText(str(selectedPreset['b']))
+		self.lensC.setText(str(selectedPreset['c']))
+		self.lensD.setText(str(selectedPreset['d']))
+		self.lensE.setText(str(selectedPreset['e']))
 
 	def ClickedStoreCalibration(self):
 
