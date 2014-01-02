@@ -1,5 +1,5 @@
 
-from PyQt4 import QtGui, QtCore
+from PySide import QtGui, QtCore
 import time
 
 class SourceWidget(QtGui.QFrame):

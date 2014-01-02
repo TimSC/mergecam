@@ -1,5 +1,5 @@
 
-from PyQt4 import QtGui, QtCore
+from PySide import QtGui, QtCore
 import uuid
 import cv2, cv, proj, math, random, time
 import numpy as np

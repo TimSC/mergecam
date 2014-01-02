@@ -1,5 +1,5 @@
 
-from PyQt4 import QtGui, QtCore
+from PySide import QtGui, QtCore
 
 class VideoOutWidget(QtGui.QFrame):
 	def __init__(self, devId, videoOutManager):

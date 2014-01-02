@@ -3,7 +3,7 @@ Copyright (c) 2013-2014, Tim Sheerman-Chase
 All rights reserved.
 '''
 import sys, time, os, random, copy
-from PyQt4 import QtGui, QtCore
+from PySide import QtGui, QtCore
 import guisources
 import numpy as np
 import videolive
