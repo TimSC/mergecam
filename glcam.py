@@ -6,18 +6,20 @@ import sys, time, os, random, copy
 from PySide import QtGui, QtCore
 import guisources
 import numpy as np
-import videolive
+import videolive, vidpano
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self):
 		super(MainWindow, self).__init__() 
 		self.currentFrames = {}
+		self.cameraArrangement = vidpano.CameraArrangement()
 		
 		self.outputDeviceToWidgetDict = {}
 		self.processingWidgets = {}
 		self.frameTestStore = []
 		self.metaTestStore = []
 		self.rxTimes = {}
+		self.findCorrespondences = vidpano.FindCorrespondences()
 
 		self.devManager = videolive.Video_in_stream_manager()
 		#self.outStreamsManager = videolive.Video_out_stream_manager()
@@ -43,6 +45,12 @@ class MainWindow(QtGui.QMainWindow):
 
 		self.guiSources = guisources.GuiSources(self.devManager)
 		self.guiSources.sourceToggled.connect(self.VideoSourceToggleEvent)
+		self.guiSources.webcamSignal.connect(self.ProcessFrame)
+
+		activeSources = self.guiSources.GetActiveSources()
+		for srcId in activeSources:
+			self.findCorrespondences.AddSource(srcId)
+
 		self.mainLayout.addWidget(self.guiSources, 1)
 
 		centralWidget = QtGui.QWidget()
@@ -64,17 +72,17 @@ class MainWindow(QtGui.QMainWindow):
 		self.guiSources.setShown(0)
 
 	def VideoSourceToggleEvent(self, srcId, srcStatus):
-		
 		print "VideoSourceToggleEvent", srcId, srcStatus
-		
+		if srcStatus == 1:
+			self.findCorrespondences.AddSource(srcId)
+		else:
+			self.findCorrespondences.RemoveSource(srcId)
+
+	def ProcessFrame(self, frame, meta, devName):
+		self.findCorrespondences.ProcessFrame(frame, meta, devName)
 
 if __name__ == '__main__':
-
 	app = QtGui.QApplication(sys.argv)
-
 	mainWindow = MainWindow()
-
-	#QtCore.QObject.connect(camWorker, QtCore.SIGNAL("webcam_frame"), mainWindow.ProcessFrame)
-
 	sys.exit(app.exec_())
 

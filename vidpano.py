@@ -132,21 +132,20 @@ def HomographyQualityScore(hom):
 	return 1./costsum
 
 class CameraArrangement(object):
-	def __init__(self, imgPairs):
-		self.imgPairs = imgPairs
+	def __init__(self):
 		self.addedPhotos = {}
 
 	def AddAnchorPhoto(self, photoId, camModel):
 		print "AddAnchorPhoto", photoId
 		self.addedPhotos[photoId] = camModel
 
-	def AddAndOptimiseFit(self, photoId, camModel, optRotation=False):
+	def AddAndOptimiseFit(self, photoId, camModel, imgPairs, optRotation=False):
 		print "OptimiseFit", photoId
 		self.addedPhotos[photoId] = camModel
 
 		x0 = [camModel.cLat, camModel.cLon, camModel.rot, 0., 0., 0., 0., 0.]
 		for dof in range(1,len(x0)+1):
-			ret = optimize.fmin_bfgs(self.Eval, x0[:dof], args=(photoId,), gtol = 10., full_output=1)
+			ret = optimize.fmin_bfgs(self.Eval, x0[:dof], args=(photoId, imgPairs), gtol = 10., full_output=1)
 			print ret
 			if len(ret[0].shape) == 0:
 				x0[0] = float(ret[0])
@@ -166,7 +165,7 @@ class CameraArrangement(object):
 			cam.d = xfinal[6]
 			cam.e = xfinal[7]
 
-	def Eval(self, vals, photoId, vis=0):
+	def Eval(self, vals, photoId, imgPairs, vis=0):
 
 		camToOpt = self.addedPhotos[photoId]
 		if len(vals)>0: camToOpt.cLat = vals[0]
@@ -186,7 +185,7 @@ class CameraArrangement(object):
 			if len(vals)>7: cam.e = vals[7]
 
 		err = 0.
-		for pair in self.imgPairs:
+		for pair in imgPairs:
 			pairScore = pair[0]
 			included1 = pair[1] in self.addedPhotos
 			included2 = pair[2] in self.addedPhotos
@@ -246,12 +245,11 @@ def GetStrongestLinkForPhotoId(imgPairs, photoId):
 ### Controlling widget
 
 class PanoWidget(QtGui.QFrame):
-	def __init__(self, devInputs):
+	def __init__(self):
 		QtGui.QFrame.__init__(self)
 
 		self.devOn = True
 		self.devId = uuid.uuid4()
-		self.devInputs = devInputs
 		#self.canvas = QtGui.QImage(640*2, 480*2, QtGui.QImage.Format_RGB888)
 		self.currentFrame = {}
 		self.currentMeta = {}
@@ -387,7 +385,11 @@ class PanoWidget(QtGui.QFrame):
 		if ind >= 0:
 			self.presetCombo.setCurrentIndex(ind)
 
-class TempClass(object):
+class FindCorrespondences(object):
+	def __init__(self):
+		self.devInputs = []
+		self.calibrationFrames = {}
+		self.calibrationMeta = {}
 
 	def ClickedStoreCalibration(self):
 
@@ -469,6 +471,27 @@ class TempClass(object):
 
 		assert len(self.framePairs) == 1
 
+	def AddSource(self, devId):
+		if devId not in self.devInputs:
+			self.devInputs.append(devId)
+		print self.devInputs
+
+	def RemoveSource(self, devId):
+		if devId in self.devInputs:
+			self.devInputs.remove(devId)
+			if devId in self.calibrationFrames:
+				del self.calibrationFrames[devId]
+			if devId in self.calibrationMeta:
+				del self.calibrationMeta[devId]
+		print self.devInputs
+
+	def ProcessFrame(self, frame, meta, devName):
+		if devName not in self.devInputs: return
+		self.calibrationFrames[devName] = frame
+		self.calibrationMeta[devName] = meta
+
+class TempClass():
+
 	def OptimiseCameraPositions(self):
 
 		#Get projection from gui
@@ -542,8 +565,6 @@ class TempClass(object):
 		print "Done"
 
 	def ClickedSimpleCalibrate(self):
-		self.calibrationFrames = []
-		self.calibrationMeta = []
 		self.ClickedStoreCalibration()
 		self.FindCorrespondences()
 		if not self.reviewCorrespondCheckbox.checkState():
@@ -588,16 +609,3 @@ class TempClass(object):
 			self.emit(QtCore.SIGNAL('webcam_frame'), result[0], result[1], self.devId)
 		self.outBuffer = []
 
-	def AddSource(self, devId):
-		if devId not in self.devInputs:
-			self.devInputs.append(devId)
-		print self.devInputs
-		self.currentFrame = {}
-		self.currentMeta = {}
-
-	def RemoveSource(self, devId):
-		if devId in self.devInputs:
-			self.devInputs.remove(devId)
-		print self.devInputs
-		self.currentFrame = {}
-		self.currentMeta = {}

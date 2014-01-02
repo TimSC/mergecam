@@ -3,6 +3,7 @@ import videolive, vidinput, vidpano, time
 
 class GuiSources(QtGui.QFrame):
 	sourceToggled = QtCore.Signal(str, int)
+	webcamSignal = QtCore.Signal(bytearray, dict, str)
 
 	def __init__(self, devManager):
 		QtGui.QFrame.__init__(self)
@@ -41,14 +42,7 @@ class GuiSources(QtGui.QFrame):
 
 		self.selectInputsLayout.addLayout(self.sourcesColumn)
 		
-		#And right area
-		activeSources = []
-		for fina in self.inputDeviceToWidgetDict:
-			srcWidget = self.inputDeviceToWidgetDict[fina]
-			if srcWidget.IsChecked():
-				activeSources.append(fina)
-		
-		self.pano = vidpano.PanoWidget(activeSources)
+		self.pano = vidpano.PanoWidget()
 		self.selectInputsLayout.addWidget(self.pano, 1)
 		#self.selectInputsLayout.addWidget(self.view, 1)
 
@@ -73,6 +67,14 @@ class GuiSources(QtGui.QFrame):
 		#self.timer.stop()
 		#self.close()
 		#del self.devManager
+
+	def GetActiveSources(self):
+		activeSources = []
+		for fina in self.inputDeviceToWidgetDict:
+			srcWidget = self.inputDeviceToWidgetDict[fina]
+			if srcWidget.IsChecked():
+				activeSources.append(fina)
+		return activeSources
 
 	def UpdateSourceList(self):
 		print "UpdateSourceList"
@@ -118,10 +120,12 @@ class GuiSources(QtGui.QFrame):
 			self.rxTimes[devName] = []
 		self.rxTimes[devName].append(timeNow)
 
+		self.webcamSignal.emit(frame, meta, devName)
+
 		#Send frames to processing widgets
-		for devId in self.processingWidgets:
-			procWidget = self.processingWidgets[devId]
-			procWidget.SendFrame(frame, meta, devName)
+		#for devId in self.processingWidgets:
+		#	procWidget = self.processingWidgets[devId]
+		#	procWidget.SendFrame(frame, meta, devName)
 
 		#Update GUI with new frame
 		#if devName == self.currentSrcId and meta['format'] == "RGB24":
