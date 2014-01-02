@@ -5,8 +5,6 @@ class GuiSources(QtGui.QFrame):
 	def __init__(self, devManager):
 		QtGui.QFrame.__init__(self)
 
-		
-
 		self.inputDeviceToWidgetDict = {}
 		self.processingWidgets = {}
 		self.rxTimes = {}
@@ -87,13 +85,13 @@ class GuiSources(QtGui.QFrame):
 			widget = vidinput.SourceWidget(fina, self.devManager, friendlyName)
 			#widget = vidinput.EmulateFixedRateVideoSource(fina, self.devManager, friendlyName)
 
-			QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
+			widget.webcamSignal.connect(self.ProcessFrame)
+			#QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
 			QtCore.QObject.connect(widget, QtCore.SIGNAL("source_toggled"), self.VideoSourceToggleEvent)
 			self.sourceList.addWidget(widget)
 			self.inputDeviceToWidgetDict[fina] = widget
-
-	def ProcessFrame(self, frame, meta, devName):
 		
+	def ProcessFrame(self, frame, meta, devName):
 		if 0: #Debug code
 			self.frameTestStore.append(frame)
 			self.metaTestStore.append(meta)

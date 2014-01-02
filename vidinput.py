@@ -3,9 +3,11 @@ from PySide import QtGui, QtCore
 import time
 
 class SourceWidget(QtGui.QFrame):
+	webcamSignal = QtCore.Signal(bytearray, dict, str)
+
 	def __init__(self, devId, devManager, friendlyName):
 		QtGui.QFrame.__init__(self)
-
+		
 		self.widgetLayout = QtGui.QVBoxLayout()
 		self.setLayout(self.widgetLayout)
 
@@ -50,7 +52,7 @@ class SourceWidget(QtGui.QFrame):
 			data = self.devManager.get_frame(self.devId)
 
 			if data is not None:
-				self.emit(QtCore.SIGNAL('webcam_frame'), data[0], data[1], self.devId)
+				self.webcamSignal.emit(data[0], data[1], str(self.devId))
 				self.UpdatePreview(data[0], data[1])
 
 	def UpdatePreview(self, frame, meta):
