@@ -17,7 +17,7 @@ class FrameView(QtGui.QWidget):
 		print "search", devId
 		for devData in self.deviceList:
 			if devData[0] != devId: continue
-			if len(devData) >= 1:
+			if len(devData) >= 2:
 				return devData[1]
 		return devId
 
