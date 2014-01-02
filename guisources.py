@@ -4,6 +4,7 @@ import videolive, vidinput, vidpano, time
 class GuiSources(QtGui.QFrame):
 	sourceToggled = QtCore.Signal(str, int)
 	webcamSignal = QtCore.Signal(bytearray, dict, str)
+	calibratePressed = QtCore.Signal()
 
 	def __init__(self, devManager):
 		QtGui.QFrame.__init__(self)
@@ -43,6 +44,7 @@ class GuiSources(QtGui.QFrame):
 		self.selectInputsLayout.addLayout(self.sourcesColumn)
 		
 		self.pano = vidpano.PanoWidget()
+		self.pano.calibratePressed.connect(self.ClickedCalibrate)
 		self.selectInputsLayout.addWidget(self.pano, 1)
 		#self.selectInputsLayout.addWidget(self.view, 1)
 
@@ -56,7 +58,7 @@ class GuiSources(QtGui.QFrame):
 			#self.devManager.set_format(fina, 800, 600, "MJPEG");
 		#	self.devManager.set_format(fina, 640, 480, "MJPEG");
 		#	self.devManager.start(fina)
-		
+
 		# Create idle timer
 		self.timer = QtCore.QTimer()
 		self.timer.timeout.connect(self.IdleEvent)
@@ -161,3 +163,5 @@ class GuiSources(QtGui.QFrame):
 	def VideoSourceToggleEvent(self, srcId, srcStatus):
 		self.sourceToggled.emit(srcId, srcStatus)
 
+	def ClickedCalibrate(self):
+		self.calibratePressed.emit()

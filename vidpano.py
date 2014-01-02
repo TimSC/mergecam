@@ -245,6 +245,9 @@ def GetStrongestLinkForPhotoId(imgPairs, photoId):
 ### Controlling widget
 
 class PanoWidget(QtGui.QFrame):
+
+	calibratePressed = QtCore.Signal()
+
 	def __init__(self):
 		QtGui.QFrame.__init__(self)
 
@@ -348,7 +351,7 @@ class PanoWidget(QtGui.QFrame):
 
 		self.onButton = QtGui.QPushButton("Calibrate")
 		self.calibrateControls.addWidget(self.onButton, 0)
-		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedSimpleCalibrate)
+		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedCalibrate)
 
 		self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
 
@@ -377,8 +380,8 @@ class PanoWidget(QtGui.QFrame):
 		self.lensD.setText(str(selectedPreset['d']))
 		self.lensE.setText(str(selectedPreset['e']))
 
-	def ClickedSimpleCalibrate(self):
-		self.emit(QtCore.SIGNAL('calibrate'))
+	def ClickedCalibrate(self):
+		self.calibratePressed.emit()
 
 	def EditCustomButton(self):
 		ind = self.presetCombo.findText("Custom")
@@ -388,15 +391,17 @@ class PanoWidget(QtGui.QFrame):
 class FindCorrespondences(object):
 	def __init__(self):
 		self.devInputs = []
-		self.calibrationFrames = {}
-		self.calibrationMeta = {}
+		self.currentFrames = {}
+		self.currentMeta = {}
+		self.calibrationFrames = []
+		self.calibrationMeta = []
 
-	def ClickedStoreCalibration(self):
+	def StoreCalibration(self):
 
 		#Check frames from each camera are stored
 		framesReady = True
 		for devIn in self.devInputs:
-			if devIn not in self.currentFrame:
+			if devIn not in self.currentFrames:
 				framesReady = False
 		if not framesReady:
 			print "Frames not ready"
@@ -405,8 +410,8 @@ class FindCorrespondences(object):
 		#Store frame set for calibration use
 		frameSet = []
 		metaSet = []
-		for devId in self.currentFrame:
-			frameSet.append(self.currentFrame[devId])
+		for devId in self.devInputs:
+			frameSet.append(self.currentFrames[devId])
 			metaSet.append(self.currentMeta[devId])
 
 		self.calibrationFrames.append(frameSet)
@@ -415,7 +420,7 @@ class FindCorrespondences(object):
 		#Update GUI
 		#self.calibrationCount.setText(str(len(self.calibrationFrames)))
 
-	def FindCorrespondences(self):
+	def Calc(self):
 		self.keypDescs = []
 
 		#Extract interest points
@@ -479,16 +484,16 @@ class FindCorrespondences(object):
 	def RemoveSource(self, devId):
 		if devId in self.devInputs:
 			self.devInputs.remove(devId)
-			if devId in self.calibrationFrames:
-				del self.calibrationFrames[devId]
-			if devId in self.calibrationMeta:
-				del self.calibrationMeta[devId]
+			if devId in self.currentFrames:
+				del self.currentFrames[devId]
+			if devId in self.currentMeta:
+				del self.currentMeta[devId]
 		print self.devInputs
 
 	def ProcessFrame(self, frame, meta, devName):
 		if devName not in self.devInputs: return
-		self.calibrationFrames[devName] = frame
-		self.calibrationMeta[devName] = meta
+		self.currentFrames[devName] = frame
+		self.currentMeta[devName] = meta
 
 class TempClass():
 

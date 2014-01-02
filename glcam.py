@@ -46,6 +46,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.guiSources = guisources.GuiSources(self.devManager)
 		self.guiSources.sourceToggled.connect(self.VideoSourceToggleEvent)
 		self.guiSources.webcamSignal.connect(self.ProcessFrame)
+		self.guiSources.calibratePressed.connect(self.CalibratePressed)
 
 		activeSources = self.guiSources.GetActiveSources()
 		for srcId in activeSources:
@@ -80,6 +81,10 @@ class MainWindow(QtGui.QMainWindow):
 
 	def ProcessFrame(self, frame, meta, devName):
 		self.findCorrespondences.ProcessFrame(frame, meta, devName)
+	
+	def CalibratePressed(self):
+		self.findCorrespondences.StoreCalibration()
+		self.findCorrespondences.Calc()
 
 if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)
