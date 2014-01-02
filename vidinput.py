@@ -4,6 +4,7 @@ import time
 
 class SourceWidget(QtGui.QFrame):
 	webcamSignal = QtCore.Signal(bytearray, dict, str)
+	sourceToggled = QtCore.Signal(str, int)
 
 	def __init__(self, devId, devManager, friendlyName):
 		QtGui.QFrame.__init__(self)
@@ -23,15 +24,10 @@ class SourceWidget(QtGui.QFrame):
 		self.checkbox = QtGui.QCheckBox()
 		self.checkbox.setCheckState(QtCore.Qt.Checked)
 		self.toolbar.addWidget(self.checkbox, 0)
-		QtCore.QObject.connect(self.checkbox, QtCore.SIGNAL('clicked()'), self.ClickedCheckBox)
+		self.checkbox.clicked.connect(self.ClickedCheckBox)
 
 		label = QtGui.QLabel(friendlyName)
 		self.toolbar.addWidget(label, 1)
-
-		#self.onButton = QtGui.QPushButton("On")
-		#self.toolbar.addWidget(self.onButton, 0)
-		#self.onButton.setCheckable(True)
-		#QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedOn)
 
 		#Create video preview
 		img = QtGui.QImage(300, 200, QtGui.QImage.Format_RGB888)
@@ -85,7 +81,7 @@ class SourceWidget(QtGui.QFrame):
 		#self.onButton.setChecked(self.cameraOn)
 
 	def ClickedCheckBox(self):
-		self.emit(QtCore.SIGNAL('source_toggled'), self.devId, self.checkbox.isChecked())
+		self.sourceToggled.emit(self.devId, self.checkbox.isChecked())
 
 	def IsChecked(self):
 		return self.checkbox.isChecked()
@@ -118,7 +114,7 @@ class EmulateFixedRateVideoSource(SourceWidget):
 
 				if send:
 					self.UpdatePreview(self.currentFrame, self.currentMeta)
-					self.emit(QtCore.SIGNAL('webcam_frame'), self.currentFrame, self.currentMeta, self.devId)
+					self.webcamSignal.emit(self.currentFrame, self.currentMeta, self.devId)
 					self.frameTimes.append(timeNow)
 					while len(self.frameTimes) > 50:
 						self.frameTimes.pop(0)

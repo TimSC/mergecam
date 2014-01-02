@@ -86,8 +86,7 @@ class GuiSources(QtGui.QFrame):
 			#widget = vidinput.EmulateFixedRateVideoSource(fina, self.devManager, friendlyName)
 
 			widget.webcamSignal.connect(self.ProcessFrame)
-			#QtCore.QObject.connect(widget, QtCore.SIGNAL("webcam_frame"), self.ProcessFrame)
-			QtCore.QObject.connect(widget, QtCore.SIGNAL("source_toggled"), self.VideoSourceToggleEvent)
+			widget.sourceToggled.connect(self.VideoSourceToggleEvent)
 			self.sourceList.addWidget(widget)
 			self.inputDeviceToWidgetDict[fina] = widget
 		
