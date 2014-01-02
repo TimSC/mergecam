@@ -4,7 +4,7 @@ All rights reserved.
 '''
 import sys, time, os, random, copy
 from PySide import QtGui, QtCore
-import guisources
+import guisources, guicorrespondences
 import numpy as np
 import videolive, vidpano
 
@@ -52,8 +52,12 @@ class MainWindow(QtGui.QMainWindow):
 		for srcId in activeSources:
 			self.findCorrespondences.AddSource(srcId)
 
-		self.mainLayout.addWidget(self.guiSources, 1)
+		self.guiCorrespondences = guicorrespondences.GuiCorrespondences(self.findCorrespondences)
+		self.guiCorrespondences.setShown(0)
 
+		self.mainLayout.addWidget(self.guiSources, 1)
+		self.mainLayout.addWidget(self.guiCorrespondences, 1)
+		
 		centralWidget = QtGui.QWidget()
 		centralWidget.setLayout(self.mainLayout)
 		self.setCentralWidget(centralWidget)
@@ -65,12 +69,15 @@ class MainWindow(QtGui.QMainWindow):
 
 	def ViewSourcesButtonPressed(self):
 		self.guiSources.setShown(1)
+		self.guiCorrespondences.setShown(0)
 
 	def ViewCorrespondencesButtonPressed(self):
 		self.guiSources.setShown(0)
+		self.guiCorrespondences.setShown(1)
 
 	def ViewPanoramaButtonPressed(self):
 		self.guiSources.setShown(0)
+		self.guiCorrespondences.setShown(0)
 
 	def VideoSourceToggleEvent(self, srcId, srcStatus):
 		print "VideoSourceToggleEvent", srcId, srcStatus
