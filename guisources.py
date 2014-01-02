@@ -5,6 +5,7 @@ class GuiSources(QtGui.QFrame):
 	sourceToggled = QtCore.Signal(str, int)
 	webcamSignal = QtCore.Signal(bytearray, dict, str)
 	calibratePressed = QtCore.Signal()
+	deviceListChanged = QtCore.Signal(list)
 
 	def __init__(self, devManager):
 		QtGui.QFrame.__init__(self)
@@ -95,6 +96,8 @@ class GuiSources(QtGui.QFrame):
 			widget.sourceToggled.connect(self.VideoSourceToggleEvent)
 			self.sourceList.addWidget(widget)
 			self.inputDeviceToWidgetDict[fina] = widget
+
+		self.deviceListChanged.emit(self.devNames)
 		
 	def ProcessFrame(self, frame, meta, devName):
 		if 0: #Debug code

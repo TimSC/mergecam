@@ -1,5 +1,32 @@
 from PySide import QtGui, QtCore
 
+class FrameView(QtGui.QWidget):
+	def __init__(self, correspondenceModel):
+		QtGui.QWidget.__init__(self)
+
+		self.correspondenceModel = correspondenceModel
+		self.deviceList = []
+
+		self.layout = QtGui.QVBoxLayout()
+		self.setLayout(self.layout)
+
+		self.frameCombo = QtGui.QComboBox()
+		self.layout.addWidget(self.frameCombo)
+
+	def FindFriendlyName(self, devId):
+		print "search", devId
+		for devData in self.deviceList:
+			if devData[0] != devId: continue
+			if len(devData) >= 1:
+				return devData[1]
+		return devId
+
+	def RefreshList(self):
+		self.frameCombo.clear()
+		for devId in self.correspondenceModel.devInputs:
+			name = self.FindFriendlyName(devId)
+			self.frameCombo.addItem(name)
+
 class GuiCorrespondences(QtGui.QFrame):
 
 	def __init__(self, correspondenceModel):
@@ -22,6 +49,20 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.tableFrame.setLayout(self.tableLayout)
 		self.mainSplitter.addWidget(self.tableFrame)
 
-		self.splitLayout.addWidget(QtGui.QLabel("Left"))
-		self.splitLayout.addWidget(QtGui.QLabel("Right"))
+		self.leftView = FrameView(self.correspondenceModel)
+		self.rightView = FrameView(self.correspondenceModel)
+
+		self.splitLayout.addWidget(self.leftView)
+		self.splitLayout.addWidget(self.rightView)
 		self.tableLayout.addWidget(QtGui.QLabel("Table"))
+
+		self.UpdateActiveDevices()
+
+	def UpdateActiveDevices(self):
+		self.leftView.RefreshList()
+		self.rightView.RefreshList()
+
+	def SetDeviceList(self, deviceList):
+		self.leftView.deviceList = deviceList
+		self.rightView.deviceList = deviceList
+		self.UpdateActiveDevices()

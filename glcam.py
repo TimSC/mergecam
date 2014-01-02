@@ -34,11 +34,11 @@ class MainWindow(QtGui.QMainWindow):
 		self.mainToolbarLayout = QtGui.QHBoxLayout()
 		self.mainLayout.addLayout(self.mainToolbarLayout)
 		self.viewSourcesButton = QtGui.QPushButton("Sources")
-		QtCore.QObject.connect(self.viewSourcesButton, QtCore.SIGNAL("pressed()"), self.ViewSourcesButtonPressed)
+		self.viewSourcesButton.pressed.connect(self.ViewSourcesButtonPressed)
 		self.correspondencesButton = QtGui.QPushButton("Correspondences")
-		QtCore.QObject.connect(self.correspondencesButton, QtCore.SIGNAL("pressed()"), self.ViewCorrespondencesButtonPressed)
+		self.correspondencesButton.pressed.connect(self.ViewCorrespondencesButtonPressed)
 		self.panoramaButton = QtGui.QPushButton("Panorama")
-		QtCore.QObject.connect(self.panoramaButton, QtCore.SIGNAL("pressed()"), self.ViewPanoramaButtonPressed)
+		self.panoramaButton.pressed.connect(self.ViewPanoramaButtonPressed)
 		self.mainToolbarLayout.addWidget(self.viewSourcesButton)
 		self.mainToolbarLayout.addWidget(self.correspondencesButton)
 		self.mainToolbarLayout.addWidget(self.panoramaButton)
@@ -47,6 +47,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.guiSources.sourceToggled.connect(self.VideoSourceToggleEvent)
 		self.guiSources.webcamSignal.connect(self.ProcessFrame)
 		self.guiSources.calibratePressed.connect(self.CalibratePressed)
+		self.guiSources.deviceListChanged.connect(self.DeviceListChanged)
 
 		activeSources = self.guiSources.GetActiveSources()
 		for srcId in activeSources:
@@ -54,6 +55,7 @@ class MainWindow(QtGui.QMainWindow):
 
 		self.guiCorrespondences = guicorrespondences.GuiCorrespondences(self.findCorrespondences)
 		self.guiCorrespondences.setShown(0)
+		self.guiCorrespondences.SetDeviceList(self.guiSources.devNames)
 
 		self.mainLayout.addWidget(self.guiSources, 1)
 		self.mainLayout.addWidget(self.guiCorrespondences, 1)
@@ -85,6 +87,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.findCorrespondences.AddSource(srcId)
 		else:
 			self.findCorrespondences.RemoveSource(srcId)
+		self.guiCorrespondences.UpdateActiveDevices()
 
 	def ProcessFrame(self, frame, meta, devName):
 		self.findCorrespondences.ProcessFrame(frame, meta, devName)
@@ -92,6 +95,10 @@ class MainWindow(QtGui.QMainWindow):
 	def CalibratePressed(self):
 		self.findCorrespondences.StoreCalibration()
 		self.findCorrespondences.Calc()
+
+	def DeviceListChanged(self, deviceList):
+		print "DeviceListChanged"
+		self.findCorrespondences.SetDeviceList(deviceList)
 
 if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)
