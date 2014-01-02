@@ -42,6 +42,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.mainToolbarLayout.addWidget(self.panoramaButton)
 
 		self.guiSources = guisources.GuiSources(self.devManager)
+		self.guiSources.sourceToggled.connect(self.VideoSourceToggleEvent)
 		self.mainLayout.addWidget(self.guiSources, 1)
 
 		centralWidget = QtGui.QWidget()
@@ -61,6 +62,11 @@ class MainWindow(QtGui.QMainWindow):
 
 	def ViewPanoramaButtonPressed(self):
 		self.guiSources.setShown(0)
+
+	def VideoSourceToggleEvent(self, srcId, srcStatus):
+		
+		print "VideoSourceToggleEvent", srcId, srcStatus
+		
 
 if __name__ == '__main__':
 

@@ -2,6 +2,8 @@ from PySide import QtGui, QtCore
 import videolive, vidinput, vidpano, time
 
 class GuiSources(QtGui.QFrame):
+	sourceToggled = QtCore.Signal(str, int)
+
 	def __init__(self, devManager):
 		QtGui.QFrame.__init__(self)
 
@@ -153,8 +155,5 @@ class GuiSources(QtGui.QFrame):
 				print err
 
 	def VideoSourceToggleEvent(self, srcId, srcStatus):
-		print "VideoSourceToggleEvent", srcId, srcStatus
-		if srcStatus:
-			self.pano.AddSource(srcId)
-		else:
-			self.pano.RemoveSource(srcId)
+		self.sourceToggled.emit(srcId, srcStatus)
+
