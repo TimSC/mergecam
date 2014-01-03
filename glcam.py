@@ -103,20 +103,18 @@ class MainWindow(QtGui.QMainWindow):
 		self.guiPanorama.ProcessFrame(frame, meta, devName)
 	
 	def CalibratePressed(self):
+		#Find point correspondances
 		self.findCorrespondences.StoreCalibration()
 		framePairs = self.findCorrespondences.Calc()
-		self.cameraArrangement.PrepareForPickle()
-		pickle.dump((self.cameraArrangement, framePairs), open("test.dat", "wb"), protocol=0)
-		self.cameraArrangement.OptimiseCameraPositions(framePairs)
-		self.cameraArrangement.PrepareForPickle()
-		pickle.dump((self.cameraArrangement), open("test2.dat", "wb"), protocol=0)
 
-		print "Calculate final projection"
+		#Estimate camera directions and parameters
+		self.cameraArrangement.OptimiseCameraPositions(framePairs)
+
+		#Estimate final transform
 		outProj = proj.EquirectangularCam()
 		outProj.imgW = 800
 		outProj.imgH = 600
 		visObj = pano.PanoView(self.cameraArrangement, outProj)
-		print "Done"
 
 		self.guiPanorama.SetVisObject(visObj)
 
