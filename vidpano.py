@@ -232,7 +232,8 @@ class CameraArrangement(object):
 		bestPair = 1	
 
 		while bestPair is not None:# and len(self.cameraArrangement.addedPhotos) < 5:
-			bestPair, newInd1, newInd2 = SelectPhotoToAdd(framePairs, self)
+			firstFrameSetPairs = framePairs[0]
+			bestPair, newInd1, newInd2 = SelectPhotoToAdd(firstFrameSetPairs, self)
 			print "SelectPhotoToAdd", bestPair, newInd1, newInd2
 			if bestPair is None: continue
 			print bestPair[:3], newInd1, newInd2
@@ -263,7 +264,7 @@ class CameraArrangement(object):
 					newCam = camProjFactory()
 					newCam.imgW = pmeta[1]
 					newCam.imgH = pmeta[0]				
-					self.AddAndOptimiseFit(pid, newCam, optRotation = True)
+					self.AddAndOptimiseFit(pid, newCam, firstFrameSetPairs, optRotation = True)
 
 			for photoId in self.addedPhotos:
 				photo = self.addedPhotos[photoId]
@@ -291,6 +292,7 @@ def SelectPhotoToAdd(imgPairs, cameraArrangement):
 	bestPair = None
 	bestNewInd = None
 	for pair in imgPairs:
+		assert len(pair) == 8
 		pairScore = pair[0]
 		
 		included1 = pair[1] in cameraArrangement.addedPhotos

@@ -105,6 +105,8 @@ class MainWindow(QtGui.QMainWindow):
 	def CalibratePressed(self):
 		self.findCorrespondences.StoreCalibration()
 		framePairs = self.findCorrespondences.Calc()
+		print "Num frame pairs", len(framePairs)
+		print "Params in pair data", len(framePairs[0])
 		visObj = self.cameraArrangement.OptimiseCameraPositions(framePairs)
 		self.guiPanorama.visObj = visObj
 
