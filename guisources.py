@@ -6,6 +6,7 @@ class GuiSources(QtGui.QFrame):
 	webcamSignal = QtCore.Signal(bytearray, dict, str)
 	calibratePressed = QtCore.Signal()
 	deviceListChanged = QtCore.Signal(list)
+	cameraParamsChanged = QtCore.Signal(dict)
 
 	def __init__(self, devManager):
 		QtGui.QFrame.__init__(self)
@@ -46,6 +47,7 @@ class GuiSources(QtGui.QFrame):
 		
 		self.pano = vidpano.PanoWidget()
 		self.pano.calibratePressed.connect(self.ClickedCalibrate)
+		self.pano.cameraParamsChanged.connect(self.CameraParamsChanged)
 		self.selectInputsLayout.addWidget(self.pano, 1)
 		#self.selectInputsLayout.addWidget(self.view, 1)
 
@@ -168,3 +170,10 @@ class GuiSources(QtGui.QFrame):
 
 	def ClickedCalibrate(self):
 		self.calibratePressed.emit()
+
+	def CameraParamsChanged(self, camParams):
+		self.cameraParamsChanged.emit(camParams)
+		
+	def GetCamParams(self):
+		return self.pano.GetCamParams()
+

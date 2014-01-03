@@ -66,3 +66,4 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.leftView.deviceList = deviceList
 		self.rightView.deviceList = deviceList
 		self.UpdateActiveDevices()
+

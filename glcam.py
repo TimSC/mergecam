@@ -48,6 +48,8 @@ class MainWindow(QtGui.QMainWindow):
 		self.guiSources.webcamSignal.connect(self.ProcessFrame)
 		self.guiSources.calibratePressed.connect(self.CalibratePressed)
 		self.guiSources.deviceListChanged.connect(self.DeviceListChanged)
+		self.guiSources.cameraParamsChanged.connect(self.CameraParamsChanged)
+		self.cameraArrangement.SetCamParams(self.guiSources.GetCamParams())
 
 		activeSources = self.guiSources.GetActiveSources()
 		for srcId in activeSources:
@@ -102,11 +104,16 @@ class MainWindow(QtGui.QMainWindow):
 	
 	def CalibratePressed(self):
 		self.findCorrespondences.StoreCalibration()
-		self.findCorrespondences.Calc()
+		framePairs = self.findCorrespondences.Calc()
+		visObj = self.cameraArrangement.OptimiseCameraPositions(framePairs)
+		self.guiPanorama.visObj = visObj
 
 	def DeviceListChanged(self, deviceList):
 		print "DeviceListChanged"
 		self.findCorrespondences.SetDeviceList(deviceList)
+
+	def CameraParamsChanged(self, camParams):
+		self.cameraArrangement.SetCamParams(camParams)
 
 if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)

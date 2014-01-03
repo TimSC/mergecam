@@ -134,6 +134,7 @@ def HomographyQualityScore(hom):
 class CameraArrangement(object):
 	def __init__(self):
 		self.addedPhotos = {}
+		self.camParams = None
 
 	def AddAnchorPhoto(self, photoId, camModel):
 		print "AddAnchorPhoto", photoId
@@ -208,6 +209,83 @@ class CameraArrangement(object):
 	def NumPhotos(self):
 		return len(self.addedPhotos)
 
+	def SetCamParams(self, camParams):
+		self.camParams = camParams
+
+	def OptimiseCameraPositions(self, framePairs):
+
+		if self.camParams is None:
+			return None
+
+		camProjFactory = None
+		if self.camParams['proj'] == "rectilinear":
+			camProjFactory = proj.Rectilinear
+			projParams = {}
+		if self.camParams['proj'] == "fisheye":
+			camProjFactory = proj.FishEye
+			projParams = {}
+		assert camProjFactory is not None
+
+		#Calibrate cameras
+		#self.cameraArrangement = CameraArrangement(self.framePairs[0])
+		#visobj = visualise.VisualiseArrangement()
+		bestPair = 1	
+
+		while bestPair is not None:# and len(self.cameraArrangement.addedPhotos) < 5:
+			bestPair, newInd1, newInd2 = SelectPhotoToAdd(framePairs, self)
+			print "SelectPhotoToAdd", bestPair, newInd1, newInd2
+			if bestPair is None: continue
+			print bestPair[:3], newInd1, newInd2
+		
+			photosToAdd = []
+			photosMetaToAdd = []
+
+			if not newInd1:
+				print "Adding", bestPair[1]
+				photosToAdd.append(bestPair[1])
+				photosMetaToAdd.append(bestPair[5])
+				
+			if not newInd2:
+				print "Adding", bestPair[2]
+				photosToAdd.append(bestPair[2])
+				photosMetaToAdd.append(bestPair[6])
+			
+			if 1:
+				if self.NumPhotos() == 0 and len(photosToAdd) > 0:
+					newCam = camProjFactory()
+					newCam.imgW = photosMetaToAdd[0][1]
+					newCam.imgH = photosMetaToAdd[0][0]
+					self.AddAnchorPhoto(photosToAdd[0], newCam)
+					photosToAdd.pop(0)
+					photosMetaToAdd.pop(0)
+				for pid, pmeta in zip(photosToAdd, photosMetaToAdd):
+					#Add photos one by one to scene and optimise
+					newCam = camProjFactory()
+					newCam.imgW = pmeta[1]
+					newCam.imgH = pmeta[0]				
+					self.AddAndOptimiseFit(pid, newCam, optRotation = True)
+
+			for photoId in self.addedPhotos:
+				photo = self.addedPhotos[photoId]
+				print photoId, photo.cLat, photo.cLon
+				#print "Proj test", photo.Proj([(0.,0.)])
+				hfov = photo.UnProj([(0., photo.imgH * 0.5), (photo.imgW, photo.imgH * 0.5)])
+				vfov = photo.UnProj([(photo.imgW * 0.5, 0.), (photo.imgW * 0.5, photo.imgH)])
+				print "HFOV", math.degrees(hfov[1][1] - hfov[0][1])
+				print "VFOV", math.degrees(vfov[1][0] - vfov[0][0])
+
+			if 0:
+				vis = visobj.Vis(self.calibrationFrames[0], self.calibrationMeta[0], self.framePairs[0], self.cameraArrangement)
+				vis.save("vis{0}.png".format(len(self.cameraArrangement.addedPhotos)))
+
+		print "Calculate final projection"		
+		outProj = proj.EquirectangularCam()
+		outProj.imgW = 800
+		outProj.imgH = 600
+		visobj = pano.PanoView(self, outProj)
+		print "Done"
+		return visobj
+
 def SelectPhotoToAdd(imgPairs, cameraArrangement):
 	bestScore = None
 	bestPair = None
@@ -247,6 +325,7 @@ def GetStrongestLinkForPhotoId(imgPairs, photoId):
 class PanoWidget(QtGui.QFrame):
 
 	calibratePressed = QtCore.Signal()
+	cameraParamsChanged = QtCore.Signal(dict)
 
 	def __init__(self):
 		QtGui.QFrame.__init__(self)
@@ -380,6 +459,8 @@ class PanoWidget(QtGui.QFrame):
 		self.lensD.setText(str(selectedPreset['d']))
 		self.lensE.setText(str(selectedPreset['e']))
 
+		self.CameraParamsChanged()
+
 	def ClickedCalibrate(self):
 		self.calibratePressed.emit()
 
@@ -387,6 +468,24 @@ class PanoWidget(QtGui.QFrame):
 		ind = self.presetCombo.findText("Custom")
 		if ind >= 0:
 			self.presetCombo.setCurrentIndex(ind)
+		self.CameraParamsChanged()
+
+	def GetCamParams(self):
+		#Get projection from gui
+		selectedProj = self.projectionType.currentText()
+
+		vfov = float(self.fovEdit.text())
+		a = float(self.lensA.text())
+		b = float(self.lensB.text())
+		c = float(self.lensC.text())		
+		d = float(self.lensD.text())
+		e = float(self.lensE.text())
+
+		camParams = {"proj": selectedProj.lower(), "hfov": vfov, "a": a, "b": b, "c": c, "d": d, "e": e}
+		return camParams
+
+	def CameraParamsChanged(self):
+		self.cameraParamsChanged.emit(self.GetCamParams())
 
 class FindCorrespondences(object):
 	def __init__(self):
@@ -441,7 +540,7 @@ class FindCorrespondences(object):
 			self.keypDescs.append(keypDescsSet)
 
 		#Calc homography between pairs
-		self.framePairs = []
+		framePairs = []
 		for photoSet, metaSet, keypDescsSet in zip(self.calibrationFrames, self.calibrationMeta, self.keypDescs):
 
 			pairsSet = []
@@ -472,9 +571,9 @@ class FindCorrespondences(object):
 
 					pairsSet.append((frac*homqual, i, i2, inliers1, inliers2, im1.shape, im2.shape, H))
 
-			self.framePairs.append(pairsSet)
+			framePairs.append(pairsSet)
 
-		assert len(self.framePairs) == 1
+		return framePairs
 
 	def AddSource(self, devId):
 		if devId not in self.devInputs:
@@ -495,122 +594,6 @@ class FindCorrespondences(object):
 		self.currentFrames[devName] = frame
 		self.currentMeta[devName] = meta
 
-class TempClass():
 
-	def OptimiseCameraPositions(self):
 
-		#Get projection from gui
-		selectedProj = self.projectionType.currentText()
-		camProjFactory = None
-		if selectedProj == "Rectilinear":
-			camProjFactory = proj.Rectilinear
-			projParams = {}
-		if selectedProj == "Fisheye":
-			camProjFactory = proj.FishEye
-			projParams = {}
-		assert camProjFactory is not None
-
-		#Calibrate cameras
-		self.cameraArrangement = CameraArrangement(self.framePairs[0])
-		#visobj = visualise.VisualiseArrangement()
-		bestPair = 1	
-
-		while bestPair is not None:# and len(self.cameraArrangement.addedPhotos) < 5:
-			bestPair, newInd1, newInd2 = SelectPhotoToAdd(self.framePairs[0], self.cameraArrangement)
-			print "SelectPhotoToAdd", bestPair, newInd1, newInd2
-			if bestPair is None: continue
-			print bestPair[:3], newInd1, newInd2
-		
-			photosToAdd = []
-			photosMetaToAdd = []
-
-			if not newInd1:
-				print "Adding", bestPair[1]
-				photosToAdd.append(bestPair[1])
-				photosMetaToAdd.append(bestPair[5])
-				
-			if not newInd2:
-				print "Adding", bestPair[2]
-				photosToAdd.append(bestPair[2])
-				photosMetaToAdd.append(bestPair[6])
-			
-			if 1:
-				if self.cameraArrangement.NumPhotos() == 0 and len(photosToAdd) > 0:
-					newCam = camProjFactory()
-					newCam.imgW = photosMetaToAdd[0][1]
-					newCam.imgH = photosMetaToAdd[0][0]
-					self.cameraArrangement.AddAnchorPhoto(photosToAdd[0], newCam)
-					photosToAdd.pop(0)
-					photosMetaToAdd.pop(0)
-				for pid, pmeta in zip(photosToAdd, photosMetaToAdd):
-					#Add photos one by one to scene and optimise
-					newCam = camProjFactory()
-					newCam.imgW = pmeta[1]
-					newCam.imgH = pmeta[0]				
-					self.cameraArrangement.AddAndOptimiseFit(pid, newCam, optRotation = True)
-
-			for photoId in self.cameraArrangement.addedPhotos:
-				photo = self.cameraArrangement.addedPhotos[photoId]
-				print photoId, photo.cLat, photo.cLon
-				#print "Proj test", photo.Proj([(0.,0.)])
-				hfov = photo.UnProj([(0., photo.imgH * 0.5), (photo.imgW, photo.imgH * 0.5)])
-				vfov = photo.UnProj([(photo.imgW * 0.5, 0.), (photo.imgW * 0.5, photo.imgH)])
-				print "HFOV", math.degrees(hfov[1][1] - hfov[0][1])
-				print "VFOV", math.degrees(vfov[1][0] - vfov[0][0])
-
-			if 0:
-				vis = visobj.Vis(self.calibrationFrames[0], self.calibrationMeta[0], self.framePairs[0], self.cameraArrangement)
-				vis.save("vis{0}.png".format(len(self.cameraArrangement.addedPhotos)))
-
-		print "Calculate final projection"		
-		outProj = proj.EquirectangularCam()
-		outProj.imgW = 800
-		outProj.imgH = 600
-		self.visobj = pano.PanoView(self.cameraArrangement, outProj)
-		print "Done"
-
-	def ClickedSimpleCalibrate(self):
-		self.ClickedStoreCalibration()
-		self.FindCorrespondences()
-		if not self.reviewCorrespondCheckbox.checkState():
-			self.OptimiseCameraPositions()
-
-	def SendFrame(self, frame, meta, devName):
-		if devName not in self.devInputs: return
-		self.currentFrame[devName] = frame
-		self.currentMeta[devName] = meta
-
-		if not self.devOn: return
-		if self.visobj is None: return
-
-		if devName in self.framesRcvSinceOutput:
-			#We have received this frame again; it is time to write output
-
-			if self.cameraArrangement is not None:
-				if 0:
-					visobj = visualise.VisualiseArrangement()
-					vis = visobj.Vis(self.currentFrame.values(), self.currentMeta.values(), self.framePairs[0], self.cameraArrangement)
-					metaOut = {'width': vis.size[0], 'height': vis.size[1], 'format': 'RGB24'}
-					self.outBuffer.append([vis.tostring(), metaOut])
-				if 1:
-					#print len(self.currentFrame), self.currentMeta
-					startTime = time.time()
-					visPixOut, visMetaOut = self.visobj.Vis(self.currentFrame.values(), self.currentMeta.values())
-					print "Generated panorama in",time.time()-startTime,"sec"
-					#self.visobj.Vis(self.currentFrame.values(), self.currentMeta.values())
-
-					#visPixOut = bytearray([128 for i in range(800 * 600 * 3)])
-					#visMetaOut = {"height": 600, "width": 800, "format": "RGB24"}
-					
-					#print len(visPixOut), visMetaOut
-					self.outBuffer.append([bytearray(visPixOut), visMetaOut])
-
-			self.framesRcvSinceOutput = set()
-
-		self.framesRcvSinceOutput.add(devName)
-
-	def Update(self):
-		for result in self.outBuffer:
-			self.emit(QtCore.SIGNAL('webcam_frame'), result[0], result[1], self.devId)
-		self.outBuffer = []
 
