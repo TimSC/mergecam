@@ -6,7 +6,7 @@ import sys, time, os, random, copy
 from PySide import QtGui, QtCore
 import guisources, guicorrespondences, guipanorama
 import numpy as np
-import videolive, vidpano
+import videolive, vidpano, pickle, proj, pano
 
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self):
@@ -105,7 +105,19 @@ class MainWindow(QtGui.QMainWindow):
 	def CalibratePressed(self):
 		self.findCorrespondences.StoreCalibration()
 		framePairs = self.findCorrespondences.Calc()
-		visObj = self.cameraArrangement.OptimiseCameraPositions(framePairs)
+		self.cameraArrangement.PrepareForPickle()
+		pickle.dump((self.cameraArrangement, framePairs), open("test.dat", "wb"), protocol=0)
+		self.cameraArrangement.OptimiseCameraPositions(framePairs)
+		self.cameraArrangement.PrepareForPickle()
+		pickle.dump((self.cameraArrangement), open("test2.dat", "wb"), protocol=0)
+
+		print "Calculate final projection"
+		outProj = proj.EquirectangularCam()
+		outProj.imgW = 800
+		outProj.imgH = 600
+		visObj = pano.PanoView(self.cameraArrangement, outProj)
+		print "Done"
+
 		self.guiPanorama.SetVisObject(visObj)
 
 	def DeviceListChanged(self, deviceList):

@@ -279,13 +279,9 @@ class CameraArrangement(object):
 				vis = visobj.Vis(self.calibrationFrames[0], self.calibrationMeta[0], self.framePairs[0], self.cameraArrangement)
 				vis.save("vis{0}.png".format(len(self.cameraArrangement.addedPhotos)))
 
-		print "Calculate final projection"		
-		outProj = proj.EquirectangularCam()
-		outProj.imgW = 800
-		outProj.imgH = 600
-		visobj = pano.PanoView(self, outProj)
-		print "Done"
-		return visobj
+	def PrepareForPickle(self):
+		for proj in self.addedPhotos.values():
+			proj.PrepareForPickle()
 
 def SelectPhotoToAdd(imgPairs, cameraArrangement):
 	bestScore = None
