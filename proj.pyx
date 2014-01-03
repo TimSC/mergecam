@@ -139,6 +139,13 @@ class BaseCam(object):
 		self.correctionFunc = InvertableFunc()
 		self.paramsChanged = True
 
+	def GetParams(self):
+		return {'fov': self.hfov, 'a': self._a, 'b': self._b, 'c': self._c, 'd': self.d, 'e': self.e, 
+			'cLat': self.cLat, 'cLon': self.cLon, 'rot': self.rot}
+
+	def __repr__(self):
+		return "BaseCam"+str(self.GetParams())
+
 	def UpdateCorrectionFunc(self):
 		dval = 1 - (self._a + self._b + self._c)
 		self.correctionFunc.func = lambda x: (x ** 4) * self._a + (x ** 3) * self._b + (x ** 2) * self._c + x * dval

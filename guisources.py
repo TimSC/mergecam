@@ -1,5 +1,6 @@
 from PySide import QtGui, QtCore
 import videolive, vidinput, vidpano, time
+import multiprocessing
 
 class GuiSources(QtGui.QFrame):
 	sourceToggled = QtCore.Signal(str, int)
@@ -177,8 +178,13 @@ class GuiSources(QtGui.QFrame):
 	def GetCamParams(self):
 		return self.pano.GetCamParams()
 
+def WorkerProcess(cameraArrangement, framePairs, childPipe):
+	cameraArrangement.OptimiseCameraPositions(framePairs)
+	cameraArrangement.PrepareForPickle()
+	childPipe.send(cameraArrangement)
+
 class CalibratePopup(QtGui.QDialog):
-    def __init__(self, parent, findCorrespondences, cameraArrangement):
+	def __init__(self, parent, findCorrespondences, cameraArrangement):
 		QtGui.QDialog.__init__(self, parent)
 
 		self.findCorrespondences = findCorrespondences
@@ -189,11 +195,20 @@ class CalibratePopup(QtGui.QDialog):
 		self.framePairs = self.findCorrespondences.Calc()
 
 		#Estimate camera directions and parameters
-		self.cameraArrangement.OptimiseCameraPositions(self.framePairs)
+		self.pipe, childPipe = multiprocessing.Pipe()
+		self.process = multiprocessing.Process(target=WorkerProcess, args=(self.cameraArrangement, 
+			self.framePairs, childPipe))
+		self.process.start()
+		#self.cameraArrangement.OptimiseCameraPositions(self.framePairs)
+		
+		self.timer = QtCore.QTimer()
+		self.timer.timeout.connect(self.IdleEvent)
+		self.timer.start(10)
 
-    def paintEvent(self, e):
-        dc = QtGui.QPainter(self)
-        dc.drawLine(0, 0, 100, 100)
-        dc.drawLine(100, 0, 0, 100)
-
+	def IdleEvent(self):
+		if not self.pipe.poll(0.01):
+			return
+		self.cameraArrangement = self.pipe.recv()
+		print "Data received from worker", self.cameraArrangement
+		print self.cameraArrangement.addedPhotos
 
