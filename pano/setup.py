@@ -4,6 +4,12 @@
 import os
 from distutils.core import Extension, setup
 
+if os.name == "nt":
+	libs = ["pthread", "freeglut", "glu32", "opengl32"]
+else:
+	libs = ["pthread", "glut", "GLU", "GL"]
+
+
 setup(
     name = "pano",
     version = "1.0",
@@ -18,7 +24,7 @@ setup(
         "Programming Language :: C++"],
     ext_modules = [
         Extension("pano", ["pano.cpp"], 
-			libraries = ["pthread", "freeglut", "glu32", "opengl32"],
+			libraries = libs,
 			include_dirs=['C:\\Dev\\Lib\\freeglut-2.8.1\\include'],
 			library_dirs=['C:\\Dev\\Lib\\freeglut-2.8.1\\lib'],
 			)
