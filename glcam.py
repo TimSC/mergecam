@@ -59,7 +59,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.guiCorrespondences.setShown(0)
 		self.guiCorrespondences.SetDeviceList(self.guiSources.devNames)
 
-		self.guiPanorama = guipanorama.GuiPanorama(self.findCorrespondences)
+		self.guiPanorama = guipanorama.GuiPanorama(self.findCorrespondences, self.cameraArrangement)
 		self.guiPanorama.setShown(0)
 
 		self.mainLayout.addWidget(self.guiSources, 1)
@@ -105,10 +105,8 @@ class MainWindow(QtGui.QMainWindow):
 	def CalibratePressed(self):
 		self.findCorrespondences.StoreCalibration()
 		framePairs = self.findCorrespondences.Calc()
-		print "Num frame pairs", len(framePairs)
-		print "Params in pair data", len(framePairs[0])
 		visObj = self.cameraArrangement.OptimiseCameraPositions(framePairs)
-		self.guiPanorama.visObj = visObj
+		self.guiPanorama.SetVisObject(visObj)
 
 	def DeviceListChanged(self, deviceList):
 		print "DeviceListChanged"

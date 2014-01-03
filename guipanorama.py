@@ -1,11 +1,14 @@
 from PySide import QtGui, QtCore
+import time
 
 class GuiPanorama(QtGui.QFrame):
 
-	def __init__(self, correspondenceModel):
+	def __init__(self, correspondenceModel, cameraArrangement):
 		QtGui.QFrame.__init__(self)
 
+		self.framesRcvSinceOutput = set()
 		self.correspondenceModel = correspondenceModel
+		self.cameraArrangement = cameraArrangement
 		self.currentFrame = {}
 		self.currentMeta = {}
 		self.visobj = None
@@ -28,8 +31,10 @@ class GuiPanorama(QtGui.QFrame):
 			gpm = QtGui.QGraphicsPixmapItem(pix)
 			self.scene.addItem(gpm)
 
-	def ProcessFrame(self, frame, meta, devName):
+	def SetVisObject(self, visobj):
+		self.visobj = visobj
 
+	def ProcessFrame(self, frame, meta, devName):
 		if devName not in self.correspondenceModel.devInputs: return
 		self.currentFrame[devName] = frame
 		self.currentMeta[devName] = meta
