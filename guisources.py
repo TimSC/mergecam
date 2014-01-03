@@ -177,3 +177,23 @@ class GuiSources(QtGui.QFrame):
 	def GetCamParams(self):
 		return self.pano.GetCamParams()
 
+class CalibratePopup(QtGui.QDialog):
+    def __init__(self, parent, findCorrespondences, cameraArrangement):
+		QtGui.QDialog.__init__(self, parent)
+
+		self.findCorrespondences = findCorrespondences
+		self.cameraArrangement = cameraArrangement
+
+		#Find point correspondances
+		self.findCorrespondences.StoreCalibration()
+		self.framePairs = self.findCorrespondences.Calc()
+
+		#Estimate camera directions and parameters
+		self.cameraArrangement.OptimiseCameraPositions(self.framePairs)
+
+    def paintEvent(self, e):
+        dc = QtGui.QPainter(self)
+        dc.drawLine(0, 0, 100, 100)
+        dc.drawLine(100, 0, 0, 100)
+
+
