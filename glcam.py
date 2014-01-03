@@ -4,7 +4,7 @@ All rights reserved.
 '''
 import sys, time, os, random, copy
 from PySide import QtGui, QtCore
-import guisources, guicorrespondences
+import guisources, guicorrespondences, guipanorama
 import numpy as np
 import videolive, vidpano
 
@@ -57,8 +57,12 @@ class MainWindow(QtGui.QMainWindow):
 		self.guiCorrespondences.setShown(0)
 		self.guiCorrespondences.SetDeviceList(self.guiSources.devNames)
 
+		self.guiPanorama = guipanorama.GuiPanorama(self.findCorrespondences)
+		self.guiPanorama.setShown(0)
+
 		self.mainLayout.addWidget(self.guiSources, 1)
 		self.mainLayout.addWidget(self.guiCorrespondences, 1)
+		self.mainLayout.addWidget(self.guiPanorama, 1)
 		
 		centralWidget = QtGui.QWidget()
 		centralWidget.setLayout(self.mainLayout)
@@ -72,14 +76,17 @@ class MainWindow(QtGui.QMainWindow):
 	def ViewSourcesButtonPressed(self):
 		self.guiSources.setShown(1)
 		self.guiCorrespondences.setShown(0)
+		self.guiPanorama.setShown(0)
 
 	def ViewCorrespondencesButtonPressed(self):
 		self.guiSources.setShown(0)
 		self.guiCorrespondences.setShown(1)
+		self.guiPanorama.setShown(0)
 
 	def ViewPanoramaButtonPressed(self):
 		self.guiSources.setShown(0)
 		self.guiCorrespondences.setShown(0)
+		self.guiPanorama.setShown(1)
 
 	def VideoSourceToggleEvent(self, srcId, srcStatus):
 		print "VideoSourceToggleEvent", srcId, srcStatus
@@ -91,6 +98,7 @@ class MainWindow(QtGui.QMainWindow):
 
 	def ProcessFrame(self, frame, meta, devName):
 		self.findCorrespondences.ProcessFrame(frame, meta, devName)
+		self.guiPanorama.ProcessFrame(frame, meta, devName)
 	
 	def CalibratePressed(self):
 		self.findCorrespondences.StoreCalibration()
