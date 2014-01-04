@@ -24,6 +24,8 @@
 #include <GL/glu.h>
 #include <GL/freeglut.h>
 
+int gGlutInitDone = 0;
+
 class PanoView_cl{
 public:
 	PyObject_HEAD
@@ -225,9 +227,13 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	char *arg1 = new char[9];
 	strcpy(arg1, "pano.dll");
 	char **argv = &arg1;
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
-	glutInitWindowSize(outWidth, outHeight);
+	if(!gGlutInitDone)
+	{
+		glutInit(&argc, argv);
+		glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
+		glutInitWindowSize(outWidth, outHeight);
+		gGlutInitDone = 1;
+	}
 	int glut_id = glutCreateWindow("VWGL");
 	int hideOpenGL = 1;
 	if(hideOpenGL)
@@ -653,6 +659,8 @@ static PyMethodDef module_methods[] = {
 
 PyMODINIT_FUNC initpano(void)
 {
+	gGlutInitDone = 0;
+
 	PanoView_type.tp_new = PyType_GenericNew;
 
 	if(PyType_Ready(&PanoView_type) < 0)
