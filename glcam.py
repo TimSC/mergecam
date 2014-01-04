@@ -111,7 +111,9 @@ class MainWindow(QtGui.QMainWindow):
 		self.calibratePopup = guisources.CalibratePopup(self, self.findCorrespondences, self.cameraArrangement)
 		self.calibratePopup.setGeometry(QtCore.QRect(100, 100, 400, 200))
 		self.calibratePopup.exec_()
+		self.guiCorrespondences.SetFramePairs(self.calibratePopup.framePairs)
 		self.guiCorrespondences.UpdateFrames()
+		self.guiCorrespondences.SelectionChanged()
 
 		#Read back results
 		self.cameraArrangement = self.calibratePopup.cameraArrangement

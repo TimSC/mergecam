@@ -1,6 +1,8 @@
 from PySide import QtGui, QtCore
 
 class FrameView(QtGui.QWidget):
+	selectionChanged = QtCore.Signal()
+
 	def __init__(self, correspondenceModel):
 		QtGui.QWidget.__init__(self)
 
@@ -17,6 +19,7 @@ class FrameView(QtGui.QWidget):
 		self.scene = QtGui.QGraphicsScene()
 		self.view = QtGui.QGraphicsView(self.scene)
 		self.layout.addWidget(self.view, 1)
+		self.controlPoints = []
 
 	def FindFriendlyName(self, devId):
 		print "search", devId
@@ -34,16 +37,18 @@ class FrameView(QtGui.QWidget):
 			self.frameCombo.addItem(name)
 
 	def FrameChanged(self, ind = None):
-		if ind is None:
-			ind = self.frameCombo.currentIndex()
+		self.selectionChanged.emit()
+		self.DrawFrame()
 
+	def DrawFrame(self):
+		print "draw"
+		ind = self.frameCombo.currentIndex()
 		if len(self.correspondenceModel.calibrationFrames) < 1: return
 		if ind < 0 or ind >= len(self.correspondenceModel.calibrationFrames[0]): return
 
-		self.DrawScene(self.correspondenceModel.calibrationFrames[0][ind], 
-			self.correspondenceModel.calibrationMeta[0][ind])
+		frame = self.correspondenceModel.calibrationFrames[0][ind]
+		meta = self.correspondenceModel.calibrationMeta[0][ind]
 
-	def DrawScene(self, frame, meta):
 		self.scene.clear()
 		im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
 		pix = QtGui.QPixmap(im2)
@@ -51,12 +56,28 @@ class FrameView(QtGui.QWidget):
 		gpm = QtGui.QGraphicsPixmapItem(pix)
 		self.scene.addItem(gpm)
 
+		pen = QtGui.QPen(QtCore.Qt.white, 1.0, QtCore.Qt.SolidLine);
+		for pt in self.controlPoints:
+			self.scene.addLine(pt[0]-5., pt[1], pt[0]+5., pt[1], pen)
+			self.scene.addLine(pt[0], pt[1]-5., pt[0], pt[1]+5., pen)
+
+	def CurrentIndex(self):
+		return self.frameCombo.currentIndex()
+
+	def CurrentText(self):
+		return self.frameCombo.currentText()
+
+	def SetControlPoints(self, pts):
+		self.controlPoints = pts
+		self.DrawFrame()
+
 class GuiCorrespondences(QtGui.QFrame):
 
 	def __init__(self, correspondenceModel):
 		QtGui.QFrame.__init__(self)
 
 		self.correspondenceModel = correspondenceModel
+		self.framePairs = None
 
 		self.layout = QtGui.QHBoxLayout()
 		self.mainSplitter = QtGui.QSplitter(QtCore.Qt.Vertical)
@@ -76,6 +97,9 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.leftView = FrameView(self.correspondenceModel)
 		self.rightView = FrameView(self.correspondenceModel)
 
+		self.leftView.selectionChanged.connect(self.SelectionChanged)
+		self.rightView.selectionChanged.connect(self.SelectionChanged)
+
 		self.splitLayout.addWidget(self.leftView)
 		self.splitLayout.addWidget(self.rightView)
 		self.tableLayout.addWidget(QtGui.QLabel("Table"))
@@ -92,6 +116,29 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.UpdateActiveDevices()
 
 	def UpdateFrames(self):
-		self.leftView.FrameChanged()
-		self.rightView.FrameChanged()
+		self.leftView.DrawFrame()
+		self.rightView.DrawFrame()
+
+	def SetFramePairs(self, framePairs):
+		self.framePairs = framePairs
+		
+	def SelectionChanged(self):
+		indLeft = self.leftView.CurrentIndex()
+		indRight = self.rightView.CurrentIndex()
+
+		if self.framePairs is None or len(self.framePairs[0]) < 1: return
+		firstSet = self.framePairs[0]
+
+		for pair in firstSet:
+			pairInd1 = pair[1]
+			pairInd2 = pair[2]
+
+			if pairInd1 == indLeft and pairInd2 == indRight:
+				self.leftView.SetControlPoints(pair[3])
+				self.rightView.SetControlPoints(pair[4])
+
+			if pairInd1 == indRight and pairInd2 == indLeft:
+				self.leftView.SetControlPoints(pair[4])
+				self.rightView.SetControlPoints(pair[3])
+
 
