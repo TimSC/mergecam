@@ -178,10 +178,13 @@ class GuiSources(QtGui.QFrame):
 	def GetCamParams(self):
 		return self.pano.GetCamParams()
 
-def WorkerProcess(cameraArrangement, framePairs, childPipe):
-	cameraArrangement.OptimiseCameraPositions(framePairs)
+#def CalibrateProgressCallback(progress):
+#	print "progress", progress
+
+def WorkerProcess(cameraArrangement, framePairs, childResultPipe, childProgressPipe):
+	cameraArrangement.OptimiseCameraPositions(framePairs, childProgressPipe.send)
 	cameraArrangement.PrepareForPickle()
-	childPipe.send(cameraArrangement)
+	childResultPipe.send(cameraArrangement)
 
 class CalibratePopup(QtGui.QDialog):
 	def __init__(self, parent, findCorrespondences, cameraArrangement):
@@ -190,14 +193,26 @@ class CalibratePopup(QtGui.QDialog):
 		self.findCorrespondences = findCorrespondences
 		self.cameraArrangement = cameraArrangement
 
+		#Create gui
+		self.layout = QtGui.QVBoxLayout()
+		self.setLayout(self.layout)
+
+		self.layout.addWidget(QtGui.QLabel("Calibration progress"))
+
+		self.progressBar = QtGui.QProgressBar()
+		self.progressBar.setRange(0., 100.)
+		self.progressBar.setValue(0.)
+		self.layout.addWidget(self.progressBar)
+
 		#Find point correspondances
 		self.findCorrespondences.StoreCalibration()
 		self.framePairs = self.findCorrespondences.Calc()
 
 		#Estimate camera directions and parameters
-		self.pipe, childPipe = multiprocessing.Pipe()
+		self.resultPipe, childResultPipe = multiprocessing.Pipe()
+		self.progressPipe, childProgressPipe = multiprocessing.Pipe()
 		self.process = multiprocessing.Process(target=WorkerProcess, args=(self.cameraArrangement, 
-			self.framePairs, childPipe))
+			self.framePairs, childResultPipe, childProgressPipe))
 		self.process.start()
 		#self.cameraArrangement.OptimiseCameraPositions(self.framePairs)
 		
@@ -206,9 +221,16 @@ class CalibratePopup(QtGui.QDialog):
 		self.timer.start(10)
 
 	def IdleEvent(self):
-		if not self.pipe.poll(0.01):
+		if self.progressPipe.poll(0.01):
+			progress = self.progressPipe.recv()
+			print "progress", progress
+			self.progressBar.setValue(progress * 100.)
+
+		if not self.resultPipe.poll(0.01):
 			return
-		self.cameraArrangement = self.pipe.recv()
+		self.cameraArrangement = self.resultPipe.recv()
 		print "Data received from worker", self.cameraArrangement
 		print self.cameraArrangement.addedPhotos
+
+		self.close()
 

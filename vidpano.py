@@ -136,16 +136,27 @@ class CameraArrangement(object):
 		self.addedPhotos = {}
 		self.camParams = None
 
-	def AddAnchorPhoto(self, photoId, camModel):
+	def AddAnchorPhoto(self, photoId, camModel,
+		progressThisIter, progressIterPlusOne, progressCallback):
+
 		print "AddAnchorPhoto", photoId
 		self.addedPhotos[photoId] = camModel
 
-	def AddAndOptimiseFit(self, photoId, camModel, imgPairs, optRotation=False):
+	def AddAndOptimiseFit(self, photoId, camModel, imgPairs, 
+		progressThisIter, progressIterPlusOne, progressCallback, 
+		optRotation=False):
+
 		print "OptimiseFit", photoId
 		self.addedPhotos[photoId] = camModel
 
 		x0 = [camModel.cLat, camModel.cLon, camModel.rot, 0., 0., 0., 0., 0.]
 		for dof in range(1,len(x0)+1):
+			#Progress calc
+			if progressCallback is not None:
+				progress = progressThisIter + (float(dof) / len(x0)+1) * (progressIterPlusOne - progressThisIter)
+				progressCallback(progress)
+
+			#Optimise Lens Model
 			ret = optimize.fmin_bfgs(self.Eval, x0[:dof], args=(photoId, imgPairs), gtol = 10., full_output=1)
 			print ret
 			if len(ret[0].shape) == 0:
@@ -212,10 +223,18 @@ class CameraArrangement(object):
 	def SetCamParams(self, camParams):
 		self.camParams = camParams
 
-	def OptimiseCameraPositions(self, framePairs):
+	def OptimiseCameraPositions(self, framePairs, progressCallback = None):
 
 		if self.camParams is None:
 			return None
+
+		#Generate simple list of cam ids
+		photoIds = set()
+		for frameSet in framePairs:
+			for pair in frameSet:
+				photoIds.add(pair[1])
+				photoIds.add(pair[2])
+		print photoIds
 
 		camProjFactory = None
 		if self.camParams['proj'] == "rectilinear":
@@ -229,14 +248,20 @@ class CameraArrangement(object):
 		#Calibrate cameras
 		#self.cameraArrangement = CameraArrangement(self.framePairs[0])
 		#visobj = visualise.VisualiseArrangement()
-		bestPair = 1	
+		bestPair = 1
 
-		while bestPair is not None:# and len(self.cameraArrangement.addedPhotos) < 5:
+		while bestPair is not None:
 			firstFrameSetPairs = framePairs[0]
 			bestPair, newInd1, newInd2 = SelectPhotoToAdd(firstFrameSetPairs, self)
 			print "SelectPhotoToAdd", bestPair, newInd1, newInd2
 			if bestPair is None: continue
 			print bestPair[:3], newInd1, newInd2
+
+			#Update progress calc
+			progressThisIter = float(len(self.addedPhotos)) / len(photoIds)
+			progressIterPlusOne = float(len(self.addedPhotos)+1) / len(photoIds)
+			if progressCallback is not None:
+				progressCallback(progressThisIter)
 		
 			photosToAdd = []
 			photosMetaToAdd = []
@@ -256,7 +281,8 @@ class CameraArrangement(object):
 					newCam = camProjFactory()
 					newCam.imgW = photosMetaToAdd[0][1]
 					newCam.imgH = photosMetaToAdd[0][0]
-					self.AddAnchorPhoto(photosToAdd[0], newCam)
+					self.AddAnchorPhoto(photosToAdd[0], newCam, 
+						progressThisIter, progressIterPlusOne, progressCallback)
 					photosToAdd.pop(0)
 					photosMetaToAdd.pop(0)
 				for pid, pmeta in zip(photosToAdd, photosMetaToAdd):
@@ -264,7 +290,8 @@ class CameraArrangement(object):
 					newCam = camProjFactory()
 					newCam.imgW = pmeta[1]
 					newCam.imgH = pmeta[0]				
-					self.AddAndOptimiseFit(pid, newCam, firstFrameSetPairs, optRotation = True)
+					self.AddAndOptimiseFit(pid, newCam, firstFrameSetPairs, 
+						progressThisIter, progressIterPlusOne, progressCallback, optRotation = True)
 
 			for photoId in self.addedPhotos:
 				photo = self.addedPhotos[photoId]
