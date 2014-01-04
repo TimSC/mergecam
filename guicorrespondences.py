@@ -12,6 +12,11 @@ class FrameView(QtGui.QWidget):
 
 		self.frameCombo = QtGui.QComboBox()
 		self.layout.addWidget(self.frameCombo)
+		QtCore.QObject.connect(self.frameCombo, QtCore.SIGNAL('activated(int)'), self.FrameChanged)
+
+		self.scene = QtGui.QGraphicsScene()
+		self.view = QtGui.QGraphicsView(self.scene)
+		self.layout.addWidget(self.view, 1)
 
 	def FindFriendlyName(self, devId):
 		print "search", devId
@@ -26,6 +31,22 @@ class FrameView(QtGui.QWidget):
 		for devId in self.correspondenceModel.devInputs:
 			name = self.FindFriendlyName(devId)
 			self.frameCombo.addItem(name)
+
+	def FrameChanged(self, ind):
+		if len(self.correspondenceModel.calibrationFrames) < 1: return
+		if ind < 0 or ind >= len(self.correspondenceModel.calibrationFrames[0]): return
+		print ind, len(self.correspondenceModel.calibrationFrames)
+
+		self.DrawScene(self.correspondenceModel.calibrationFrames[0][ind], 
+			self.correspondenceModel.calibrationMeta[0][ind])
+
+	def DrawScene(self, frame, meta):
+		self.scene.clear()
+		im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
+		pix = QtGui.QPixmap(im2)
+
+		gpm = QtGui.QGraphicsPixmapItem(pix)
+		self.scene.addItem(gpm)
 
 class GuiCorrespondences(QtGui.QFrame):
 
