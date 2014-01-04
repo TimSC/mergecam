@@ -151,8 +151,11 @@ class CameraArrangement(object):
 
 		print "OptimiseFit", photoId
 		self.addedPhotos[photoId] = camModel
+		camModelParams = camModel.GetParams()
 
-		x0 = [camModel.cLat, camModel.cLon, camModel.rot, 0., 0., 0., 0., 0.]
+		x0 = [camModel.cLat, camModel.cLon, camModel.rot, camModelParams['a'], camModelParams['b'], 
+			camModelParams['c'], camModelParams['d'], camModelParams['e']]
+		print "x0", x0
 		for dof in range(1,len(x0)+1):
 			#Progress calc
 			if progressCallback is not None:
@@ -308,6 +311,17 @@ class CameraArrangement(object):
 			if 0:
 				vis = visobj.Vis(self.calibrationFrames[0], self.calibrationMeta[0], self.framePairs[0], self.cameraArrangement)
 				vis.save("vis{0}.png".format(len(self.cameraArrangement.addedPhotos)))
+
+		print "Store camera parameters"
+		firstCam = self.addedPhotos.values()[0]
+		firstCamParams = firstCam.GetParams()
+		projLens = "unknown"
+		if isinstance(firstCam, proj.Rectilinear):
+			projLens = "rectilinear"
+		if isinstance(firstCam, proj.FishEye):
+			projLens = "fisheye"
+		firstCamParams['proj'] = projLens
+		self.camParams = firstCamParams
 
 	def PrepareForPickle(self):
 		for proj in self.addedPhotos.values():
@@ -566,6 +580,10 @@ class FindCorrespondences(object):
 
 		#Update GUI
 		#self.calibrationCount.setText(str(len(self.calibrationFrames)))
+
+	def Clear(self):
+		self.calibrationFrames = []
+		self.calibrationMeta = []
 
 	def Calc(self):
 		self.keypDescs = []
