@@ -41,7 +41,6 @@ class FrameView(QtGui.QWidget):
 		self.DrawFrame()
 
 	def DrawFrame(self):
-		print "draw"
 		ind = self.frameCombo.currentIndex()
 		if len(self.correspondenceModel.calibrationFrames) < 1: return
 		if ind < 0 or ind >= len(self.correspondenceModel.calibrationFrames[0]): return
@@ -129,6 +128,7 @@ class GuiCorrespondences(QtGui.QFrame):
 		if self.framePairs is None or len(self.framePairs[0]) < 1: return
 		firstSet = self.framePairs[0]
 
+		found = 0
 		for pair in firstSet:
 			pairInd1 = pair[1]
 			pairInd2 = pair[2]
@@ -136,9 +136,14 @@ class GuiCorrespondences(QtGui.QFrame):
 			if pairInd1 == indLeft and pairInd2 == indRight:
 				self.leftView.SetControlPoints(pair[3])
 				self.rightView.SetControlPoints(pair[4])
+				found = 1
 
 			if pairInd1 == indRight and pairInd2 == indLeft:
 				self.leftView.SetControlPoints(pair[4])
 				self.rightView.SetControlPoints(pair[3])
+				found = 1
 
+		if not found:
+			self.leftView.SetControlPoints([])
+			self.rightView.SetControlPoints([])
 
