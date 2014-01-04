@@ -190,6 +190,7 @@ def WorkerProcess(cameraArrangement, framePairs, childResultPipe, childProgressP
 	childResultPipe.send(cameraArrangement)
 
 class CalibratePopup(QtGui.QDialog):
+
 	def __init__(self, parent, findCorrespondences, cameraArrangement):
 		QtGui.QDialog.__init__(self, parent)
 
@@ -208,8 +209,10 @@ class CalibratePopup(QtGui.QDialog):
 		self.progressBar.setValue(0.)
 		self.layout.addWidget(self.progressBar)
 
-		#Find point correspondances
+		#Store calibration frames
 		self.findCorrespondences.StoreCalibration()
+
+		#Find point correspondances
 		self.framePairs = self.findCorrespondences.Calc()
 
 		#Estimate camera directions and parameters

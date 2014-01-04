@@ -28,14 +28,17 @@ class FrameView(QtGui.QWidget):
 
 	def RefreshList(self):
 		self.frameCombo.clear()
-		for devId in self.correspondenceModel.devInputs:
+		devList = self.correspondenceModel.devInputs
+		for devId in devList:
 			name = self.FindFriendlyName(devId)
 			self.frameCombo.addItem(name)
 
-	def FrameChanged(self, ind):
+	def FrameChanged(self, ind = None):
+		if ind is None:
+			ind = self.frameCombo.currentIndex()
+
 		if len(self.correspondenceModel.calibrationFrames) < 1: return
 		if ind < 0 or ind >= len(self.correspondenceModel.calibrationFrames[0]): return
-		print ind, len(self.correspondenceModel.calibrationFrames)
 
 		self.DrawScene(self.correspondenceModel.calibrationFrames[0][ind], 
 			self.correspondenceModel.calibrationMeta[0][ind])
@@ -87,4 +90,8 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.leftView.deviceList = deviceList
 		self.rightView.deviceList = deviceList
 		self.UpdateActiveDevices()
+
+	def UpdateFrames(self):
+		self.leftView.FrameChanged()
+		self.rightView.FrameChanged()
 
