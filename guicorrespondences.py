@@ -78,7 +78,7 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.correspondenceModel = correspondenceModel
 		self.framePairs = None
 
-		self.layout = QtGui.QHBoxLayout()
+		self.layout = QtGui.QVBoxLayout()
 		self.mainSplitter = QtGui.QSplitter(QtCore.Qt.Vertical)
 		self.setLayout(self.layout)
 		self.layout.addWidget(self.mainSplitter)
@@ -88,11 +88,6 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.splitWidget.setLayout(self.splitLayout)
 		self.mainSplitter.addWidget(self.splitWidget)
 
-		self.tableFrame = QtGui.QFrame()
-		self.tableLayout = QtGui.QHBoxLayout()
-		self.tableFrame.setLayout(self.tableLayout)
-		self.mainSplitter.addWidget(self.tableFrame)
-
 		self.leftView = FrameView(self.correspondenceModel)
 		self.rightView = FrameView(self.correspondenceModel)
 
@@ -101,8 +96,10 @@ class GuiCorrespondences(QtGui.QFrame):
 
 		self.splitLayout.addWidget(self.leftView)
 		self.splitLayout.addWidget(self.rightView)
-		self.tableLayout.addWidget(QtGui.QLabel("Table"))
 
+		self.table = QtGui.QTableWidget(3, 4, self)
+		self.layout.addWidget(self.table)
+	
 		self.UpdateActiveDevices()
 
 	def UpdateActiveDevices(self):
@@ -136,14 +133,37 @@ class GuiCorrespondences(QtGui.QFrame):
 			if pairInd1 == indLeft and pairInd2 == indRight:
 				self.leftView.SetControlPoints(pair[3])
 				self.rightView.SetControlPoints(pair[4])
+				self.GenerateTable(pair[3], pair[4])
 				found = 1
 
 			if pairInd1 == indRight and pairInd2 == indLeft:
 				self.leftView.SetControlPoints(pair[4])
 				self.rightView.SetControlPoints(pair[3])
+				self.GenerateTable(pair[4], pair[3])
 				found = 1
 
 		if not found:
 			self.leftView.SetControlPoints([])
 			self.rightView.SetControlPoints([])
+			self.GenerateTable([], [])
+		
+	def GenerateTable(self, leftPts, rightPts):
+
+		self.table.setRowCount(0)
+
+		for lpt, rpt in zip(leftPts, rightPts):
+			row = self.table.rowCount()
+			self.table.setRowCount(row+1)
+
+			newItem = QtGui.QTableWidgetItem(str(lpt[0]))
+			self.table.setItem(row, 0, newItem)
+
+			newItem = QtGui.QTableWidgetItem(str(lpt[1]))
+			self.table.setItem(row, 1, newItem)
+
+			newItem = QtGui.QTableWidgetItem(str(rpt[0]))
+			self.table.setItem(row, 2, newItem)
+
+			newItem = QtGui.QTableWidgetItem(str(rpt[1]))
+			self.table.setItem(row, 3, newItem)
 
