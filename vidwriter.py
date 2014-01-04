@@ -16,13 +16,10 @@ class VideoWriterWidget(QtGui.QFrame):
 		self.toolbar = QtGui.QHBoxLayout()
 		self.widgetLayout.addLayout(self.toolbar)
 
-		self.checkbox = QtGui.QCheckBox()
-		self.toolbar.addWidget(self.checkbox, 0)
-
 		label = QtGui.QLabel("Video Writer")
 		self.toolbar.addWidget(label, 1)
 
-		self.onButton = QtGui.QPushButton("On")
+		self.onButton = QtGui.QPushButton("Record")
 		self.toolbar.addWidget(self.onButton, 0)
 		self.onButton.setCheckable(True)
 		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedOn)
@@ -40,12 +37,12 @@ class VideoWriterWidget(QtGui.QFrame):
 		if self.devOn:
 			#Switch off
 			self.devOn = False
-			self.filenameEntry.setReadOnly(False)
+			self.filenameEntry.setEnabled(True)
 			self.outFilesManager.close(str(self.filenameEntry.text()))
 		else:
 			#Switch true
 			self.devOn = True
-			self.filenameEntry.setReadOnly(True)
+			self.filenameEntry.setEnabled(False)
 			try:
 				fina = str(self.filenameEntry.text())
 				self.outFilesManager.open(fina, 800, 600)
@@ -87,6 +84,4 @@ class VideoWriterWidget(QtGui.QFrame):
 				self.emit(QtCore.SIGNAL('webcam_frame'), data[0], data[1], self.devId)
 				self.UpdatePreview(data[0], data[1])
 
-	def IsChecked(self):
-		return self.checkbox.isChecked()
 

@@ -2,9 +2,8 @@
 from PySide import QtGui, QtCore
 
 class VideoOutWidget(QtGui.QFrame):
-	def __init__(self, devId, videoOutManager):
+	def __init__(self, videoOutManager):
 		QtGui.QFrame.__init__(self)
-		self.devId = devId
 		self.devOn = False
 		self.videoOutManager = videoOutManager
 
@@ -15,13 +14,12 @@ class VideoOutWidget(QtGui.QFrame):
 		self.toolbar = QtGui.QHBoxLayout()
 		self.widgetLayout.addLayout(self.toolbar)
 
-		self.checkbox = QtGui.QCheckBox()
-		self.toolbar.addWidget(self.checkbox, 0)
+		self.devCombo = QtGui.QComboBox()
+		self.toolbar.addWidget(self.devCombo, 1)
+		for dev in self.videoOutManager.list_devices():
+			self.devCombo.addItem(dev)
 
-		label = QtGui.QLabel(devId)
-		self.toolbar.addWidget(label, 1)
-
-		self.onButton = QtGui.QPushButton("On")
+		self.onButton = QtGui.QPushButton("Transmit")
 		self.toolbar.addWidget(self.onButton, 0)
 		self.onButton.setCheckable(True)
 		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedOn)
@@ -35,9 +33,12 @@ class VideoOutWidget(QtGui.QFrame):
 
 		if self.devOn:
 			self.devOn = False
+			self.devCombo.setEnabled(True)
 			self.videoOutManager.close(self.devId)
 		else:
 			self.devOn = True
+			self.devId = self.devCombo.currentText()
+			self.devCombo.setEnabled(False)
 			self.videoOutManager.open(self.devId, "YUYV", 640, 480)
 
 			if self.standbyGraphic is None:
@@ -75,5 +76,3 @@ class VideoOutWidget(QtGui.QFrame):
 				self.emit(QtCore.SIGNAL('webcam_frame'), data[0], data[1], self.devId)
 				self.UpdatePreview(data[0], data[1])
 
-	def IsChecked(self):
-		return self.checkbox.isChecked()

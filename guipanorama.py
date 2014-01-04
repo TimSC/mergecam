@@ -27,7 +27,7 @@ class GuiPanorama(QtGui.QFrame):
 		self.outputBar = QtGui.QHBoxLayout()
 		self.layout.addLayout(self.outputBar)
 
-		self.vidOutStreamWidget = vidoutput.VideoOutWidget("/dev/video0", self.outStreamsManager)
+		self.vidOutStreamWidget = vidoutput.VideoOutWidget(self.outStreamsManager)
 		self.outputBar.addWidget(self.vidOutStreamWidget)
 		
 		self.vidOutFileWidget = vidwriter.VideoWriterWidget(self.outFilesManager)
