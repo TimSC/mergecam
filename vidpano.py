@@ -345,9 +345,9 @@ def GetStrongestLinkForPhotoId(imgPairs, photoId):
 	return bestPair, bestScore
 
 
-### Controlling widget
+### Lens parameter gui widget
 
-class PanoWidget(QtGui.QFrame):
+class LensParamsWidget(QtGui.QFrame):
 
 	calibratePressed = QtCore.Signal()
 	cameraParamsChanged = QtCore.Signal(dict)
@@ -508,6 +508,17 @@ class PanoWidget(QtGui.QFrame):
 
 		camParams = {"proj": selectedProj.lower(), "hfov": vfov, "a": a, "b": b, "c": c, "d": d, "e": e}
 		return camParams
+
+	def SetCamParams(self, params):
+		self.lensA.setText(unicode(params['a']))
+		self.lensB.setText(unicode(params['b']))
+		self.lensC.setText(unicode(params['c']))
+		self.lensD.setText(unicode(params['d']))
+		self.lensE.setText(unicode(params['e']))
+
+		ind = self.projectionType.findText(params['proj'].capitalize())
+		if ind >= 0:
+			self.projectionType.setCurrentIndex(ind)
 
 	def CameraParamsChanged(self):
 		self.cameraParamsChanged.emit(self.GetCamParams())

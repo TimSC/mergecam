@@ -46,7 +46,7 @@ class GuiSources(QtGui.QFrame):
 
 		self.selectInputsLayout.addLayout(self.sourcesColumn)
 		
-		self.pano = vidpano.PanoWidget()
+		self.pano = vidpano.LensParamsWidget()
 		self.pano.calibratePressed.connect(self.ClickedCalibrate)
 		self.pano.cameraParamsChanged.connect(self.CameraParamsChanged)
 		self.selectInputsLayout.addWidget(self.pano, 1)
@@ -177,6 +177,9 @@ class GuiSources(QtGui.QFrame):
 		
 	def GetCamParams(self):
 		return self.pano.GetCamParams()
+	
+	def SetCamParams(self, params):
+		self.pano.SetCamParams(params)
 
 #def CalibrateProgressCallback(progress):
 #	print "progress", progress
@@ -239,4 +242,5 @@ class CalibratePopup(QtGui.QDialog):
 	def closeEvent(self, event):
 		if not self.done:
 			event.ignore()
+
 

@@ -119,6 +119,20 @@ class MainWindow(QtGui.QMainWindow):
 
 		self.guiPanorama.SetVisObject(visObj)
 
+		#Update gui with camera parameters
+		if len(self.cameraArrangement.addedPhotos) > 0:
+			firstCam = self.cameraArrangement.addedPhotos.values()[0]
+			firstCamParams = firstCam.GetParams()
+			
+			projLens = "unknown"
+			if isinstance(firstCam, proj.Rectilinear):
+				projLens = "rectilinear"
+			if isinstance(firstCam, proj.FishEye):
+				projLens = "fisheye"
+
+			firstCamParams['proj'] = projLens
+			self.guiSources.SetCamParams(firstCamParams)
+
 	def DeviceListChanged(self, deviceList):
 		print "DeviceListChanged"
 		self.findCorrespondences.SetDeviceList(deviceList)
