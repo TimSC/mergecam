@@ -1,5 +1,5 @@
 from PySide import QtGui, QtCore
-import time
+import time, vidoutput, vidwriter, videolive
 
 class GuiPanorama(QtGui.QFrame):
 
@@ -13,12 +13,25 @@ class GuiPanorama(QtGui.QFrame):
 		self.currentMeta = {}
 		self.visobj = None
 
-		self.layout = QtGui.QHBoxLayout()
+		self.outStreamsManager = videolive.Video_out_stream_manager()
+		self.outFilesManager = videolive.Video_out_file_manager()
+
+		self.layout = QtGui.QVBoxLayout()
 		self.setLayout(self.layout)
 
 		self.scene = QtGui.QGraphicsScene()
 		self.view = QtGui.QGraphicsView(self.scene)
-		self.layout.addWidget(self.view)
+		self.layout.addWidget(self.view, 1)
+
+		#Output bar
+		self.outputBar = QtGui.QHBoxLayout()
+		self.layout.addLayout(self.outputBar)
+
+		self.vidOutStreamWidget = vidoutput.VideoOutWidget("/dev/video0", self.outStreamsManager)
+		self.outputBar.addWidget(self.vidOutStreamWidget)
+		
+		self.vidOutStreamWidget = vidwriter.VideoWriterWidget(self.outFilesManager)
+		self.outputBar.addWidget(self.vidOutStreamWidget)
 		
 	def SetFrame(self, frame, meta):
 
