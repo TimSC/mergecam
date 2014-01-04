@@ -520,6 +520,10 @@ class LensParamsWidget(QtGui.QFrame):
 		if ind >= 0:
 			self.projectionType.setCurrentIndex(ind)
 
+		ind = self.presetCombo.findText("Custom")
+		if ind >= 0:
+			self.presetCombo.setCurrentIndex(ind)
+
 	def CameraParamsChanged(self):
 		self.cameraParamsChanged.emit(self.GetCamParams())
 
