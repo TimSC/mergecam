@@ -11,7 +11,7 @@ class GuiPanorama(QtGui.QFrame):
 		self.cameraArrangement = cameraArrangement
 		self.currentFrame = {}
 		self.currentMeta = {}
-		self.visobj = None
+		self.visObj = None
 
 		self.outStreamsManager = videolive.Video_out_stream_manager()
 		self.outFilesManager = videolive.Video_out_file_manager()
@@ -30,8 +30,8 @@ class GuiPanorama(QtGui.QFrame):
 		self.vidOutStreamWidget = vidoutput.VideoOutWidget("/dev/video0", self.outStreamsManager)
 		self.outputBar.addWidget(self.vidOutStreamWidget)
 		
-		self.vidOutStreamWidget = vidwriter.VideoWriterWidget(self.outFilesManager)
-		self.outputBar.addWidget(self.vidOutStreamWidget)
+		self.vidOutFileWidget = vidwriter.VideoWriterWidget(self.outFilesManager)
+		self.outputBar.addWidget(self.vidOutFileWidget)
 		
 	def SetFrame(self, frame, meta):
 
@@ -45,37 +45,42 @@ class GuiPanorama(QtGui.QFrame):
 			self.scene.addItem(gpm)
 
 	def SetVisObject(self, visobj):
-		self.visobj = visobj
+		self.visObj = visobj
+
+	def FrameGenerated(self, frame, meta):
+		self.SetFrame(frame, meta)
+		self.vidOutStreamWidget.SendFrame(frame, meta, "pano")
+		self.vidOutFileWidget.SendFrame(frame, meta, "pano")
 
 	def ProcessFrame(self, frame, meta, devName):
 		if devName not in self.correspondenceModel.devInputs: return
 		self.currentFrame[devName] = frame
 		self.currentMeta[devName] = meta
 
-		if self.visobj is None: return
+		if self.visObj is None: return
 
 		if devName in self.framesRcvSinceOutput:
 			#We have received this frame again; it is time to write output
 
 			if self.cameraArrangement is not None:
 				if 0:
-					visobj = visualise.VisualiseArrangement()
-					vis = visobj.Vis(self.currentFrame.values(), self.currentMeta.values(), self.framePairs[0], self.cameraArrangement)
+					visObj = visualise.VisualiseArrangement()
+					vis = visObj.Vis(self.currentFrame.values(), self.currentMeta.values(), self.framePairs[0], self.cameraArrangement)
 					metaOut = {'width': vis.size[0], 'height': vis.size[1], 'format': 'RGB24'}
 					self.outBuffer.append([vis.tostring(), metaOut])
 				if 1:
 					#print len(self.currentFrame), self.currentMeta
 					startTime = time.time()
-					visPixOut, visMetaOut = self.visobj.Vis(self.currentFrame.values(), self.currentMeta.values())
+					visPixOut, visMetaOut = self.visObj.Vis(self.currentFrame.values(), self.currentMeta.values())
 					print "Generated panorama in",time.time()-startTime,"sec"
-					#self.visobj.Vis(self.currentFrame.values(), self.currentMeta.values())
+					#self.visObj.Vis(self.currentFrame.values(), self.currentMeta.values())
 
 					#visPixOut = bytearray([128 for i in range(800 * 600 * 3)])
 					#visMetaOut = {"height": 600, "width": 800, "format": "RGB24"}
 					
 					#print len(visPixOut), visMetaOut
 					#self.outBuffer.append([bytearray(visPixOut), visMetaOut])
-					self.SetFrame(bytearray(visPixOut), visMetaOut)
+					self.FrameGenerated(bytearray(visPixOut), visMetaOut)
 
 			self.framesRcvSinceOutput = set()
 
