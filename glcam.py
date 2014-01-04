@@ -103,6 +103,9 @@ class MainWindow(QtGui.QMainWindow):
 		self.guiPanorama.ProcessFrame(frame, meta, devName)
 	
 	def CalibratePressed(self):
+		#Clear old calibration
+		self.cameraArrangement.Clear()
+
 		#Estimate correspondences and camera positions
 		self.calibratePopup = guisources.CalibratePopup(self, self.findCorrespondences, self.cameraArrangement)
 		self.calibratePopup.setGeometry(QtCore.QRect(100, 100, 400, 200))

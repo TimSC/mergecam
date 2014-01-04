@@ -139,10 +139,6 @@ class BaseCam(object):
 		self.correctionFunc = InvertableFunc()
 		self.paramsChanged = True
 
-	def GetParams(self):
-		return {'fov': self.hfov, 'a': self._a, 'b': self._b, 'c': self._c, 'd': self.d, 'e': self.e, 
-			'cLat': self.cLat, 'cLon': self.cLon, 'rot': self.rot}
-
 	def __repr__(self):
 		return "BaseCam"+str(self.GetParams())
 
@@ -166,6 +162,19 @@ class BaseCam(object):
 
 	def CoreProjFuncInv(self, R):
 		return R
+
+	def GetParams(self):
+		return {'hfov': self.hfov, 'a': self._a, 'b': self._b, 'c': self._c, 'd': self.d, 'e': self.e, 
+			'cLat': self.cLat, 'cLon': self.cLon, 'rot': self.rot}
+
+	def SetParams(self, params):
+		if 'a' in params: self._a = params['a']
+		if 'b' in params: self._b = params['b']
+		if 'c' in params: self._c = params['c']
+		if 'd' in params: self.d = params['d']
+		if 'e' in params: self.e = params['e']
+		if 'hfov' in params: self.hfov = params['hfov']
+		self.paramsChanged = True
 	
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
 		out = []

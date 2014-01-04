@@ -136,6 +136,9 @@ class CameraArrangement(object):
 		self.addedPhotos = {}
 		self.camParams = None
 
+	def Clear(self):
+		self.addedPhotos = {}
+
 	def AddAnchorPhoto(self, photoId, camModel,
 		progressThisIter, progressIterPlusOne, progressCallback):
 
@@ -239,10 +242,8 @@ class CameraArrangement(object):
 		camProjFactory = None
 		if self.camParams['proj'] == "rectilinear":
 			camProjFactory = proj.Rectilinear
-			projParams = {}
 		if self.camParams['proj'] == "fisheye":
 			camProjFactory = proj.FishEye
-			projParams = {}
 		assert camProjFactory is not None
 
 		#Calibrate cameras
@@ -279,6 +280,7 @@ class CameraArrangement(object):
 			if 1:
 				if self.NumPhotos() == 0 and len(photosToAdd) > 0:
 					newCam = camProjFactory()
+					newCam.SetParams(self.camParams)
 					newCam.imgW = photosMetaToAdd[0][1]
 					newCam.imgH = photosMetaToAdd[0][0]
 					self.AddAnchorPhoto(photosToAdd[0], newCam, 
@@ -288,6 +290,7 @@ class CameraArrangement(object):
 				for pid, pmeta in zip(photosToAdd, photosMetaToAdd):
 					#Add photos one by one to scene and optimise
 					newCam = camProjFactory()
+					newCam.SetParams(self.camParams)
 					newCam.imgW = pmeta[1]
 					newCam.imgH = pmeta[0]				
 					self.AddAndOptimiseFit(pid, newCam, firstFrameSetPairs, 
@@ -377,7 +380,12 @@ class LensParamsWidget(QtGui.QFrame):
 
 		self.presets = {"Generic Rectilinear": {"proj": "rectilinear", "hfov": 60., "a": 0., "b": 0., "c": 0., "d": 0., "e": 0.},
 			"Generic Fisheye": {"proj": "fisheye", "hfov": 120., "a": 0., "b": 0., "c": 0., "d": 0., "e": 0.},
-			"Genius Widecam 1050": {"proj": "fisheye", "hfov": 120., "a": 0.1, "b": 0.2, "c": 0.3, "d": 0.4, "e": 0.5},}
+			"Genius Widecam 1050": {"proj": "fisheye", "hfov": 120., 
+				"a": -0.0756995560702, 
+				"b": -0.0028201661539, 
+				"c": -0.00346306241764, 
+				"d": 0.00462751409686, 
+				"e": 0.},}
 
 		#Create calibration controls
 		self.presetCombo = QtGui.QComboBox()
@@ -499,14 +507,14 @@ class LensParamsWidget(QtGui.QFrame):
 		#Get projection from gui
 		selectedProj = self.projectionType.currentText()
 
-		vfov = float(self.fovEdit.text())
+		hfov = float(self.fovEdit.text())
 		a = float(self.lensA.text())
 		b = float(self.lensB.text())
 		c = float(self.lensC.text())		
 		d = float(self.lensD.text())
 		e = float(self.lensE.text())
 
-		camParams = {"proj": selectedProj.lower(), "hfov": vfov, "a": a, "b": b, "c": c, "d": d, "e": e}
+		camParams = {"proj": selectedProj.lower(), "hfov": hfov, "a": a, "b": b, "c": c, "d": d, "e": e}
 		return camParams
 
 	def SetCamParams(self, params):
