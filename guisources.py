@@ -192,6 +192,7 @@ class CalibratePopup(QtGui.QDialog):
 
 		self.findCorrespondences = findCorrespondences
 		self.cameraArrangement = cameraArrangement
+		self.done = False
 
 		#Create gui
 		self.layout = QtGui.QVBoxLayout()
@@ -232,5 +233,10 @@ class CalibratePopup(QtGui.QDialog):
 		print "Data received from worker", self.cameraArrangement
 		print self.cameraArrangement.addedPhotos
 
+		self.done = True
 		self.close()
+
+	def closeEvent(self, event):
+		if not self.done:
+			event.ignore()
 
