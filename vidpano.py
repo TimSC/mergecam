@@ -169,7 +169,7 @@ class CameraArrangement(object):
 				progressCallback(progress)
 
 			#Optimise Lens Model
-			ret = optimize.fmin_bfgs(self.Eval, x0[:dof], args=(photoId, imgPairs), gtol = 10., full_output=1)
+			ret = optimize.fmin_bfgs(self.Eval, x0[:dof], args=(photoId, imgPairs), full_output=1, epsilon = 0.01)
 			print ret
 			if len(ret[0].shape) == 0:
 				x0[0] = float(ret[0])
@@ -209,6 +209,7 @@ class CameraArrangement(object):
 			if len(vals)>7: cam.e = vals[7]
 
 		err = 0.
+		count = 0
 		for pair in imgPairs:
 			pairScore = pair[0]
 			included1 = pair[1] in self.addedPhotos
@@ -219,15 +220,22 @@ class CameraArrangement(object):
 			cam1 = self.addedPhotos[pair[1]]
 			cam2 = self.addedPhotos[pair[2]]
 
+			#for pt1, pt2 in zip(pair[3], pair[4]):
+			#	print "pt", pt1, pt2
+
 			cam1latLons = cam1.UnProj(pair[3])
 			cam2latLons = cam2.UnProj(pair[4])
 			
 			for ptcam1, ptcam2 in zip(cam1latLons, cam2latLons):
-				err += abs(ptcam1[0] - ptcam2[0])
-				err += abs(ptcam1[1] - ptcam2[1])
+				herr = abs(ptcam1[0] - ptcam2[0])
+				verr = abs(ptcam1[1] - ptcam2[1])
+				#print "err", herr, verr
+				err += herr
+				err += verr
+				count += 1
 
-		print vals, err
-		return err
+		print vals, err / count
+		return err / count
 
 	def NumPhotos(self):
 		return len(self.addedPhotos)
