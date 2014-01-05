@@ -97,8 +97,23 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.splitLayout.addWidget(self.leftView)
 		self.splitLayout.addWidget(self.rightView)
 
+		self.lowerArea = QtGui.QHBoxLayout()
+		self.lowerAreaWidget = QtGui.QWidget()
+		self.lowerAreaWidget.setLayout(self.lowerArea)
+		self.mainSplitter.addWidget(self.lowerAreaWidget)
+
+		self.lowerLeftArea = QtGui.QVBoxLayout()		
+		self.lowerArea.addLayout(self.lowerLeftArea)
+
+		self.lowerRightButtons = QtGui.QVBoxLayout()
+		self.lowerArea.addLayout(self.lowerRightButtons)
+
 		self.table = QtGui.QTableWidget(3, 4, self)
-		self.layout.addWidget(self.table)
+		self.lowerLeftArea.addWidget(self.table)
+
+		self.removeButton = QtGui.QPushButton("Remove")
+		self.lowerRightButtons.addWidget(self.removeButton)
+		self.removeButton.pressed.connect(self.RemovePressed)
 	
 		self.UpdateActiveDevices()
 
@@ -166,4 +181,8 @@ class GuiCorrespondences(QtGui.QFrame):
 
 			newItem = QtGui.QTableWidgetItem(str(rpt[1]))
 			self.table.setItem(row, 3, newItem)
+
+	def RemovePressed(self):
+		print "x"
+
 
