@@ -110,6 +110,8 @@ class GuiCorrespondences(QtGui.QFrame):
 
 		self.table = QtGui.QTableWidget(3, 4, self)
 		self.lowerLeftArea.addWidget(self.table)
+		self.table.itemSelectionChanged.connect(self.TableSelectionChanged)
+		self.table.itemChanged.connect(self.TableItemChanged)
 
 		self.removeButton = QtGui.QPushButton("Remove")
 		self.lowerRightButtons.addWidget(self.removeButton)
@@ -181,6 +183,14 @@ class GuiCorrespondences(QtGui.QFrame):
 
 			newItem = QtGui.QTableWidgetItem(str(rpt[1]))
 			self.table.setItem(row, 3, newItem)
+
+	def TableSelectionChanged(self):
+		col = self.table.currentColumn()
+		row = self.table.currentRow()
+		print "a", row, col
+
+	def TableItemChanged(self):
+		print "b"
 
 	def RemovePressed(self):
 		print "x"

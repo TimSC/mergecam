@@ -131,6 +131,12 @@ def HomographyQualityScore(hom):
 		return 1000.
 	return 1./costsum
 
+def StringToFloat(s):
+    try:
+        return float(s)
+    except ValueError:
+        return 0.
+
 class CameraArrangement(object):
 	def __init__(self):
 		self.addedPhotos = {}
@@ -521,12 +527,12 @@ class LensParamsWidget(QtGui.QFrame):
 		#Get projection from gui
 		selectedProj = self.projectionType.currentText()
 
-		hfov = float(self.fovEdit.text())
-		a = float(self.lensA.text())
-		b = float(self.lensB.text())
-		c = float(self.lensC.text())		
-		d = float(self.lensD.text())
-		e = float(self.lensE.text())
+		hfov = StringToFloat(self.fovEdit.text())
+		a = StringToFloat(self.lensA.text())
+		b = StringToFloat(self.lensB.text())
+		c = StringToFloat(self.lensC.text())		
+		d = StringToFloat(self.lensD.text())
+		e = StringToFloat(self.lensE.text())
 
 		camParams = {"proj": selectedProj.lower(), "hfov": hfov, "a": a, "b": b, "c": c, "d": d, "e": e}
 		return camParams
