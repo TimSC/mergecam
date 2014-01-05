@@ -376,6 +376,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		self->textureIds.push_back(texture);
 
+		Py_DECREF(pyImage);
+		Py_DECREF(metaObj);
+
 	}
 
 	//Create display lists of camera lens shapes
