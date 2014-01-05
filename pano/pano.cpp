@@ -284,8 +284,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	if(numSources != numMetas)
 	{
 		PyErr_Format(PyExc_RuntimeError, "Number of sources and metas must match.");
-		Py_DECREF(images);
-		Py_DECREF(metas);
  		return NULL;
 	}
 
@@ -614,16 +612,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	PyObject *out = PyTuple_New(2);
 	PyTuple_SetItem(out, 0, pxOut);
 	PyTuple_SetItem(out, 1, metaOut);
-
-	//Free source objects
-	/*for(unsigned i=0; i<srcObjs.size(); i++)
-	{
-		Py_DECREF(srcObjs[i]);
-	}
-	srcObjs.clear();*/
-
-	Py_DECREF(images);
-	Py_DECREF(metas);
 
 	//double endTime = double(clock()) / CLOCKS_PER_SEC;
 	//std::cout << "PanoView_Vis " << endTime - startTime << std::endl;
