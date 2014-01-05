@@ -1,5 +1,15 @@
 from PySide import QtGui, QtCore
 
+class MyQGraphicsScene(QtGui.QGraphicsScene):
+	mousePress = QtCore.Signal(list)
+
+	def __init__(self):
+		QtGui.QGraphicsScene.__init__(self)
+
+	def mousePressEvent(self, event):
+		scenePos = event.scenePos()
+		self.mousePress.emit([scenePos.x(), scenePos.y()])
+
 class FrameView(QtGui.QWidget):
 	selectionChanged = QtCore.Signal()
 
@@ -9,6 +19,7 @@ class FrameView(QtGui.QWidget):
 		self.correspondenceModel = correspondenceModel
 		self.deviceList = []
 		self.selectedPointIndex = []
+		self.clickedPoint = None
 
 		self.layout = QtGui.QVBoxLayout()
 		self.setLayout(self.layout)
@@ -17,7 +28,8 @@ class FrameView(QtGui.QWidget):
 		self.layout.addWidget(self.frameCombo)
 		QtCore.QObject.connect(self.frameCombo, QtCore.SIGNAL('activated(int)'), self.FrameChanged)
 
-		self.scene = QtGui.QGraphicsScene()
+		self.scene = MyQGraphicsScene()
+		self.scene.mousePress.connect(self.MousePressEvent)
 		self.view = QtGui.QGraphicsView(self.scene)
 		self.layout.addWidget(self.view, 1)
 		self.controlPoints = []
@@ -56,8 +68,8 @@ class FrameView(QtGui.QWidget):
 		gpm = QtGui.QGraphicsPixmapItem(pix)
 		self.scene.addItem(gpm)
 
-		penWhite = QtGui.QPen(QtCore.Qt.white, 1.0, QtCore.Qt.SolidLine);
-		penRed = QtGui.QPen(QtCore.Qt.red, 1.0, QtCore.Qt.SolidLine);
+		penWhite = QtGui.QPen(QtCore.Qt.white, 1.0, QtCore.Qt.SolidLine)
+		penRed = QtGui.QPen(QtCore.Qt.red, 1.0, QtCore.Qt.SolidLine)
 		for ptNum, pt in enumerate(self.controlPoints):
 			currentPen = penWhite
 			if self.selectedPointIndex is not None and ptNum == self.selectedPointIndex:
@@ -65,6 +77,13 @@ class FrameView(QtGui.QWidget):
 
 			self.scene.addLine(pt[0]-5., pt[1], pt[0]+5., pt[1], currentPen)
 			self.scene.addLine(pt[0], pt[1]-5., pt[0], pt[1]+5., currentPen)
+
+		if self.clickedPoint is not None:
+			penYellow = QtGui.QPen(QtCore.Qt.yellow, 1.0, QtCore.Qt.SolidLine);
+			self.scene.addLine(self.clickedPoint[0]-5., self.clickedPoint[1], 
+				self.clickedPoint[0]+5., self.clickedPoint[1], penYellow)
+			self.scene.addLine(self.clickedPoint[0], self.clickedPoint[1]-5., 
+				self.clickedPoint[0], self.clickedPoint[1]+5., penYellow)
 
 	def CurrentIndex(self):
 		return self.frameCombo.currentIndex()
@@ -81,6 +100,17 @@ class FrameView(QtGui.QWidget):
 
 	def SetSelectedPoint(self, ptInd):
 		self.selectedPointIndex = ptInd
+		self.DrawFrame()
+
+	def MousePressEvent(self, pos):
+		self.clickedPoint = pos
+		self.DrawFrame()
+
+	def GetClickedPointPos(self):
+		return self.clickedPoint
+
+	def ClearClickedPoint(self):
+		self.clickedPoint = None
 		self.DrawFrame()
 
 def StringToFloat(s):
@@ -132,6 +162,10 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.lowerLeftArea.addWidget(self.table)
 		self.table.itemSelectionChanged.connect(self.TableSelectionChanged)
 		self.table.itemChanged.connect(self.TableItemChanged)
+
+		self.addButton = QtGui.QPushButton("Add")
+		self.lowerRightButtons.addWidget(self.addButton)
+		self.addButton.pressed.connect(self.AddPressed)
 
 		self.removeButton = QtGui.QPushButton("Remove")
 		self.lowerRightButtons.addWidget(self.removeButton)
@@ -230,6 +264,7 @@ class GuiCorrespondences(QtGui.QFrame):
 
 		self.ignoreTableChanges = True
 		left, right = self.FindCurrentFramePair()
+		#print self.table.rowCount(), len(left), len(right)
 		assert(self.table.rowCount() == len(left))
 		assert(self.table.rowCount() == len(right))
 
@@ -279,6 +314,45 @@ class GuiCorrespondences(QtGui.QFrame):
 		#Refresh visualisation
 		self.leftView.SetSelectedPoint(None)
 		self.rightView.SetSelectedPoint(None)
-		self.UpdateFrames()	
+		self.leftView.ClearClickedPoint()
+		self.rightView.ClearClickedPoint()
+
+	def AddPressed(self):
+		leftPt = self.leftView.GetClickedPointPos()
+		rightPt = self.rightView.GetClickedPointPos()		
+		if leftPt is None: return
+		if rightPt is None: return
+		
+		#Insert extra row into table
+		self.ignoreTableChanges = True
+		row = self.table.rowCount()
+		self.table.setRowCount(row+1)
+
+		newItem = QtGui.QTableWidgetItem(str(leftPt[0]))
+		self.table.setItem(row, 0, newItem)
+
+		newItem = QtGui.QTableWidgetItem(str(leftPt[1]))
+		self.table.setItem(row, 1, newItem)
+
+		newItem = QtGui.QTableWidgetItem(str(rightPt[0]))
+		self.table.setItem(row, 2, newItem)
+
+		newItem = QtGui.QTableWidgetItem(str(rightPt[1]))
+		self.table.setItem(row, 3, newItem)
+		self.ignoreTableChanges = False
+
+		#Reduce size of memory struct by one
+		left, right = self.FindCurrentFramePair()
+		left = list(left) #Possibly cast from numpy array to list
+		right = list(right)
+
+		left.append(leftPt)
+		right.append(rightPt)
+
+		self.SetCurrentFramePair(left, right)
+
+		#Refresh visualisation
+		self.leftView.ClearClickedPoint()
+		self.rightView.ClearClickedPoint()
 
 
