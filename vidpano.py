@@ -641,7 +641,7 @@ class FindCorrespondences(object):
 					#print inliers1
 					#print inliers2
 
-					pairsSet.append((frac*homqual, i, i2, inliers1, inliers2, im1.shape, im2.shape, H))
+					pairsSet.append([frac*homqual, i, i2, inliers1, inliers2, im1.shape, im2.shape, H])
 
 			framePairs.append(pairsSet)
 

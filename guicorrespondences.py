@@ -162,7 +162,6 @@ class GuiCorrespondences(QtGui.QFrame):
 		if self.framePairs is None or len(self.framePairs[0]) < 1: return None, None
 		firstSet = self.framePairs[0]
 
-		found = 0
 		for pair in firstSet:
 			pairInd1 = pair[1]
 			pairInd2 = pair[2]
@@ -174,6 +173,25 @@ class GuiCorrespondences(QtGui.QFrame):
 				return pair[4], pair[3]
 		
 		return None, None
+
+	def SetCurrentFramePair(self, leftPts, rightPts):
+		indLeft = self.leftView.CurrentIndex()
+		indRight = self.rightView.CurrentIndex()
+
+		if self.framePairs is None or len(self.framePairs[0]) < 1: return
+		firstSet = self.framePairs[0]
+
+		for pair in firstSet:
+			pairInd1 = pair[1]
+			pairInd2 = pair[2]
+
+			if pairInd1 == indLeft and pairInd2 == indRight:
+				pair[3] = leftPts
+				pair[4] = rightPts
+
+			if pairInd1 == indRight and pairInd2 == indLeft:
+				pair[4] = leftPts
+				pair[3] = rightPts
 
 	def SelectionChanged(self):
 		left, right = self.FindCurrentFramePair()
@@ -212,6 +230,8 @@ class GuiCorrespondences(QtGui.QFrame):
 
 		self.ignoreTableChanges = True
 		left, right = self.FindCurrentFramePair()
+		assert(self.table.rowCount() == len(left))
+		assert(self.table.rowCount() == len(right))
 
 		for rowNum in range(self.table.rowCount()):
 
@@ -243,6 +263,22 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.CopyTableValuesToMemStruct()
 
 	def RemovePressed(self):
-		print "x"
+		#Update gui table
+		row = self.table.currentRow()
+		self.table.removeRow(row)
+
+		#Reduce size of memory struct by one
+		left, right = self.FindCurrentFramePair()
+		left = left[:-1]
+		right = right[:-1]
+		self.SetCurrentFramePair(left, right)
+
+		#Set values of memory struct
+		self.CopyTableValuesToMemStruct()
+
+		#Refresh visualisation
+		self.leftView.SetSelectedPoint(None)
+		self.rightView.SetSelectedPoint(None)
+		self.UpdateFrames()	
 
 
