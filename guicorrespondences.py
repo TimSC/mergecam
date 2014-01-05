@@ -352,7 +352,10 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.SetCurrentFramePair(left, right)
 
 		#Refresh visualisation
+		self.leftView.SetControlPoints(left)
+		self.rightView.SetControlPoints(right)
+		self.leftView.SetSelectedPoint(None)
+		self.rightView.SetSelectedPoint(None)
 		self.leftView.ClearClickedPoint()
 		self.rightView.ClearClickedPoint()
-
 
