@@ -63,8 +63,8 @@ class FrameView(QtGui.QWidget):
 			if self.selectedPointIndex is not None and ptNum == self.selectedPointIndex:
 				currentPen = penRed
 
-			self.scene.addLine(pt[0]-5., pt[1], pt[0]+5., pt[1], pen)
-			self.scene.addLine(pt[0], pt[1]-5., pt[0], pt[1]+5., pen)
+			self.scene.addLine(pt[0]-5., pt[1], pt[0]+5., pt[1], currentPen)
+			self.scene.addLine(pt[0], pt[1]-5., pt[0], pt[1]+5., currentPen)
 
 	def CurrentIndex(self):
 		return self.frameCombo.currentIndex()
@@ -79,7 +79,7 @@ class FrameView(QtGui.QWidget):
 			self.controlPoints = pts
 		self.DrawFrame()
 
-	def SetSelectedPoint(self, pt)
+	def SetSelectedPoint(self, ptInd):
 		self.selectedPointIndex = ptInd
 		self.DrawFrame()
 
@@ -235,8 +235,8 @@ class GuiCorrespondences(QtGui.QFrame):
 	def TableSelectionChanged(self):
 		col = self.table.currentColumn()
 		row = self.table.currentRow()
-		self.leftView.selectedPointIndex(row)
-		self.rightView.selectedPointIndex(row)
+		self.leftView.SetSelectedPoint(row)
+		self.rightView.SetSelectedPoint(row)
 
 	def TableItemChanged(self):
 		if self.ignoreTableChanges: return
