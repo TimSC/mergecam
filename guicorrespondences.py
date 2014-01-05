@@ -12,6 +12,7 @@ class MyQGraphicsScene(QtGui.QGraphicsScene):
 
 class FrameView(QtGui.QWidget):
 	selectionChanged = QtCore.Signal()
+	pointSelected = QtCore.Signal(int)
 
 	def __init__(self, correspondenceModel):
 		QtGui.QWidget.__init__(self)
@@ -106,6 +107,16 @@ class FrameView(QtGui.QWidget):
 		self.clickedPoint = pos
 		self.DrawFrame()
 
+		bestDist = None
+		bestInd = None
+		for ptNum, pt in enumerate(self.controlPoints):
+			dist = ((pt[0] - pos[0]) ** 2. + (pt[1] - pos[1]) ** 2.) ** 0.5
+			if bestDist is None or dist < bestDist:
+				bestDist = dist
+				bestInd = ptNum
+		self.pointSelected.emit(bestInd)
+		self.SetSelectedPoint(bestInd)
+
 	def GetClickedPointPos(self):
 		return self.clickedPoint
 
@@ -143,6 +154,8 @@ class GuiCorrespondences(QtGui.QFrame):
 
 		self.leftView.selectionChanged.connect(self.SelectionChanged)
 		self.rightView.selectionChanged.connect(self.SelectionChanged)
+		self.leftView.pointSelected.connect(self.PointSelectedViaGraphic)
+		self.rightView.pointSelected.connect(self.PointSelectedViaGraphic)
 
 		self.splitLayout.addWidget(self.leftView)
 		self.splitLayout.addWidget(self.rightView)
@@ -358,4 +371,7 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.rightView.SetSelectedPoint(None)
 		self.leftView.ClearClickedPoint()
 		self.rightView.ClearClickedPoint()
+
+	def PointSelectedViaGraphic(self, rowIndex):
+		self.table.setCurrentCell(rowIndex, 0)
 
