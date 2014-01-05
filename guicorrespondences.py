@@ -67,8 +67,17 @@ class FrameView(QtGui.QWidget):
 		return self.frameCombo.currentText()
 
 	def SetControlPoints(self, pts):
-		self.controlPoints = pts
+		if pts is None:
+			self.controlPoints = []
+		else:
+			self.controlPoints = pts
 		self.DrawFrame()
+
+def StringToFloat(s):
+	try:
+		return float(s)
+	except ValueError:
+		return 0.
 
 class GuiCorrespondences(QtGui.QFrame):
 
@@ -77,6 +86,7 @@ class GuiCorrespondences(QtGui.QFrame):
 
 		self.correspondenceModel = correspondenceModel
 		self.framePairs = None
+		self.ignoreTableChanges = False
 
 		self.layout = QtGui.QVBoxLayout()
 		self.mainSplitter = QtGui.QSplitter(QtCore.Qt.Vertical)
@@ -135,11 +145,11 @@ class GuiCorrespondences(QtGui.QFrame):
 	def SetFramePairs(self, framePairs):
 		self.framePairs = framePairs
 		
-	def SelectionChanged(self):
+	def FindCurrentFramePair(self):
 		indLeft = self.leftView.CurrentIndex()
 		indRight = self.rightView.CurrentIndex()
 
-		if self.framePairs is None or len(self.framePairs[0]) < 1: return
+		if self.framePairs is None or len(self.framePairs[0]) < 1: return None, None
 		firstSet = self.framePairs[0]
 
 		found = 0
@@ -148,24 +158,26 @@ class GuiCorrespondences(QtGui.QFrame):
 			pairInd2 = pair[2]
 
 			if pairInd1 == indLeft and pairInd2 == indRight:
-				self.leftView.SetControlPoints(pair[3])
-				self.rightView.SetControlPoints(pair[4])
-				self.GenerateTable(pair[3], pair[4])
-				found = 1
+				return pair[3], pair[4]
 
 			if pairInd1 == indRight and pairInd2 == indLeft:
-				self.leftView.SetControlPoints(pair[4])
-				self.rightView.SetControlPoints(pair[3])
-				self.GenerateTable(pair[4], pair[3])
-				found = 1
+				return pair[4], pair[3]
+		
+		return None, None
 
-		if not found:
-			self.leftView.SetControlPoints([])
-			self.rightView.SetControlPoints([])
-			self.GenerateTable([], [])
+	def SelectionChanged(self):
+		left, right = self.FindCurrentFramePair()
+
+		self.leftView.SetControlPoints(left)
+		self.rightView.SetControlPoints(right)
+		self.GenerateTable(left, right)
 		
 	def GenerateTable(self, leftPts, rightPts):
 
+		if leftPts is None: leftPts = []
+		if rightPts is None: rightPts = []
+
+		self.ignoreTableChanges = True
 		self.table.setRowCount(0)
 
 		for lpt, rpt in zip(leftPts, rightPts):
@@ -184,13 +196,41 @@ class GuiCorrespondences(QtGui.QFrame):
 			newItem = QtGui.QTableWidgetItem(str(rpt[1]))
 			self.table.setItem(row, 3, newItem)
 
+		self.ignoreTableChanges = False
+
+	def CopyTableValuesToMemStruct(self):
+
+		self.ignoreTableChanges = True
+		left, right = self.FindCurrentFramePair()
+
+		for rowNum in range(self.table.rowCount()):
+
+			cellLX = self.table.item(rowNum, 0)
+			cellLY = self.table.item(rowNum, 1)
+			if cellLX is not None and cellLY is not None:
+				cellLX = StringToFloat(cellLX.text())
+				cellLY = StringToFloat(cellLY.text())
+				left[rowNum] = (cellLX, cellLY)
+
+			cellRX = self.table.item(rowNum, 2)
+			cellRY = self.table.item(rowNum, 3)
+			if cellRX is not None and cellRY is not None:
+				cellRX = StringToFloat(cellRX.text())
+				cellRY = StringToFloat(cellRY.text())
+				right[rowNum] = (cellRX, cellRY)
+
+		self.ignoreTableChanges = False
+		self.UpdateFrames()	
+
 	def TableSelectionChanged(self):
 		col = self.table.currentColumn()
 		row = self.table.currentRow()
 		print "a", row, col
 
 	def TableItemChanged(self):
-		print "b"
+		if self.ignoreTableChanges: return
+		print "TableItemChanged"
+		self.CopyTableValuesToMemStruct()
 
 	def RemovePressed(self):
 		print "x"
