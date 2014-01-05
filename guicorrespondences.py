@@ -8,6 +8,7 @@ class FrameView(QtGui.QWidget):
 
 		self.correspondenceModel = correspondenceModel
 		self.deviceList = []
+		self.selectedPointIndex = []
 
 		self.layout = QtGui.QVBoxLayout()
 		self.setLayout(self.layout)
@@ -55,8 +56,13 @@ class FrameView(QtGui.QWidget):
 		gpm = QtGui.QGraphicsPixmapItem(pix)
 		self.scene.addItem(gpm)
 
-		pen = QtGui.QPen(QtCore.Qt.white, 1.0, QtCore.Qt.SolidLine);
-		for pt in self.controlPoints:
+		penWhite = QtGui.QPen(QtCore.Qt.white, 1.0, QtCore.Qt.SolidLine);
+		penRed = QtGui.QPen(QtCore.Qt.red, 1.0, QtCore.Qt.SolidLine);
+		for ptNum, pt in enumerate(self.controlPoints):
+			currentPen = penWhite
+			if self.selectedPointIndex is not None and ptNum == self.selectedPointIndex:
+				currentPen = penRed
+
 			self.scene.addLine(pt[0]-5., pt[1], pt[0]+5., pt[1], pen)
 			self.scene.addLine(pt[0], pt[1]-5., pt[0], pt[1]+5., pen)
 
@@ -71,6 +77,10 @@ class FrameView(QtGui.QWidget):
 			self.controlPoints = []
 		else:
 			self.controlPoints = pts
+		self.DrawFrame()
+
+	def SetSelectedPoint(self, pt)
+		self.selectedPointIndex = ptInd
 		self.DrawFrame()
 
 def StringToFloat(s):
@@ -225,11 +235,11 @@ class GuiCorrespondences(QtGui.QFrame):
 	def TableSelectionChanged(self):
 		col = self.table.currentColumn()
 		row = self.table.currentRow()
-		print "a", row, col
+		self.leftView.selectedPointIndex(row)
+		self.rightView.selectedPointIndex(row)
 
 	def TableItemChanged(self):
 		if self.ignoreTableChanges: return
-		print "TableItemChanged"
 		self.CopyTableValuesToMemStruct()
 
 	def RemovePressed(self):
