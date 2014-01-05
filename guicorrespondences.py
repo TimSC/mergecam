@@ -177,14 +177,18 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.table.itemSelectionChanged.connect(self.TableSelectionChanged)
 		self.table.itemChanged.connect(self.TableItemChanged)
 
-		self.addButton = QtGui.QPushButton("Add")
+		self.addButton = QtGui.QPushButton("Add Point")
 		self.lowerRightButtons.addWidget(self.addButton)
 		self.addButton.pressed.connect(self.AddPressed)
 
-		self.removeButton = QtGui.QPushButton("Remove")
+		self.removeButton = QtGui.QPushButton("Remove Point")
 		self.lowerRightButtons.addWidget(self.removeButton)
 		self.removeButton.pressed.connect(self.RemovePressed)
 	
+		self.removeAllButton = QtGui.QPushButton("Remove All")
+		self.lowerRightButtons.addWidget(self.removeAllButton)
+		self.removeAllButton.pressed.connect(self.RemoveAllPressed)
+
 		self.optimiseButton = QtGui.QPushButton("Optimise Cameras")
 		self.lowerRightButtons.addWidget(self.optimiseButton)
 		self.optimiseButton.pressed.connect(self.OptimisePressed)
@@ -384,4 +388,17 @@ class GuiCorrespondences(QtGui.QFrame):
 
 	def OptimisePressed(self):
 		self.optimisePressed.emit()
+
+	def RemoveAllPressed(self):
+		#Update gui
+		self.table.setRowCount(0)
+		self.leftView.SetControlPoints([])
+		self.rightView.SetControlPoints([])
+		self.leftView.SetSelectedPoint(None)
+		self.rightView.SetSelectedPoint(None)
+		self.leftView.ClearClickedPoint()
+		self.rightView.ClearClickedPoint()		
+
+		#Update mem structure
+		self.SetCurrentFramePair([], [])
 

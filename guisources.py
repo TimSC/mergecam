@@ -213,11 +213,12 @@ class CalibratePopup(QtGui.QDialog):
 		self.progressBar.setValue(0.)
 		self.layout.addWidget(self.progressBar)
 
-		#Store calibration frames
-		self.findCorrespondences.StoreCalibration()
+		if self.doCorrespondence or len(self.findCorrespondences.calibrationFrames) == 0:
+			#Store calibration frames
+			self.findCorrespondences.StoreCalibration()
 
-		#Find point correspondances
 		if self.doCorrespondence:
+			#Find point correspondances
 			self.framePairs = self.findCorrespondences.Calc()
 
 		#Estimate camera directions and parameters
