@@ -459,7 +459,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		PyObject *unprojArgs = PyTuple_New(1);
 		PyTuple_SetItem(unprojArgs, 0, imgPix);
-		Py_INCREF(imgPix);
+		//Py_INCREF(imgPix);
 
 		PyObject *worldPos = PyObject_Call(camUnProj, unprojArgs, NULL);
 		//PyObject_Print(worldPos, stdout, Py_PRINT_RAW); std::cout << std::endl;
@@ -471,7 +471,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		PyObject *projArgs = PyTuple_New(1);
 		PyTuple_SetItem(projArgs, 0, worldPos);
-		Py_INCREF(worldPos);
+		//Py_INCREF(worldPos);
 
 		PyObject *dstPos = PyObject_Call(dstProj, projArgs, NULL);
 
