@@ -53,6 +53,7 @@ class GuiPanorama(QtGui.QFrame):
 		self.vidOutFileWidget.SendFrame(frame, meta, "pano")
 
 	def ProcessFrame(self, frame, meta, devName):
+		
 		if devName not in self.correspondenceModel.devInputs: return
 		self.currentFrame[devName] = frame
 		self.currentMeta[devName] = meta
@@ -61,22 +62,18 @@ class GuiPanorama(QtGui.QFrame):
 
 		if devName in self.framesRcvSinceOutput:
 			#We have received this frame again; it is time to write output
-
+			
 			if self.cameraArrangement is not None:
-				if 0:
-					visObj = visualise.VisualiseArrangement()
-					vis = visObj.Vis(self.currentFrame.values(), self.currentMeta.values(), self.framePairs[0], self.cameraArrangement)
-					metaOut = {'width': vis.size[0], 'height': vis.size[1], 'format': 'RGB24'}
-					self.outBuffer.append([vis.tostring(), metaOut])
+
 				if 1:
 					#print len(self.currentFrame), self.currentMeta
 					startTime = time.time()
 					visPixOut, visMetaOut = self.visObj.Vis(self.currentFrame.values(), self.currentMeta.values())
 					print "Generated panorama in",time.time()-startTime,"sec"
 					#self.visObj.Vis(self.currentFrame.values(), self.currentMeta.values())
-
-					#visPixOut = bytearray([128 for i in range(800 * 600 * 3)])
-					#visMetaOut = {"height": 600, "width": 800, "format": "RGB24"}
+				if 1:
+					visPixOut = bytearray([128 for i in range(800 * 600 * 3)])
+					visMetaOut = {"height": 600, "width": 800, "format": "RGB24"}
 					
 					#print len(visPixOut), visMetaOut
 					#self.outBuffer.append([bytearray(visPixOut), visMetaOut])
