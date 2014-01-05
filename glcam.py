@@ -46,7 +46,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.guiSources = guisources.GuiSources(self.devManager)
 		self.guiSources.sourceToggled.connect(self.VideoSourceToggleEvent)
 		self.guiSources.webcamSignal.connect(self.ProcessFrame)
-		self.guiSources.calibratePressed.connect(self.CalibratePressed)
+		self.guiSources.calibratePressed.connect(self.SourcesCalibratePressed)
 		self.guiSources.deviceListChanged.connect(self.DeviceListChanged)
 		self.guiSources.cameraParamsChanged.connect(self.CameraParamsChanged)
 		self.cameraArrangement.SetCamParams(self.guiSources.GetCamParams())
@@ -58,6 +58,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.guiCorrespondences = guicorrespondences.GuiCorrespondences(self.findCorrespondences)
 		self.guiCorrespondences.setShown(0)
 		self.guiCorrespondences.SetDeviceList(self.guiSources.devNames)
+		self.guiCorrespondences.optimisePressed.connect(self.CorrespondenceOptimisePressed)
 
 		self.guiPanorama = guipanorama.GuiPanorama(self.findCorrespondences, self.cameraArrangement)
 		self.guiPanorama.setShown(0)
@@ -102,15 +103,25 @@ class MainWindow(QtGui.QMainWindow):
 		self.findCorrespondences.ProcessFrame(frame, meta, devName)
 		self.guiPanorama.ProcessFrame(frame, meta, devName)
 	
-	def CalibratePressed(self):
+	def SourcesCalibratePressed(self):
+		self.Calibration(True, True)
+
+	def CorrespondenceOptimisePressed(self):
+		self.Calibration(False, True)
+
+	def Calibration(self, doCorrespondence = True, doCameraPositions = True):
 		#Clear old calibration
 		self.cameraArrangement.Clear()
-		self.findCorrespondences.Clear()
+		if doCorrespondence:
+			self.findCorrespondences.Clear()
 
 		#Estimate correspondences and camera positions
 		self.calibratePopup = guisources.CalibratePopup(self, self.findCorrespondences, self.cameraArrangement)
 		self.calibratePopup.setGeometry(QtCore.QRect(100, 100, 400, 200))
-		self.calibratePopup.exec_()
+		self.calibratePopup.framePairs = self.guiCorrespondences.framePairs
+		self.calibratePopup.doCorrespondence = doCorrespondence
+		self.calibratePopup.Do()
+		self.calibratePopup.exec_() #Block until done
 		self.guiCorrespondences.SetFramePairs(self.calibratePopup.framePairs)
 		self.guiCorrespondences.UpdateFrames()
 		self.guiCorrespondences.SelectionChanged()

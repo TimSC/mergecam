@@ -197,6 +197,10 @@ class CalibratePopup(QtGui.QDialog):
 		self.findCorrespondences = findCorrespondences
 		self.cameraArrangement = cameraArrangement
 		self.done = False
+		self.doCorrespondence = True
+		self.framePairs = None
+
+	def Do(self):
 
 		#Create gui
 		self.layout = QtGui.QVBoxLayout()
@@ -213,7 +217,8 @@ class CalibratePopup(QtGui.QDialog):
 		self.findCorrespondences.StoreCalibration()
 
 		#Find point correspondances
-		self.framePairs = self.findCorrespondences.Calc()
+		if self.doCorrespondence:
+			self.framePairs = self.findCorrespondences.Calc()
 
 		#Estimate camera directions and parameters
 		self.resultPipe, childResultPipe = multiprocessing.Pipe()
@@ -245,5 +250,4 @@ class CalibratePopup(QtGui.QDialog):
 	def closeEvent(self, event):
 		if not self.done:
 			event.ignore()
-
 

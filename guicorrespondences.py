@@ -131,6 +131,7 @@ def StringToFloat(s):
 		return 0.
 
 class GuiCorrespondences(QtGui.QFrame):
+	optimisePressed = QtCore.Signal()
 
 	def __init__(self, correspondenceModel):
 		QtGui.QFrame.__init__(self)
@@ -184,6 +185,10 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.lowerRightButtons.addWidget(self.removeButton)
 		self.removeButton.pressed.connect(self.RemovePressed)
 	
+		self.optimiseButton = QtGui.QPushButton("Optimise Cameras")
+		self.lowerRightButtons.addWidget(self.optimiseButton)
+		self.optimiseButton.pressed.connect(self.OptimisePressed)
+
 		self.UpdateActiveDevices()
 
 	def UpdateActiveDevices(self):
@@ -329,6 +334,8 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.rightView.SetSelectedPoint(None)
 		self.leftView.ClearClickedPoint()
 		self.rightView.ClearClickedPoint()
+		self.leftView.SetControlPoints(left)
+		self.rightView.SetControlPoints(right)
 
 	def AddPressed(self):
 		leftPt = self.leftView.GetClickedPointPos()
@@ -374,4 +381,7 @@ class GuiCorrespondences(QtGui.QFrame):
 
 	def PointSelectedViaGraphic(self, rowIndex):
 		self.table.setCurrentCell(rowIndex, 0)
+
+	def OptimisePressed(self):
+		self.optimisePressed.emit()
 
