@@ -282,6 +282,7 @@ class CameraArrangement(object):
 			print bestPair[:3], newInd1, newInd2
 
 			#Update progress calc
+			print "len self.addedPhotos", len(self.addedPhotos)
 			progressThisIter = float(len(self.addedPhotos)) / len(photoIds)
 			progressIterPlusOne = float(len(self.addedPhotos)+1) / len(photoIds)
 			if progressCallback is not None:
@@ -351,12 +352,14 @@ def SelectPhotoToAdd(imgPairs, cameraArrangement):
 	bestScore = None
 	bestPair = None
 	bestNewInd = None
+	bestInc1, bestInc2 = None, None
 	for pair in imgPairs:
 		assert len(pair) == 8
 		pairScore = pair[0]
 		
 		included1 = pair[1] in cameraArrangement.addedPhotos
 		included2 = pair[2] in cameraArrangement.addedPhotos
+		print "pair check", pair[:3], included1, included2
 		if len(cameraArrangement.addedPhotos) > 0:
 			if included1 + included2 != 1: continue
 
@@ -364,11 +367,13 @@ def SelectPhotoToAdd(imgPairs, cameraArrangement):
 		if bestScore is None or pairScore > bestScore:
 			bestScore = pairScore
 			bestPair = pair
+			bestInc1 = included1
+			bestInc2 = included2
 
 	if bestScore is None:
 		return None, None, None
 
-	return bestPair, included1, included2
+	return bestPair, bestInc1, bestInc2
 
 def GetStrongestLinkForPhotoId(imgPairs, photoId):
 
