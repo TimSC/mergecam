@@ -92,6 +92,13 @@ class FrameView(QtGui.QWidget):
 	def CurrentText(self):
 		return self.frameCombo.currentText()
 
+	def GetNumDevices(self):
+		return len(self.deviceList)
+
+	def SetCurrentIndex(self, ind):
+		self.frameCombo.setCurrentIndex(ind)
+		self.FrameChanged()
+
 	def SetControlPoints(self, pts):
 		if pts is None:
 			self.controlPoints = []
@@ -402,4 +409,15 @@ class GuiCorrespondences(QtGui.QFrame):
 
 		#Update mem structure
 		self.SetCurrentFramePair([], [])
+
+	def showEvent(self, arg):
+
+		if self.framePairs is None: return
+
+		if self.leftView.CurrentIndex() == self.rightView.CurrentIndex():
+			firstPairSet = self.framePairs[0]
+			if len(firstPairSet) == 0: return
+			print firstPairSet[0][:3]
+			self.leftView.SetCurrentIndex(firstPairSet[0][1])
+			self.rightView.SetCurrentIndex(firstPairSet[0][2])
 
