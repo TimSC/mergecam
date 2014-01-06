@@ -176,6 +176,7 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.lowerLeftArea.addWidget(self.table)
 		self.table.itemSelectionChanged.connect(self.TableSelectionChanged)
 		self.table.itemChanged.connect(self.TableItemChanged)
+		self.table.setHorizontalHeaderLabels(["Left X", "Left Y", "Right X", "Right Y"])
 
 		self.addButton = QtGui.QPushButton("Add Point")
 		self.lowerRightButtons.addWidget(self.addButton)
