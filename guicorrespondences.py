@@ -45,7 +45,8 @@ class FrameView(QtGui.QWidget):
 
 	def RefreshList(self):
 		self.frameCombo.clear()
-		devList = self.correspondenceModel.devInputs
+		devList = self.correspondenceModel.devInputs[:]
+		devList.reverse()
 		for devId in devList:
 			name = self.FindFriendlyName(devId)
 			self.frameCombo.addItem(name)
