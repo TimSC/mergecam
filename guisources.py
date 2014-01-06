@@ -124,7 +124,8 @@ class GuiSources(QtGui.QFrame):
 			self.rxTimes[devName] = []
 		timeNow = time.time()
 		if len(self.rxTimes[devName]) >= 2 and timeNow - self.rxTimes[devName][0] > 1.:
-			print devName, (len(self.rxTimes[devName])-1) / (self.rxTimes[devName][-1] - self.rxTimes[devName][0]), "hz"
+			if 0:
+				print devName, (len(self.rxTimes[devName])-1) / (self.rxTimes[devName][-1] - self.rxTimes[devName][0]), "hz"
 			self.rxTimes[devName] = []
 		self.rxTimes[devName].append(timeNow)
 

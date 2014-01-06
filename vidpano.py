@@ -149,6 +149,8 @@ class CameraArrangement(object):
 		progressThisIter, progressIterPlusOne, progressCallback):
 
 		print "AddAnchorPhoto", photoId
+		if len(self.addedPhotos) > 0:
+			raise Exception("Anchor photo should be first added")
 		self.addedPhotos[photoId] = camModel
 
 	def AddAndOptimiseFit(self, photoId, camModel, imgPairs, 
@@ -156,6 +158,10 @@ class CameraArrangement(object):
 		optRotation=False):
 
 		print "OptimiseFit", photoId
+		if len(self.addedPhotos) == 0:
+			raise Exception("Anchor photo should be first added")
+		if photoId in self.addedPhotos:
+			raise Exception("Photo already added")
 		self.addedPhotos[photoId] = camModel
 		camModelParams = camModel.GetParams()
 
@@ -170,7 +176,7 @@ class CameraArrangement(object):
 
 			#Optimise Lens Model
 			ret = optimize.fmin_bfgs(self.Eval, x0[:dof], args=(photoId, imgPairs), full_output=1, epsilon = 0.01)
-			print ret
+			#print ret
 			if len(ret[0].shape) == 0:
 				x0[0] = float(ret[0])
 			else:
@@ -234,7 +240,7 @@ class CameraArrangement(object):
 				err += verr
 				count += 1
 
-		print vals, err / count
+		#print vals, err / count
 		return err / count
 
 	def NumPhotos(self):
@@ -271,7 +277,7 @@ class CameraArrangement(object):
 		while bestPair is not None:
 			firstFrameSetPairs = framePairs[0]
 			bestPair, newInd1, newInd2 = SelectPhotoToAdd(firstFrameSetPairs, self)
-			print "SelectPhotoToAdd", bestPair, newInd1, newInd2
+			#print "SelectPhotoToAdd", bestPair, newInd1, newInd2
 			if bestPair is None: continue
 			print bestPair[:3], newInd1, newInd2
 
