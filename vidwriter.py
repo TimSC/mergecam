@@ -22,12 +22,19 @@ class VideoWriterWidget(QtGui.QFrame):
 		self.onButton = QtGui.QPushButton("Record")
 		self.toolbar.addWidget(self.onButton, 0)
 		self.onButton.setCheckable(True)
-		QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedOn)
+		self.onButton.clicked.connect(self.ClickedOn)
 
 		#Create text box for file name
+		self.fileLineLayout = QtGui.QHBoxLayout()
+		self.widgetLayout.addLayout(self.fileLineLayout, 1)
+
 		self.filenameEntry = QtGui.QLineEdit()
 		self.filenameEntry.setText("out.mp4")
-		self.widgetLayout.addWidget(self.filenameEntry, 1)
+		self.fileLineLayout.addWidget(self.filenameEntry, 1)
+
+		self.chooseFileButton = QtGui.QPushButton("Select Output File")
+		self.fileLineLayout.addWidget(self.chooseFileButton, 1)
+		self.chooseFileButton.clicked.connect(self.ChooseFilePressed)
 
 		self.setFrameStyle(QtGui.QFrame.Box)
 		self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
@@ -38,11 +45,13 @@ class VideoWriterWidget(QtGui.QFrame):
 			#Switch off
 			self.devOn = False
 			self.filenameEntry.setEnabled(True)
+			self.chooseFileButton.setEnabled(True)
 			self.outFilesManager.close(str(self.filenameEntry.text()))
 		else:
 			#Switch true
 			self.devOn = True
 			self.filenameEntry.setEnabled(False)
+			self.chooseFileButton.setEnabled(True)
 			try:
 				fina = str(self.filenameEntry.text())
 				self.outFilesManager.open(fina, 800, 600)
@@ -84,4 +93,11 @@ class VideoWriterWidget(QtGui.QFrame):
 				self.emit(QtCore.SIGNAL('webcam_frame'), data[0], data[1], self.devId)
 				self.UpdatePreview(data[0], data[1])
 
+	def ChooseFilePressed(self):
+
+		choice = QtGui.QFileDialog.getSaveFileName(self,
+    		caption="Select Output Video File", filter="mp4 Videos (*.mp4)")
+
+		if len(choice[0]) > 0:
+			self.filenameEntry.setText(choice[0])
 
