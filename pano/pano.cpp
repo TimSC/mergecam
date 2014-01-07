@@ -551,7 +551,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	//Scale display area to fit
 	glLoadIdentity();
-	int showEntire = 0;
+	int showEntire = 1;
 	if(showEntire || !self->dstXRangeSet)
 	{
 		glTranslated(-1.0, -1.0, 0.);
@@ -582,7 +582,19 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	//Perform actual drawing
 	for(int i=0;i< self->displayLists.size(); i++)
 	{
+		glPushMatrix();
+		glTranslatef(-self->outImgW,0.,0.);
 		glCallList(self->displayLists[i]);
+		glPopMatrix();
+
+		glPushMatrix();
+		glCallList(self->displayLists[i]);
+		glPopMatrix();
+
+		glPushMatrix();
+		glTranslatef(self->outImgW,0.,0.);
+		glCallList(self->displayLists[i]);
+		glPopMatrix();
 	}
 
 	for(int i=0;i<self->textureIds.size(); i++)
