@@ -265,6 +265,35 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	return 0;
 }
 
+void UpdateRanges(PanoView *self, double dstx, double dsty)
+{
+	//Update ranges
+	if(!self->dstXRangeSet)
+	{
+		self->dstXMin = dstx;
+		self->dstXMax = dstx;
+		self->dstXRangeSet = 1;
+	}
+	else
+	{
+		if(dstx < self->dstXMin) self->dstXMin = dstx;
+		if(dstx > self->dstXMax) self->dstXMax = dstx;
+	}
+		
+	if(!self->dstYRangeSet)
+	{
+		self->dstYMin = dsty;
+		self->dstYMax = dsty;
+		self->dstYRangeSet = 1;
+	}
+	else
+	{
+		if(dsty < self->dstYMin) self->dstYMin = dsty;
+		if(dsty > self->dstYMax) self->dstYMax = dsty;
+	}
+}
+
+
 static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 {
 
@@ -505,31 +534,20 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				Py_DECREF(pydstx);
 				Py_DECREF(pydsty);
 
-				//Update ranges
-				if(!self->dstXRangeSet)
+				//Update max and min extent but consider wrap around effect
+				UpdateRanges(self, dstx, dsty);
+				int wrapOutputHorizontally = 1;
+				while(dstx > self->outImgW && wrapOutputHorizontally)
 				{
-					self->dstXMin = dstx;
-					self->dstXMax = dstx;
-					self->dstXRangeSet = 1;
-				}
-				else
-				{
-					if(dstx < self->dstXMin) self->dstXMin = dstx;
-					if(dstx > self->dstXMax) self->dstXMax = dstx;
-				}
-			
-				if(!self->dstYRangeSet)
-				{
-					self->dstYMin = dsty;
-					self->dstYMax = dsty;
-					self->dstYRangeSet = 1;
-				}
-				else
-				{
-					if(dsty < self->dstYMin) self->dstYMin = dsty;
-					if(dsty > self->dstYMax) self->dstYMax = dsty;
+					dstx -= self->outImgW;
+					UpdateRanges(self, dstx, dsty);
 				}
 
+				while(dstx < 0. && wrapOutputHorizontally)
+				{
+					dstx += self->outImgW;
+					UpdateRanges(self, dstx, dsty);
+				}
 			}
 			//std::cout << std::endl;
 			glEnd();
@@ -549,9 +567,15 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	}
 	}
 
+	//Limit display area to bounds
+	if(self->dstXMax > self->outImgW) self->dstXMax = self->outImgW;
+	if(self->dstXMin < 0.) self->dstXMin = 0.;
+	if(self->dstYMax > self->outImgW) self->dstYMax = self->outImgH;
+	if(self->dstYMin < 0.) self->dstYMin = 0.;
+
 	//Scale display area to fit
 	glLoadIdentity();
-	int showEntire = 1;
+	int showEntire = 0;
 	if(showEntire || !self->dstXRangeSet)
 	{
 		glTranslated(-1.0, -1.0, 0.);
