@@ -75,10 +75,17 @@ class FrameView(QtGui.QWidget):
 		for ptNum, pt in enumerate(self.controlPoints):
 			currentPen = penWhite
 			if self.selectedPointIndex is not None and ptNum == self.selectedPointIndex:
-				currentPen = penRed
+				continue
 
-			self.scene.addLine(pt[0]-5., pt[1], pt[0]+5., pt[1], currentPen)
-			self.scene.addLine(pt[0], pt[1]-5., pt[0], pt[1]+5., currentPen)
+			self.scene.addLine(pt[0]-5., pt[1], pt[0]+5., pt[1], penWhite)
+			self.scene.addLine(pt[0], pt[1]-5., pt[0], pt[1]+5., penWhite)
+
+		for ptNum, pt in enumerate(self.controlPoints):
+			if self.selectedPointIndex is None or ptNum != self.selectedPointIndex:
+				continue
+
+			self.scene.addLine(pt[0]-5., pt[1], pt[0]+5., pt[1], penRed)
+			self.scene.addLine(pt[0], pt[1]-5., pt[0], pt[1]+5., penRed)
 
 		if self.clickedPoint is not None:
 			penYellow = QtGui.QPen(QtCore.Qt.yellow, 1.0, QtCore.Qt.SolidLine);
