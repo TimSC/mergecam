@@ -128,6 +128,9 @@ def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descript
 	return mask.mean(), corresp1Inliers, corresp2Inliers, corresp1, corresp2
 
 def CalcQualityForPair(inliers1, inliers2, corresp1, corresp2):
+	if len(inliers1) < 3:
+		return 0.
+
 	inliers1homo = np.hstack((inliers1, np.ones(shape=(inliers1.shape[0], 1)))) #Convert to homogenious co
 	inliers2homo = np.hstack((inliers2, np.ones(shape=(inliers2.shape[0], 1)))) #Convert to homogenious co
 	corresp1homo = np.hstack((corresp1, np.ones(shape=(corresp1.shape[0], 1)))) #Convert to homogenious co
@@ -734,10 +737,11 @@ class FindCorrespondences(object):
 					#print inliers1
 					#print inliers2
 
-					qualityThreshold = 0.01
+					qualityThreshold = 0.04
 					if quality < qualityThreshold:
 						print "discarding pair"
-						pairsSet.append([None, i, i2, [[]], [[]], im1.shape, im2.shape, None, [[]], [[]])
+						pairsSet.append([None, i, i2, np.empty(shape=(0,0)), np.empty(shape=(0,0)), 
+							im1.shape, im2.shape, None, np.empty(shape=(0,0)), np.empty(shape=(0,0))])
 					else:
 						pairsSet.append([None, i, i2, inliers1, inliers2, im1.shape, im2.shape, None, corresp1, corresp2])
 
