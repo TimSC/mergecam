@@ -39,9 +39,16 @@ class MainWindow(QtGui.QMainWindow):
 		self.correspondencesButton.pressed.connect(self.ViewCorrespondencesButtonPressed)
 		self.panoramaButton = QtGui.QPushButton("Panorama")
 		self.panoramaButton.pressed.connect(self.ViewPanoramaButtonPressed)
+		self.loadButton = QtGui.QPushButton("Load")
+		self.loadButton.pressed.connect(self.LoadButtonPressed)
+		self.saveButton = QtGui.QPushButton("Save")
+		self.saveButton.pressed.connect(self.SaveButtonPressed)
+
 		self.mainToolbarLayout.addWidget(self.viewSourcesButton)
 		self.mainToolbarLayout.addWidget(self.correspondencesButton)
 		self.mainToolbarLayout.addWidget(self.panoramaButton)
+		self.mainToolbarLayout.addWidget(self.loadButton)
+		self.mainToolbarLayout.addWidget(self.saveButton)
 
 		self.guiSources = guisources.GuiSources(self.devManager)
 		self.guiSources.sourceToggled.connect(self.VideoSourceToggleEvent)
@@ -149,6 +156,36 @@ class MainWindow(QtGui.QMainWindow):
 
 	def CameraParamsChanged(self, camParams):
 		self.cameraArrangement.SetCamParams(camParams)
+
+	def LoadButtonPressed(self):
+		choice = QtGui.QFileDialog.getOpenFileNames(self,
+    		caption="Select File to Load Camera Info", filter="Camera config (*.cams)")
+
+		if len(choice[0]) == 0: return
+		if len(choice[0][0]) == 0: return
+
+		self.findCorrespondences, self.cameraArrangement = pickle.load(open(choice[0][0], "rb"))
+
+		#Estimate final transform
+		outProj = proj.EquirectangularCam()
+		outProj.imgW = 800
+		outProj.imgH = 600
+		visObj = pano.PanoView(self.cameraArrangement, outProj)
+
+		self.guiPanorama.SetVisObject(visObj)
+
+		#Update gui with camera parameters
+		self.guiSources.SetCamParams(self.cameraArrangement.camParams)
+
+	def SaveButtonPressed(self):
+		choice = QtGui.QFileDialog.getSaveFileName(self,
+    		caption="Select File to Save Camera Info", filter="Camera config (*.cams)")
+
+		if len(choice[0]) == 0: return
+		self.findCorrespondences.PrepareForPickle()
+		self.cameraArrangement.PrepareForPickle()
+
+		pickle.dump((self.findCorrespondences, self.cameraArrangement), open(choice[0], "wb"), protocol = -1)
 
 if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)

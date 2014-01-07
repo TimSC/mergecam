@@ -192,6 +192,10 @@ class CameraArrangement(object):
 	def Clear(self):
 		self.addedPhotos = {}
 
+	def PrepareForPickle(self):
+		for proj in self.addedPhotos.values():
+			proj.PrepareForPickle()
+
 	def AddAnchorPhoto(self, photoId, camModel,
 		progressThisIter, progressIterPlusOne, progressCallback):
 
@@ -676,12 +680,15 @@ class FindCorrespondences(object):
 		#Update GUI
 		#self.calibrationCount.setText(str(len(self.calibrationFrames)))
 
+	def PrepareForPickle(self):
+		pass
+
 	def Clear(self):
 		self.calibrationFrames = []
 		self.calibrationMeta = []
 
 	def Calc(self):
-		self.keypDescs = []
+		keypDescs = []
 		imgSets = []
 
 		#Extract interest points
@@ -701,12 +708,12 @@ class FindCorrespondences(object):
 				keypDescsSet.append((keyp, desc))
 				imgs.append(source)
 
-			self.keypDescs.append(keypDescsSet)
+			keypDescs.append(keypDescsSet)
 			imgSets.append(imgs)
 
 		#Calc homography between pairs
 		framePairs = []
-		for photoSet, metaSet, keypDescsSet, imgs in zip(self.calibrationFrames, self.calibrationMeta, self.keypDescs, imgSets):
+		for photoSet, metaSet, keypDescsSet, imgs in zip(self.calibrationFrames, self.calibrationMeta, keypDescs, imgSets):
 
 			pairsSet = []
 			
