@@ -128,6 +128,8 @@ class MainWindow(QtGui.QMainWindow):
 
 		#Read back results
 		self.cameraArrangement = self.calibratePopup.cameraArrangement
+		if self.cameraArrangement is None:
+			raise Exception("Camera arrangement not found")
 
 		#Estimate final transform
 		outProj = proj.EquirectangularCam()

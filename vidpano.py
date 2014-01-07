@@ -128,7 +128,6 @@ def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descript
 	return mask.mean(), corresp1Inliers, corresp2Inliers, corresp1, corresp2
 
 def CalcQualityForPair(inliers1, inliers2, corresp1, corresp2):
-
 	inliers1homo = np.hstack((inliers1, np.ones(shape=(inliers1.shape[0], 1)))) #Convert to homogenious co
 	inliers2homo = np.hstack((inliers2, np.ones(shape=(inliers2.shape[0], 1)))) #Convert to homogenious co
 	corresp1homo = np.hstack((corresp1, np.ones(shape=(corresp1.shape[0], 1)))) #Convert to homogenious co
@@ -316,6 +315,13 @@ class CameraArrangement(object):
 		assert camProjFactory is not None
 
 		firstFrameSetPairs = framePairs[0]
+
+		#Cast coordinates to numpy array
+		for pair in firstFrameSetPairs:
+			pair[3] = np.array(pair[3])
+			pair[4] = np.array(pair[4])
+			pair[8] = np.array(pair[8])
+			pair[9] = np.array(pair[9])
 
 		#Calc quality of match pairs
 		for pair in firstFrameSetPairs:

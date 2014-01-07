@@ -1,6 +1,7 @@
 from PySide import QtGui, QtCore
 import videolive, vidinput, vidpano, time
 import multiprocessing
+import traceback
 
 class GuiSources(QtGui.QFrame):
 	sourceToggled = QtCore.Signal(str, int)
@@ -192,6 +193,7 @@ def WorkerProcess(cameraArrangement, framePairs, childResultPipe, childProgressP
 		childResultPipe.send(cameraArrangement)
 	except Exception as err:
 		print err
+		print traceback.format_exc()
 		childResultPipe.send(None)
 
 class CalibratePopup(QtGui.QDialog):
@@ -248,7 +250,8 @@ class CalibratePopup(QtGui.QDialog):
 			return
 		self.cameraArrangement = self.resultPipe.recv()
 		print "Data received from worker", self.cameraArrangement
-		print self.cameraArrangement.addedPhotos
+		if self.cameraArrangement is not None:
+			print self.cameraArrangement.addedPhotos
 
 		self.done = True
 		self.close()
