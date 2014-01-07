@@ -737,9 +737,9 @@ class FindCorrespondences(object):
 					qualityThreshold = 0.01
 					if quality < qualityThreshold:
 						print "discarding pair"
-						continue
-
-					pairsSet.append([None, i, i2, inliers1, inliers2, im1.shape, im2.shape, None, corresp1, corresp2])
+						pairsSet.append([None, i, i2, [[]], [[]], im1.shape, im2.shape, None, [[]], [[]])
+					else:
+						pairsSet.append([None, i, i2, inliers1, inliers2, im1.shape, im2.shape, None, corresp1, corresp2])
 
 			framePairs.append(pairsSet)
 
