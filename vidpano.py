@@ -5,6 +5,7 @@ import cv2, cv, proj, math, random, time
 import numpy as np
 import scipy.optimize as optimize
 import visualise, pano
+import matplotlib.pyplot as plt
 
 ### Utility functions
 
@@ -61,7 +62,7 @@ def GetKeypointsAndDescriptors(im1):
 
 	return (keypoints1, descriptors1)
 
-def CalcHomographyForImagePair(keypoints1, descriptors1, keypoints2, descriptors2):
+def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descriptors2):
 	
 	#Find corresponding points using FLANN
 	FLANN_INDEX_LSH = 6
@@ -119,7 +120,37 @@ def CalcHomographyForImagePair(keypoints1, descriptors1, keypoints2, descriptors
 	corresp1Inliers = corresp1[mask]
 	corresp2Inliers = corresp2[mask]
 
-	return H[0], mask.mean(), corresp1Inliers, corresp2Inliers
+	return mask.mean(), corresp1Inliers, corresp2Inliers, corresp1, corresp2
+
+def CalcQualityForPair(inliers1, inliers2, corresp1, corresp2):
+
+	inliers1homo = np.hstack((inliers1, np.ones(shape=(inliers1.shape[0], 1)))) #Convert to homogenious co
+	inliers2homo = np.hstack((inliers2, np.ones(shape=(inliers2.shape[0], 1)))) #Convert to homogenious co
+	corresp1homo = np.hstack((corresp1, np.ones(shape=(corresp1.shape[0], 1)))) #Convert to homogenious co
+	corresp2homo = np.hstack((corresp2, np.ones(shape=(corresp2.shape[0], 1)))) #Convert to homogenious co
+
+	inv = np.dot(inliers2homo.transpose(), np.linalg.pinv(inliers1homo.transpose()))
+	#print "inv", inv
+
+	proj = np.dot(inv, inliers1homo.transpose())
+	diff = proj - inliers2homo.transpose()
+	errs = np.power(np.power(diff[:2,:].transpose(),2.).sum(axis=1),0.5)
+	print "inlier av err", errs.mean()
+
+	proj = np.dot(inv, corresp1homo.transpose())
+	diff = proj - corresp2homo.transpose()
+	errs2 = np.power(np.power(diff[:2,:].transpose(),2.).sum(axis=1),0.5)
+	print "corresp av err", errs2.mean()
+
+	#plt.plot(proj[0,:], proj[1,:],'x')
+	#plt.plot(inliers2homo[:,0], inliers2homo[:,1],'o')
+	#plt.show()
+
+	#plt.hist(errs, bins=10)
+	#plt.show()
+
+	#homqual = HomographyQualityScore(H[0])
+	return 1. / errs.mean()
 
 def HomographyQualityScore(hom):
 	cost = [abs(hom[0,0]- 1.)]
@@ -269,13 +300,22 @@ class CameraArrangement(object):
 			camProjFactory = proj.FishEye
 		assert camProjFactory is not None
 
+		firstFrameSetPairs = framePairs[0]
+
+		#Calc quality of match pairs
+		for pair in firstFrameSetPairs:
+			print "old quality", pair[0]
+			quality = CalcQualityForPair(pair[3], pair[4], pair[8], pair[9])
+			pair[0] = quality
+			print "new quality", pair[0]
+
 		#Calibrate cameras
 		#self.cameraArrangement = CameraArrangement(self.framePairs[0])
 		#visobj = visualise.VisualiseArrangement()
 		bestPair = 1
 
 		while bestPair is not None:
-			firstFrameSetPairs = framePairs[0]
+			
 			bestPair, newInd1, newInd2 = SelectPhotoToAdd(firstFrameSetPairs, self)
 			#print "SelectPhotoToAdd", bestPair, newInd1, newInd2
 			if bestPair is None: continue
@@ -354,7 +394,7 @@ def SelectPhotoToAdd(imgPairs, cameraArrangement):
 	bestNewInd = None
 	bestInc1, bestInc2 = None, None
 	for pair in imgPairs:
-		assert len(pair) == 8
+
 		pairScore = pair[0]
 		
 		included1 = pair[1] in cameraArrangement.addedPhotos
@@ -652,15 +692,22 @@ class FindCorrespondences(object):
 						print "Warning: No keypoints in frame"
 						continue
 
-					H, frac, inliers1, inliers2 = CalcHomographyForImagePair(keyp1, desc1, keyp2, desc2)
-					homqual = HomographyQualityScore(H)
+					frac, inliers1, inliers2, corresp1, corresp2 = FindRobustMatchesForImagePair(keyp1, desc1, keyp2, desc2)
+					
+					quality = CalcQualityForPair(inliers1, inliers2, corresp1, corresp2)
+
 					#print "Homography", H
 					print "Fraction used", frac
-					print "Quality", homqual
+					print "Quality score", quality
 					#print inliers1
 					#print inliers2
 
-					pairsSet.append([frac*homqual, i, i2, inliers1, inliers2, im1.shape, im2.shape, H])
+					#qualityThreshold = 0.01
+					#if quality < qualityThreshold:
+					#	print "discarding pair"
+					#	continue
+
+					pairsSet.append([None, i, i2, inliers1, inliers2, im1.shape, im2.shape, None, corresp1, corresp2])
 
 			framePairs.append(pairsSet)
 
