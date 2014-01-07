@@ -210,8 +210,9 @@ class CameraArrangement(object):
 		print "x0", x0
 		for dof in range(1,len(x0)+1):
 			#Progress calc
+			print progressThisIter, progressIterPlusOne
 			if progressCallback is not None:
-				progress = progressThisIter + (float(dof) / len(x0)+1) * (progressIterPlusOne - progressThisIter)
+				progress = progressThisIter + (float(dof) / (len(x0)+1)) * (progressIterPlusOne - progressThisIter)
 				progressCallback(progress)
 
 			#Optimise Lens Model
@@ -361,7 +362,12 @@ class CameraArrangement(object):
 						progressThisIter, progressIterPlusOne, progressCallback)
 					photosToAdd.pop(0)
 					photosMetaToAdd.pop(0)
+
 				for pid, pmeta in zip(photosToAdd, photosMetaToAdd):
+					#Update progress
+					progressThisIter = float(len(self.addedPhotos)) / len(photoIds)
+					progressIterPlusOne = float(len(self.addedPhotos)+1) / len(photoIds)
+
 					#Add photos one by one to scene and optimise
 					newCam = camProjFactory()
 					newCam.SetParams(self.camParams)
