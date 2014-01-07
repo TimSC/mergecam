@@ -48,11 +48,11 @@ def GetKeypointsAndDescriptors(im1):
 	print "GetKeypoints"
 	detector = cv2.FeatureDetector_create("ORB")
 	#print detector.getParams()
-	detector.setInt("nFeatures", 50)
+	#detector.setInt("nFeatures", 50)
 	print "GetKeypoints done"
 
 	print "Get descriptors"
-	descriptor = cv2.DescriptorExtractor_create("BRIEF")
+	descriptor = cv2.DescriptorExtractor_create("ORB")
 	#print "Extracting points of interest 1"
 	#keypoints1 = detector.detect(grey1)
 	keypoints1 = DetectAcrossImage(grey1, detector)
@@ -62,17 +62,22 @@ def GetKeypointsAndDescriptors(im1):
 
 	return (keypoints1, descriptors1)
 
-def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descriptors2):
+def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descriptors2, im1, im2):
 	
-	#Find corresponding points using FLANN
-	FLANN_INDEX_LSH = 6
-	flann_params = dict(algorithm = FLANN_INDEX_LSH,
-	                   table_number = 6, # 12
-	                   key_size = 12,     # 20
-	                   multi_probe_level = 1) #2
+	if 0:
+		#Find corresponding points using FLANN
+		FLANN_INDEX_LSH = 6
+		flann_params = dict(algorithm = FLANN_INDEX_LSH,
+			               table_number = 6, # 12
+			               key_size = 12,     # 20
+			               multi_probe_level = 1) #2
 
-	matcher = cv2.FlannBasedMatcher(flann_params, {})
-	mat = matcher.match(descriptors1, descriptors2)
+		matcher = cv2.FlannBasedMatcher(flann_params, {})
+		mat = matcher.match(descriptors1, descriptors2)
+	
+	if 1:
+		matcher = cv2.BFMatcher(cv2.NORM_HAMMING, 1)
+		mat = matcher.match(descriptors1, descriptors2)
 
 	#for dmat in mat:
 	#	print dmat.distance, dmat.imgIdx, dmat.queryIdx, dmat.trainIdx
@@ -87,8 +92,8 @@ def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descript
 			print ptr
 			cv2.circle(im1,tuple(ptr),2,col,-1)
 		cv2.imshow('im1',im1)
-		cv2.waitKey(0)
-		cv2.destroyAllWindows()
+		#cv2.waitKey(0)
+		#cv2.destroyAllWindows()
 
 	if 0:
 		pts = np.array(ptsPos1)
@@ -114,7 +119,7 @@ def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descript
 	corresp2 = np.array(corresp2)
 
 	#Determine homography using ransac
-	H = cv2.findHomography(corresp1, corresp2, cv2.RANSAC, ransacReprojThreshold=20.)
+	H = cv2.findHomography(corresp1, corresp2, cv2.RANSAC, ransacReprojThreshold=3.)
 	#VisualiseMatches(im1, im2, keypoints1, keypoints2, mat, H[1])
 	mask = np.array(H[1], dtype=np.bool)[:,0]
 	corresp1Inliers = corresp1[mask]
@@ -668,10 +673,12 @@ class FindCorrespondences(object):
 
 	def Calc(self):
 		self.keypDescs = []
+		imgSets = []
 
 		#Extract interest points
 		for photoSet, metaSet in zip(self.calibrationFrames, self.calibrationMeta):
 			keypDescsSet = []
+			imgs = []
 
 			for frame, meta in zip(photoSet, metaSet):
 				assert meta['format'] == "RGB24"
@@ -683,21 +690,23 @@ class FindCorrespondences(object):
 
 				keyp, desc = GetKeypointsAndDescriptors(source)
 				keypDescsSet.append((keyp, desc))
+				imgs.append(source)
 
 			self.keypDescs.append(keypDescsSet)
+			imgSets.append(imgs)
 
 		#Calc homography between pairs
 		framePairs = []
-		for photoSet, metaSet, keypDescsSet in zip(self.calibrationFrames, self.calibrationMeta, self.keypDescs):
+		for photoSet, metaSet, keypDescsSet, imgs in zip(self.calibrationFrames, self.calibrationMeta, self.keypDescs, imgSets):
 
 			pairsSet = []
 			
-			for i, (frame1, meta1, (keyp1, desc1)) in enumerate(zip(photoSet, metaSet, keypDescsSet)):
+			for i, (frame1, meta1, (keyp1, desc1), img1) in enumerate(zip(photoSet, metaSet, keypDescsSet, imgs)):
 
 				arr1 = np.array(frame1, dtype=np.uint8)
 				im1 = arr1.reshape((meta1['height'], meta1['width'], 3))
 
-				for i2, (frame2, meta2, (keyp2, desc2)) in enumerate(zip(photoSet, metaSet, keypDescsSet)):
+				for i2, (frame2, meta2, (keyp2, desc2), img2) in enumerate(zip(photoSet, metaSet, keypDescsSet, imgs)):
 					if i <= i2: continue
 					print "Compare pair", i, i2
 
@@ -708,7 +717,8 @@ class FindCorrespondences(object):
 						print "Warning: No keypoints in frame"
 						continue
 
-					frac, inliers1, inliers2, corresp1, corresp2 = FindRobustMatchesForImagePair(keyp1, desc1, keyp2, desc2)
+					frac, inliers1, inliers2, corresp1, corresp2 = FindRobustMatchesForImagePair(keyp1, desc1, 
+						keyp2, desc2, img1, img2)
 					
 					quality = CalcQualityForPair(inliers1, inliers2, corresp1, corresp2)
 
@@ -718,10 +728,10 @@ class FindCorrespondences(object):
 					#print inliers1
 					#print inliers2
 
-					#qualityThreshold = 0.01
-					#if quality < qualityThreshold:
-					#	print "discarding pair"
-					#	continue
+					qualityThreshold = 0.01
+					if quality < qualityThreshold:
+						print "discarding pair"
+						continue
 
 					pairsSet.append([None, i, i2, inliers1, inliers2, im1.shape, im2.shape, None, corresp1, corresp2])
 

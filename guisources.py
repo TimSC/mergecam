@@ -186,9 +186,13 @@ class GuiSources(QtGui.QFrame):
 #	print "progress", progress
 
 def WorkerProcess(cameraArrangement, framePairs, childResultPipe, childProgressPipe):
-	cameraArrangement.OptimiseCameraPositions(framePairs, childProgressPipe.send)
-	cameraArrangement.PrepareForPickle()
-	childResultPipe.send(cameraArrangement)
+	try:
+		cameraArrangement.OptimiseCameraPositions(framePairs, childProgressPipe.send)
+		cameraArrangement.PrepareForPickle()
+		childResultPipe.send(cameraArrangement)
+	except Exception as err:
+		print err
+		childResultPipe.send(None)
 
 class CalibratePopup(QtGui.QDialog):
 
