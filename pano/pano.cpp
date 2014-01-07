@@ -358,7 +358,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_DST_COLOR);
+		glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_DST_ALPHA);
+		glBlendEquation(GL_FUNC_ADD);
 
 		//Get texture handle
 		GLuint texture;
@@ -468,16 +469,24 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		//Generate indices for complete squares
 		std::vector<std::vector<int> > sqInd;
+		std::vector<double> sqIndAlpha;
 		for(int x = 0; x < numSq-1; x ++)
 		{
+			double hwidth = ((double)numSq-1.) / 2.;
+			double xmid = 1. - fabs(((double)x - hwidth) / hwidth);
+
 			for(int y = 0; y < numSq-1; y ++)
 			{
+				double ymid = 1. - fabs(((double)y - hwidth) / hwidth);
+	
 				std::vector<int> singleSq;
 				singleSq.push_back(x + y * numSq);
 				singleSq.push_back((x + 1) + y * numSq);
 				singleSq.push_back((x + 1) + (y + 1) * numSq);
 				singleSq.push_back(x + (y + 1) * numSq);
 				sqInd.push_back(singleSq);
+
+				sqIndAlpha.push_back(xmid * ymid);
 			}
 		}
 
@@ -511,6 +520,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		for(unsigned sqNum = 0; sqNum < sqInd.size(); sqNum++)
 		{
 			std::vector<int> &singleSq = sqInd[sqNum];
+			double alpha = sqIndAlpha[sqNum];
 
 			glBegin(GL_QUADS);
 			for(int c = 0; c < singleSq.size(); c++)
@@ -528,7 +538,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				//std::cout << "tex " << texPos[ptInd][0] <<","<< texPos[ptInd][1] << std::endl;
 				//std::cout << "pt " << c << "," << (dstx / self->outImgW) <<","<< (dsty / self->outImgH) << std::endl;
 				glTexCoord2d(texPos[ptInd][0],texPos[ptInd][1]);
-				glColor4d(1., 1., 1., 0.5);
+				//std::cout << alpha << std::endl;
+				glColor4d(1., 1., 1., alpha);
 				glVertex2f(dstx,dsty);
 				Py_DECREF(dstPt);
 				Py_DECREF(pydstx);
