@@ -6,7 +6,7 @@ import traceback
 class GuiSources(QtGui.QFrame):
 	sourceToggled = QtCore.Signal(str, int)
 	webcamSignal = QtCore.Signal(bytearray, dict, str)
-	calibratePressed = QtCore.Signal()
+	calibratePressed = QtCore.Signal(int)
 	deviceListChanged = QtCore.Signal(list)
 	cameraParamsChanged = QtCore.Signal(dict)
 
@@ -171,8 +171,8 @@ class GuiSources(QtGui.QFrame):
 	def VideoSourceToggleEvent(self, srcId, srcStatus):
 		self.sourceToggled.emit(srcId, srcStatus)
 
-	def ClickedCalibrate(self):
-		self.calibratePressed.emit()
+	def ClickedCalibrate(self, skipOptimiseCams):
+		self.calibratePressed.emit(skipOptimiseCams)
 
 	def CameraParamsChanged(self, camParams):
 		self.cameraParamsChanged.emit(camParams)
@@ -205,7 +205,10 @@ class CalibratePopup(QtGui.QDialog):
 		self.cameraArrangement = cameraArrangement
 		self.done = False
 		self.doCorrespondence = True
+		self.doCameraPositions = True
 		self.framePairs = None
+		self.progressPipe = None
+		self.resultPipe = None
 
 	def Do(self):
 
@@ -228,33 +231,37 @@ class CalibratePopup(QtGui.QDialog):
 			#Find point correspondances
 			self.framePairs = self.findCorrespondences.Calc()
 
-		#Estimate camera directions and parameters
-		self.resultPipe, childResultPipe = multiprocessing.Pipe()
-		self.progressPipe, childProgressPipe = multiprocessing.Pipe()
-		self.process = multiprocessing.Process(target=WorkerProcess, args=(self.cameraArrangement, 
-			self.framePairs, childResultPipe, childProgressPipe))
-		self.process.start()
-		#self.cameraArrangement.OptimiseCameraPositions(self.framePairs)
-		
+		if self.doCameraPositions:
+			#Estimate camera directions and parameters
+			self.resultPipe, childResultPipe = multiprocessing.Pipe()
+			self.progressPipe, childProgressPipe = multiprocessing.Pipe()
+			self.process = multiprocessing.Process(target=WorkerProcess, args=(self.cameraArrangement, 
+				self.framePairs, childResultPipe, childProgressPipe))
+			self.process.start()
+			#self.cameraArrangement.OptimiseCameraPositions(self.framePairs)
+		else:
+			self.done = True
+
 		self.timer = QtCore.QTimer()
 		self.timer.timeout.connect(self.IdleEvent)
 		self.timer.start(10)
 
 	def IdleEvent(self):
-		if self.progressPipe.poll(0.01):
+		if self.progressPipe is not None and self.progressPipe.poll(0.01):
 			progress = self.progressPipe.recv()
 			print "progress", progress
 			self.progressBar.setValue(progress * 100.)
 
-		if not self.resultPipe.poll(0.01):
-			return
-		self.cameraArrangement = self.resultPipe.recv()
-		print "Data received from worker", self.cameraArrangement
-		if self.cameraArrangement is not None:
-			print self.cameraArrangement.addedPhotos
+		if self.resultPipe is not None and self.resultPipe.poll(0.01):
+			self.cameraArrangement = self.resultPipe.recv()
+			print "Data received from worker", self.cameraArrangement
+			if self.cameraArrangement is not None:
+				print self.cameraArrangement.addedPhotos
 
-		self.done = True
-		self.close()
+			self.done = True
+
+		if self.done:
+			self.close()
 
 	def closeEvent(self, event):
 		if not self.done:

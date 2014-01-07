@@ -458,7 +458,7 @@ def GetStrongestLinkForPhotoId(imgPairs, photoId):
 
 class LensParamsWidget(QtGui.QFrame):
 
-	calibratePressed = QtCore.Signal()
+	calibratePressed = QtCore.Signal(int)
 	cameraParamsChanged = QtCore.Signal(dict)
 
 	def __init__(self):
@@ -601,7 +601,7 @@ class LensParamsWidget(QtGui.QFrame):
 		self.CameraParamsChanged()
 
 	def ClickedCalibrate(self):
-		self.calibratePressed.emit()
+		self.calibratePressed.emit(self.reviewCorrespondCheckbox.isChecked())
 
 	def EditCustomButton(self):
 		ind = self.presetCombo.findText("Custom")

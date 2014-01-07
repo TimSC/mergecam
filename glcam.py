@@ -103,8 +103,8 @@ class MainWindow(QtGui.QMainWindow):
 		self.findCorrespondences.ProcessFrame(frame, meta, devName)
 		self.guiPanorama.ProcessFrame(frame, meta, devName)
 	
-	def SourcesCalibratePressed(self):
-		self.Calibration(True, True)
+	def SourcesCalibratePressed(self, skipOptimiseCams):
+		self.Calibration(True, not skipOptimiseCams)
 
 	def CorrespondenceOptimisePressed(self):
 		self.Calibration(False, True)
@@ -120,6 +120,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.calibratePopup.setGeometry(QtCore.QRect(100, 100, 400, 200))
 		self.calibratePopup.framePairs = self.guiCorrespondences.framePairs
 		self.calibratePopup.doCorrespondence = doCorrespondence
+		self.calibratePopup.doCameraPositions = doCameraPositions
 		self.calibratePopup.Do()
 		self.calibratePopup.exec_() #Block until done
 		self.guiCorrespondences.SetFramePairs(self.calibratePopup.framePairs)
