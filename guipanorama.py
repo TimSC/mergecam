@@ -67,9 +67,9 @@ class GuiPanorama(QtGui.QFrame):
 
 				if 1:
 					#print len(self.currentFrame), self.currentMeta
-					startTime = time.time()
+					#startTime = time.time()
 					visPixOut, visMetaOut = self.visObj.Vis(self.currentFrame.values(), self.currentMeta.values())
-					print "Generated panorama in",time.time()-startTime,"sec"
+					#print "Generated panorama in",time.time()-startTime,"sec"
 					#self.visObj.Vis(self.currentFrame.values(), self.currentMeta.values())
 				if 1:
 					#visPixOut = bytearray([128 for i in range(800 * 600 * 3)])

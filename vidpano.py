@@ -129,18 +129,18 @@ def CalcQualityForPair(inliers1, inliers2, corresp1, corresp2):
 	corresp1homo = np.hstack((corresp1, np.ones(shape=(corresp1.shape[0], 1)))) #Convert to homogenious co
 	corresp2homo = np.hstack((corresp2, np.ones(shape=(corresp2.shape[0], 1)))) #Convert to homogenious co
 
-	inv = np.dot(inliers2homo.transpose(), np.linalg.pinv(inliers1homo.transpose()))
-	#print "inv", inv
+	transform = np.dot(inliers2homo.transpose(), np.linalg.pinv(inliers1homo.transpose()))
+	#print "inv", transform
 
-	proj = np.dot(inv, inliers1homo.transpose())
+	proj = np.dot(transform, inliers1homo.transpose())
 	diff = proj - inliers2homo.transpose()
 	errs = np.power(np.power(diff[:2,:].transpose(),2.).sum(axis=1),0.5)
-	print "inlier av err", errs.mean()
+	#print "inlier av err", errs.mean()
 
-	proj = np.dot(inv, corresp1homo.transpose())
+	proj = np.dot(transform, corresp1homo.transpose())
 	diff = proj - corresp2homo.transpose()
 	errs2 = np.power(np.power(diff[:2,:].transpose(),2.).sum(axis=1),0.5)
-	print "corresp av err", errs2.mean()
+	#print "corresp av err", errs2.mean()
 
 	#plt.plot(proj[0,:], proj[1,:],'x')
 	#plt.plot(inliers2homo[:,0], inliers2homo[:,1],'o')
@@ -149,8 +149,17 @@ def CalcQualityForPair(inliers1, inliers2, corresp1, corresp2):
 	#plt.hist(errs, bins=10)
 	#plt.show()
 
-	#homqual = HomographyQualityScore(H[0])
-	return 1. / errs.mean()
+	transformA = abs(1. - transform[0,0])
+	transformB = abs(transform[1,0])
+	transformC = abs(transform[0,1])
+	transformD = abs(1. - transform[1,1])
+	if transformA > 1.: transformA = 1.
+	if transformB > 1.: transformB = 1.
+	if transformC > 1.: transformC = 1.
+	if transformD > 1.: transformD = 1.
+	transformScore = (1.-transformA) * (1.-transformB) * (1.-transformC) * (1.-transformD)
+	return transformScore
+	#return 1. / errs.mean()
 
 def HomographyQualityScore(hom):
 	cost = [abs(hom[0,0]- 1.)]
@@ -304,6 +313,7 @@ class CameraArrangement(object):
 
 		#Calc quality of match pairs
 		for pair in firstFrameSetPairs:
+			print "Quality for pair", pair[:3]
 			print "old quality", pair[0]
 			quality = CalcQualityForPair(pair[3], pair[4], pair[8], pair[9])
 			pair[0] = quality
