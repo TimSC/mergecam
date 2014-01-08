@@ -49,7 +49,7 @@ class VideoOutWidget(QtGui.QFrame):
 				self.standbyGraphic = img4.convertToFormat(QtGui.QImage.Format_RGB888)
 			
 			if self.standbyGraphic is not None:
-				raw = self.standbyGraphic.bits().asstring(self.standbyGraphic.numBytes())
+				raw = self.standbyGraphic.constBits()
 				self.videoOutManager.send_frame(self.devId, str(raw), "RGB24", 
 					self.standbyGraphic.width(), self.standbyGraphic.height())
 
