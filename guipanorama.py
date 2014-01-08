@@ -10,6 +10,7 @@ class GuiPanorama(QtGui.QFrame):
 		self.currentFrame = {}
 		self.currentMeta = {}
 		self.visObj = None
+		self.activeCams = []
 
 		self.outStreamsManager = videolive.Video_out_stream_manager()
 		self.outFilesManager = videolive.Video_out_file_manager()
@@ -52,6 +53,7 @@ class GuiPanorama(QtGui.QFrame):
 
 	def ProcessFrame(self, frame, meta, devName):
 		
+		if devName not in self.activeCams: return
 		self.currentFrame[devName] = frame
 		self.currentMeta[devName] = meta
 
@@ -78,3 +80,6 @@ class GuiPanorama(QtGui.QFrame):
 
 		self.framesRcvSinceOutput.add(devName)
 
+	def SetActiveCams(self, activeCams):
+		print "SetActiveCams", activeCams
+		self.activeCams = activeCams

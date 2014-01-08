@@ -146,6 +146,7 @@ class MainWindow(QtGui.QMainWindow):
 		visObj = pano.PanoView(self.cameraArrangement, outProj)
 
 		self.guiPanorama.SetVisObject(visObj)
+		self.guiPanorama.SetActiveCams(self.findCorrespondences.devInputs)
 
 		#Update gui with camera parameters
 		self.guiSources.SetCamParams(self.cameraArrangement.camParams)
@@ -185,6 +186,7 @@ class MainWindow(QtGui.QMainWindow):
 		visObj = pano.PanoView(self.cameraArrangement, outProj)
 
 		self.guiPanorama.SetVisObject(visObj)
+		self.guiPanorama.SetActiveCams(self.findCorrespondences.devInputs)
 
 		#Update gui with camera parameters
 		self.guiSources.SetCamParams(self.cameraArrangement.camParams)

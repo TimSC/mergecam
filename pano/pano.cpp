@@ -359,7 +359,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_DST_ALPHA);
-		glBlendEquation(GL_FUNC_ADD);
+		//glBlendEquation(GL_FUNC_ADD);
 
 		//Get texture handle
 		GLuint texture;
