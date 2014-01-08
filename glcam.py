@@ -150,6 +150,9 @@ class MainWindow(QtGui.QMainWindow):
 		#Update gui with camera parameters
 		self.guiSources.SetCamParams(self.cameraArrangement.camParams)
 
+		self.guiCorrespondences.SetFrames(self.findCorrespondences.calibrationFrames, 
+			self.findCorrespondences.calibrationMeta)
+
 	def DeviceListChanged(self, deviceList):
 		print "DeviceListChanged"
 		self.findCorrespondences.SetDeviceList(deviceList)

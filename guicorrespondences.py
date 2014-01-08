@@ -20,6 +20,8 @@ class FrameView(QtGui.QWidget):
 		self.deviceList = []
 		self.selectedPointIndex = []
 		self.clickedPoint = None
+		self.calibrationFrames = None
+		self.calibrationMeta = None
 
 		self.layout = QtGui.QVBoxLayout()
 		self.setLayout(self.layout)
@@ -56,6 +58,7 @@ class FrameView(QtGui.QWidget):
 
 	def DrawFrame(self):
 		ind = self.frameCombo.currentIndex()
+		if self.calibrationFrames is None: return
 		if len(self.calibrationFrames) < 1: return
 		if ind < 0 or ind >= len(self.calibrationFrames[0]): return
 
