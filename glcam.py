@@ -62,12 +62,12 @@ class MainWindow(QtGui.QMainWindow):
 		for srcId in activeSources:
 			self.findCorrespondences.AddSource(srcId)
 
-		self.guiCorrespondences = guicorrespondences.GuiCorrespondences(self.findCorrespondences)
+		self.guiCorrespondences = guicorrespondences.GuiCorrespondences()
 		self.guiCorrespondences.setShown(0)
 		self.guiCorrespondences.SetDeviceList(self.guiSources.devNames)
 		self.guiCorrespondences.optimisePressed.connect(self.CorrespondenceOptimisePressed)
 
-		self.guiPanorama = guipanorama.GuiPanorama(self.findCorrespondences, self.cameraArrangement)
+		self.guiPanorama = guipanorama.GuiPanorama()
 		self.guiPanorama.setShown(0)
 
 		self.mainLayout.addWidget(self.guiSources, 1)
@@ -164,7 +164,16 @@ class MainWindow(QtGui.QMainWindow):
 		if len(choice[0]) == 0: return
 		if len(choice[0][0]) == 0: return
 
-		self.findCorrespondences, self.cameraArrangement = pickle.load(open(choice[0][0], "rb"))
+		self.guiCorrespondences.SetFramePairs(None)
+		self.cameraArrangement = None
+		self.findCorrespondences = None
+		inData = pickle.load(open(choice[0][0], "rb"))
+		if 'cams' in inData:
+			self.cameraArrangement = inData['cams']
+		if 'pairs' in inData:
+			self.guiCorrespondences.SetFramePairs(inData['pairs'])
+		if 'correspond' in inData:
+			self.findCorrespondences = inData['correspond']
 
 		#Estimate final transform
 		outProj = proj.EquirectangularCam()
@@ -177,6 +186,9 @@ class MainWindow(QtGui.QMainWindow):
 		#Update gui with camera parameters
 		self.guiSources.SetCamParams(self.cameraArrangement.camParams)
 
+		self.guiCorrespondences.SetFrames(self.findCorrespondences.calibrationFrames, 
+			self.findCorrespondences.calibrationMeta)
+
 	def SaveButtonPressed(self):
 		choice = QtGui.QFileDialog.getSaveFileName(self,
     		caption="Select File to Save Camera Info", filter="Camera config (*.cams)")
@@ -185,7 +197,12 @@ class MainWindow(QtGui.QMainWindow):
 		self.findCorrespondences.PrepareForPickle()
 		self.cameraArrangement.PrepareForPickle()
 
-		pickle.dump((self.findCorrespondences, self.cameraArrangement), open(choice[0], "wb"), protocol = -1)
+		outData = {}
+		outData['cams'] = self.cameraArrangement
+		outData['pairs'] = self.guiCorrespondences.framePairs
+		outData['correspond'] = self.findCorrespondences
+
+		pickle.dump(outData, open(choice[0], "wb"), protocol = -1)
 
 if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)

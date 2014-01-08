@@ -14,10 +14,9 @@ class FrameView(QtGui.QWidget):
 	selectionChanged = QtCore.Signal()
 	pointSelected = QtCore.Signal(int)
 
-	def __init__(self, correspondenceModel):
+	def __init__(self):
 		QtGui.QWidget.__init__(self)
 
-		self.correspondenceModel = correspondenceModel
 		self.deviceList = []
 		self.selectedPointIndex = []
 		self.clickedPoint = None
@@ -45,7 +44,7 @@ class FrameView(QtGui.QWidget):
 
 	def RefreshList(self):
 		self.frameCombo.clear()
-		devList = self.correspondenceModel.devInputs[:]
+		devList = [dev[0] for dev in self.deviceList]
 		devList.reverse()
 		for devId in devList:
 			name = self.FindFriendlyName(devId)
@@ -57,11 +56,11 @@ class FrameView(QtGui.QWidget):
 
 	def DrawFrame(self):
 		ind = self.frameCombo.currentIndex()
-		if len(self.correspondenceModel.calibrationFrames) < 1: return
-		if ind < 0 or ind >= len(self.correspondenceModel.calibrationFrames[0]): return
+		if len(self.calibrationFrames) < 1: return
+		if ind < 0 or ind >= len(self.calibrationFrames[0]): return
 
-		frame = self.correspondenceModel.calibrationFrames[0][ind]
-		meta = self.correspondenceModel.calibrationMeta[0][ind]
+		frame = self.calibrationFrames[0][ind]
+		meta = self.calibrationMeta[0][ind]
 
 		self.scene.clear()
 		im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
@@ -139,6 +138,11 @@ class FrameView(QtGui.QWidget):
 		self.clickedPoint = None
 		self.DrawFrame()
 
+	def SetFrames(self, frames, meta):
+		self.calibrationFrames = frames
+		self.calibrationMeta = meta
+		self.DrawFrame()
+
 def StringToFloat(s):
 	try:
 		return float(s)
@@ -148,10 +152,9 @@ def StringToFloat(s):
 class GuiCorrespondences(QtGui.QFrame):
 	optimisePressed = QtCore.Signal()
 
-	def __init__(self, correspondenceModel):
+	def __init__(self):
 		QtGui.QFrame.__init__(self)
 
-		self.correspondenceModel = correspondenceModel
 		self.framePairs = None
 		self.ignoreTableChanges = False
 
@@ -165,8 +168,8 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.splitWidget.setLayout(self.splitLayout)
 		self.mainSplitter.addWidget(self.splitWidget)
 
-		self.leftView = FrameView(self.correspondenceModel)
-		self.rightView = FrameView(self.correspondenceModel)
+		self.leftView = FrameView()
+		self.rightView = FrameView()
 
 		self.leftView.selectionChanged.connect(self.SelectionChanged)
 		self.rightView.selectionChanged.connect(self.SelectionChanged)
@@ -428,4 +431,8 @@ class GuiCorrespondences(QtGui.QFrame):
 			print firstPairSet[0][:3]
 			self.leftView.SetCurrentIndex(firstPairSet[0][1])
 			self.rightView.SetCurrentIndex(firstPairSet[0][2])
+
+	def SetFrames(self, frames, meta):
+		self.leftView.SetFrames(frames, meta)
+		self.rightView.SetFrames(frames, meta)
 

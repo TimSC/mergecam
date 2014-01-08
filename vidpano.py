@@ -339,7 +339,7 @@ class CameraArrangement(object):
 			print "new quality", pair[0]
 
 		#Calibrate cameras
-		#self.cameraArrangement = CameraArrangement(self.framePairs[0])
+		#self.cameraArrangement = CameraArrangement(framePairs[0])
 		#visobj = visualise.VisualiseArrangement()
 		bestPair = 1
 
@@ -404,7 +404,7 @@ class CameraArrangement(object):
 				print "VFOV", math.degrees(vfov[1][0] - vfov[0][0])
 
 			if 0:
-				vis = visobj.Vis(self.calibrationFrames[0], self.calibrationMeta[0], self.framePairs[0], self.cameraArrangement)
+				vis = visobj.Vis(self.calibrationFrames[0], self.calibrationMeta[0], framePairs[0], self.cameraArrangement)
 				vis.save("vis{0}.png".format(len(self.cameraArrangement.addedPhotos)))
 
 		print "Store camera parameters"
@@ -478,7 +478,6 @@ class LensParamsWidget(QtGui.QFrame):
 		self.currentMeta = {}
 		self.outBuffer = []
 		self.framesRcvSinceOutput = set()
-		self.framePairs = None
 
 		self.widgetLayout = QtGui.QVBoxLayout()
 		self.setLayout(self.widgetLayout)
@@ -560,19 +559,6 @@ class LensParamsWidget(QtGui.QFrame):
 
 		self.calibrateControls = QtGui.QHBoxLayout()
 		self.widgetLayout.addLayout(self.calibrateControls)	
-
-		if 0:
-			#Separate storage of calibration frames and optimisation
-			self.onButton = QtGui.QPushButton("Store Calibration Frames")
-			self.calibrateControls.addWidget(self.onButton, 0)
-			QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedStoreCalibration)
-
-			self.calibrationCount = QtGui.QLabel("0")
-			self.calibrateControls.addWidget(self.calibrationCount, 1)
-
-			self.onButton = QtGui.QPushButton("Cal")
-			self.calibrateControls.addWidget(self.onButton, 0)
-			QtCore.QObject.connect(self.onButton, QtCore.SIGNAL('clicked()'), self.ClickedCalibrate)
 
 		self.onButton = QtGui.QPushButton("Calibrate")
 		self.calibrateControls.addWidget(self.onButton, 0)
