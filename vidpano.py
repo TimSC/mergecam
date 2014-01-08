@@ -4,8 +4,7 @@ import uuid
 import cv2, cv, proj, math, random, time
 import numpy as np
 import scipy.optimize as optimize
-import visualise, pano
-import matplotlib.pyplot as plt
+import pano
 
 ### Utility functions
 
