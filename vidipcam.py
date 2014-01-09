@@ -24,16 +24,12 @@ class HandleJpegData(object):
 		self.rxBuff.pop(0)
 
 		decodedFrame = bytearray()
-		print "test1"
-		ret = videolive.DecodeAndResizeFrame("MJPEG", 0, 0, bytearray(frameDat), "RGB24", 0, 0, decodedFrame)
-		print "test2"
-		try:
-			print "Do stuff"
-		except Exception as err:
-			print err
+		metaData = {}
+		ret = videolive.DecodeAndResizeFrame("MJPEG", 0, 0, bytearray(frameDat), 
+			"RGB24", 0, 0, decodedFrame, 
+			metaData)
 
-		return None
-		#return decodedFrame, {'format': 'RGB24', 'height': 480, 'width': 640}
+		return decodedFrame, metaData
 
 def HandleBinData(contentType, dat):
 	print contentType, len(dat)
