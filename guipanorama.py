@@ -53,7 +53,7 @@ class GuiPanorama(QtGui.QFrame):
 
 	def ProcessFrame(self, frame, meta, devName):
 		
-		if devName not in self.activeCams: return
+		if devName not in [devInfo[0] for devInfo in self.activeCams]: return
 		self.currentFrame[devName] = frame
 		self.currentMeta[devName] = meta
 

@@ -88,10 +88,10 @@ class GuiSources(QtGui.QFrame):
 
 	def GetActiveSources(self):
 		activeSources = []
-		for fina in self.inputDeviceToWidgetDict:
-			srcWidget = self.inputDeviceToWidgetDict[fina]
+		for li in self.devNames:
+			srcWidget = self.inputDeviceToWidgetDict[li[0]]
 			if srcWidget.IsChecked():
-				activeSources.append(fina)
+				activeSources.append(li)
 		return activeSources
 
 	def UpdateSourceList(self):
@@ -142,27 +142,6 @@ class GuiSources(QtGui.QFrame):
 		self.rxTimes[devName].append(timeNow)
 
 		self.webcamSignal.emit(frame, meta, devName)
-
-		#Send frames to processing widgets
-		#for devId in self.processingWidgets:
-		#	procWidget = self.processingWidgets[devId]
-		#	procWidget.SendFrame(frame, meta, devName)
-
-		#Update GUI with new frame
-		#if devName == self.currentSrcId and meta['format'] == "RGB24":
-		#	self.scene.clear()
-		#	im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
-		#	pix = QtGui.QPixmap(im2)
-		
-		#	gpm = QtGui.QGraphicsPixmapItem(pix)
-		#	self.scene.addItem(gpm)
-
-		#Send frame to output device
-		#for outDevName in self.outputDeviceToWidgetDict:
-		#	outWidget = self.outputDeviceToWidgetDict[outDevName]
-		#	outWidget.SendFrame(frame, meta, devName)
-
-		#self.pano.SendFrame(frame, meta, devName)
 
 	def IdleEvent(self):
 		for fina in self.inputDeviceToWidgetDict:

@@ -17,7 +17,7 @@ class FrameView(QtGui.QWidget):
 	def __init__(self):
 		QtGui.QWidget.__init__(self)
 
-		self.deviceList = []
+		self.activeDevices = []
 		self.selectedPointIndex = []
 		self.clickedPoint = None
 		self.calibrationFrames = None
@@ -38,7 +38,7 @@ class FrameView(QtGui.QWidget):
 
 	def FindFriendlyName(self, devId):
 		print "search", devId
-		for devData in self.deviceList:
+		for devData in self.activeDevices:
 			if devData[0] != devId: continue
 			if len(devData) >= 2:
 				return devData[1]
@@ -46,7 +46,7 @@ class FrameView(QtGui.QWidget):
 
 	def RefreshList(self):
 		self.frameCombo.clear()
-		devList = [dev[0] for dev in self.deviceList]
+		devList = [dev[0] for dev in self.activeDevices]
 		devList.reverse()
 		for devId in devList:
 			name = self.FindFriendlyName(devId)
@@ -103,7 +103,7 @@ class FrameView(QtGui.QWidget):
 		return self.frameCombo.currentText()
 
 	def GetNumDevices(self):
-		return len(self.deviceList)
+		return len(self.activeDevices)
 
 	def SetCurrentIndex(self, ind):
 		self.frameCombo.setCurrentIndex(ind)
@@ -221,9 +221,9 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.leftView.RefreshList()
 		self.rightView.RefreshList()
 
-	def SetDeviceList(self, deviceList):
-		self.leftView.deviceList = deviceList
-		self.rightView.deviceList = deviceList
+	def SetActiveCams(self, activeDevices):
+		self.leftView.activeDevices = activeDevices
+		self.rightView.activeDevices = activeDevices
 		self.UpdateActiveDevices()
 
 	def UpdateFrames(self):

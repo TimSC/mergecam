@@ -645,8 +645,8 @@ class FindCorrespondences(object):
 
 		#Check frames from each camera are stored
 		framesReady = True
-		for devIn in self.devInputs:
-			if devIn not in self.currentFrames:
+		for devInfo in self.devInputs:
+			if devInfo[0] not in self.currentFrames:
 				framesReady = False
 		if not framesReady:
 			print "Frames not ready"
@@ -655,9 +655,9 @@ class FindCorrespondences(object):
 		#Store frame set for calibration use
 		frameSet = []
 		metaSet = []
-		for devId in self.devInputs:
-			frameSet.append(self.currentFrames[devId])
-			metaSet.append(self.currentMeta[devId])
+		for devInfo in self.devInputs:
+			frameSet.append(self.currentFrames[devInfo[0]])
+			metaSet.append(self.currentMeta[devInfo[0]])
 
 		self.calibrationFrames.append(frameSet)
 		self.calibrationMeta.append(metaSet)
@@ -678,6 +678,7 @@ class FindCorrespondences(object):
 
 		#Extract interest points
 		for photoSet, metaSet in zip(self.calibrationFrames, self.calibrationMeta):
+			
 			keypDescsSet = []
 			imgs = []
 
@@ -741,22 +742,10 @@ class FindCorrespondences(object):
 
 		return framePairs
 
-	def AddSource(self, devId):
-		if devId not in self.devInputs:
-			self.devInputs.append(devId)
-		#print self.devInputs
-
-	def RemoveSource(self, devId):
-		if devId in self.devInputs:
-			self.devInputs.remove(devId)
-			if devId in self.currentFrames:
-				del self.currentFrames[devId]
-			if devId in self.currentMeta:
-				del self.currentMeta[devId]
-		#print self.devInputs
+	def SetActiveCams(self, devList):	
+		self.devInputs = devList[:]
 
 	def ProcessFrame(self, frame, meta, devName):
-		if devName not in self.devInputs: return
 		self.currentFrames[devName] = frame
 		self.currentMeta[devName] = meta
 

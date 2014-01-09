@@ -58,13 +58,8 @@ class MainWindow(QtGui.QMainWindow):
 		self.guiSources.cameraParamsChanged.connect(self.CameraParamsChanged)
 		self.cameraArrangement.SetCamParams(self.guiSources.GetCamParams())
 
-		activeSources = self.guiSources.GetActiveSources()
-		for srcId in activeSources:
-			self.findCorrespondences.AddSource(srcId)
-
 		self.guiCorrespondences = guicorrespondences.GuiCorrespondences()
-		self.guiCorrespondences.setShown(0)
-		self.guiCorrespondences.SetDeviceList(self.guiSources.devNames)
+		self.guiCorrespondences.setShown(0)		
 		self.guiCorrespondences.optimisePressed.connect(self.CorrespondenceOptimisePressed)
 
 		self.guiPanorama = guipanorama.GuiPanorama()
@@ -100,12 +95,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.guiPanorama.setShown(1)
 
 	def VideoSourceToggleEvent(self, srcId, srcStatus):
-		print "VideoSourceToggleEvent", srcId, srcStatus
-		if srcStatus == 1:
-			self.findCorrespondences.AddSource(srcId)
-		else:
-			self.findCorrespondences.RemoveSource(srcId)
-		self.guiCorrespondences.UpdateActiveDevices()
+		pass
 
 	def ProcessFrame(self, frame, meta, devName):
 		self.findCorrespondences.ProcessFrame(frame, meta, devName)
@@ -122,6 +112,12 @@ class MainWindow(QtGui.QMainWindow):
 		self.cameraArrangement.Clear()
 		if doCorrespondence:
 			self.findCorrespondences.Clear()
+
+			#Establish which cameras are used
+			activeSources = self.guiSources.GetActiveSources()
+			self.findCorrespondences.SetActiveCams(activeSources)
+			self.guiPanorama.SetActiveCams(activeSources)
+			self.guiCorrespondences.SetActiveCams(activeSources)
 
 		#Estimate correspondences and camera positions
 		self.calibratePopup = guisources.CalibratePopup(self, self.findCorrespondences, self.cameraArrangement)
@@ -147,7 +143,7 @@ class MainWindow(QtGui.QMainWindow):
 		visObj = pano.PanoView(self.cameraArrangement, outProj)
 
 		self.guiPanorama.SetVisObject(visObj)
-		self.guiPanorama.SetActiveCams(self.findCorrespondences.devInputs)
+		
 
 		#Update gui with camera parameters
 		self.guiSources.SetCamParams(self.cameraArrangement.camParams)
