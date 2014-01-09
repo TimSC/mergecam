@@ -335,6 +335,11 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	if(addedPhotosItems==NULL) throw std::runtime_error("addedPhotosItems pointer is null");
 	Py_ssize_t numCams = PySequence_Size(addedPhotosItems);
 
+	if(self->openglTxWidthLi.size() > numCams) self->openglTxWidthLi.clear();
+	while(self->openglTxWidthLi.size() < numCams) self->openglTxWidthLi.push_back(0);
+	if(self->openglTxHeightLi.size() > numCams) self->openglTxHeightLi.clear();
+	while(self->openglTxHeightLi.size() < numCams) self->openglTxHeightLi.push_back(0);
+
 	//Load textures into opengl
 	for(Py_ssize_t i=0; i<numCams; i++)
 	{
@@ -379,8 +384,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		{
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, sourceWidth, 
 				sourceHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, imgRaw);
-			self->openglTxWidthLi.push_back(sourceWidth);
-			self->openglTxHeightLi.push_back(sourceHeight);
+			self->openglTxWidthLi[i] = sourceWidth;
+			self->openglTxHeightLi[i] = sourceHeight;
 			std::cout << i << "\t" << sourceWidth << "," << sourceHeight << std::endl;
 		}
 		else
@@ -393,8 +398,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				sourceWidth, sourceHeight, 
 				sourceFmt.c_str(), &openglTex, &openglTexLen,
 				&openglTxWidth, &openglTxHeight);
-			self->openglTxWidthLi.push_back(openglTxWidth);
-			self->openglTxHeightLi.push_back(openglTxHeight);
+			self->openglTxWidthLi[i] = openglTxWidth;
+			self->openglTxHeightLi[i] = openglTxHeight;
 
 			if(openglTex!=NULL)
 			{
@@ -485,6 +490,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		PyObject *imgPix = PyList_New(0);
 		std::vector<std::vector<double> > texPos;
 		const int numSq = 20;
+
+		std::cout << "xxx" << i << "\t"<<self->openglTxWidthLi[i] << "," << self->openglTxWidthLi[i] << std::endl;
+
 		for(int xstep = 0; xstep < numSq; xstep ++)
 		{
 			for(int ystep = 0; ystep < numSq; ystep ++)
