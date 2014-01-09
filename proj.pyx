@@ -169,7 +169,7 @@ class BaseCam(object):
 
 	def GetParams(self):
 		return {'hfov': self.hfov, 'a': self._a, 'b': self._b, 'c': self._c, 'd': self.d, 'e': self.e, 
-			'cLat': self.cLat, 'cLon': self.cLon, 'rot': self.rot}
+			'cLat': self.cLat, 'cLon': self.cLon, 'rot': self.rot, 'imgW': self.imgW, 'imgH': self.imgH}
 
 	def SetParams(self, params):
 		if 'a' in params: self._a = params['a']
@@ -178,6 +178,9 @@ class BaseCam(object):
 		if 'd' in params: self.d = params['d']
 		if 'e' in params: self.e = params['e']
 		if 'hfov' in params: self.hfov = params['hfov']
+		if 'imgW' in params: self.imgW = params['imgW']
+		if 'imgH' in params: self.imgH = params['imgH']
+
 		self.paramsChanged = True
 	
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px

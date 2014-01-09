@@ -54,10 +54,12 @@ class GuiPanorama(QtGui.QFrame):
 	def ProcessFrame(self, frame, meta, devName):
 		
 		ind = None
+		#print "ProcessFrame", devName
 		for i, devInfo in enumerate(self.activeCams):
 			if devName == devInfo[0]:
 				ind = i
 				break
+		#if ind is None: print ind, self.activeCams
 
 		if ind is None: return
 		while len(self.currentFrame) < len(self.activeCams): self.currentFrame.append(None)

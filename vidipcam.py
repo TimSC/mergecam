@@ -154,6 +154,7 @@ class IpCamWidget(QtGui.QFrame):
 			if len(self.incomingImages.rxBuff) > 0:
 				data = self.incomingImages.get_frame()
 				if data is not None:
+					#print "emit", self.devId, self.url
 					self.webcamSignal.emit(data[0], data[1], str(self.devId))
 					self.UpdatePreview(data[0], data[1])
 

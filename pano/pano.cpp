@@ -42,6 +42,7 @@ public:
 	int dstXRangeSet, dstYRangeSet;
 	double dstXMin, dstXMax;
 	double dstYMin, dstYMax;
+	std::vector<int> displayListImgWidth, displayListImgHeight;
 };
 typedef PanoView_cl PanoView;
 
@@ -345,7 +346,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		if(pyImage == Py_None or metaObj == Py_None)
 		{
-			self->textureIds.push_back(-1);
+			self->textureIds.push_back(0);
 			Py_DECREF(pyImage);
 			Py_DECREF(metaObj);
 			continue;
@@ -417,14 +418,18 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	}
 
-	//Create display lists of camera lens shapes
-	if(self->displayLists.size() == 0)
-	{
-	self->dstXRangeSet = 0;
-	self->dstYRangeSet = 0;
+	//Initialise memory to contain display lists
+	while(self->displayLists.size() < numCams)
+		self->displayLists.push_back(0);
+	while(self->displayListImgWidth.size() < numCams)
+		self->displayListImgWidth.push_back(0);
+	while(self->displayListImgHeight.size() < numCams)
+		self->displayListImgHeight.push_back(0);
 
+	//Create display lists of camera lens shapes
 	for(Py_ssize_t i=0; i<numCams; i++)
 	{
+
 		//Get meta data from python objects
 		PyObject *pyImage = PySequence_GetItem(images, i);
 		if(pyImage==NULL) throw std::runtime_error("pyImage pointer is null");
@@ -433,7 +438,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		if(pyImage == Py_None or metaObj == Py_None)
 		{
-			self->displayLists.push_back(-1);
+			//Skip if camera data is missing
 			Py_DECREF(pyImage);
 			Py_DECREF(metaObj);
 			continue;
@@ -446,6 +451,24 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		if(heightObj==NULL) throw std::runtime_error("heightObj pointer is null");
 		long sourceHeight = PyInt_AsLong(heightObj);
 
+		//std::cout << i<<"src " << sourceWidth << "," << sourceHeight << std::endl;
+		//std::cout << i<<"expected " << self->displayListImgWidth[i] << "," << self->displayListImgHeight[i] << std::endl;
+
+		//If input image has an unexpected size for the corresponding display list,
+		//delete and regenerate the display list
+		if(self->displayLists[i] != 0  && (sourceWidth != self->displayListImgWidth[i]
+			|| sourceHeight != self->displayListImgHeight[i]))
+		{
+			std::cout << "Deleting display list "<< self->displayLists[i] << std::endl;
+			glDeleteLists(self->displayLists[i], 1);
+			self->displayLists[i] = 0;
+		}
+		
+		//std::cout << i << "\t" << self->displayLists[i] << std::endl;
+
+		//Existing display list is fine, continue
+		if(self->displayLists[i] != 0)
+			continue;
 
 		GLuint dl = glGenLists(1);
 		glNewList(dl,GL_COMPILE);
@@ -510,6 +533,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		PyObject *camUnProj = PyObject_GetAttrString(camData, "UnProj");
 		if(camUnProj==NULL)
 			throw std::runtime_error("UnProj method not defined");
+
+		PyObject_Print(camUnProj,stdout,Py_PRINT_RAW);
 
 		PyObject *unprojArgs = PyTuple_New(1);
 		PyTuple_SetItem(unprojArgs, 0, imgPix);
@@ -591,8 +616,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		Py_DECREF(camDataTup);
 
 		glEndList();
-		self->displayLists.push_back(dl);
-	}
+		self->displayLists[i] = dl;
+		self->displayListImgWidth[i] = sourceWidth;
+		self->displayListImgHeight[i] = sourceHeight;
 	}
 
 	//Limit display area to bounds
@@ -634,7 +660,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	//Perform actual drawing
 	for(int i=0;i< self->displayLists.size(); i++)
 	{
-		if(self->displayLists[i] < 0)
+		if(self->displayLists[i] == 0)
 			continue;
 
 		glPushMatrix();

@@ -1,7 +1,7 @@
 from PySide import QtGui, QtCore
 import videolive, vidinput, vidpano, time, vidipcam
 import multiprocessing
-import traceback, uuid
+import traceback, hashlib
 
 class GuiSources(QtGui.QFrame):
 	sourceToggled = QtCore.Signal(str, int)
@@ -183,8 +183,11 @@ class GuiSources(QtGui.QFrame):
 		self.AddIpCamera(self.camDialog.camType, self.camDialog.url)
 	
 	def AddIpCamera(self, camType, url):
-		camNamespace = uuid.UUID('c58012b7-7020-4418-a389-f79b6f075978')
-		devId = str(uuid.uuid5(camNamespace, str(camType+":"+url)))
+		ha = hashlib.sha256()
+		prehashStr = str(camType+":"+url.encode('utf-8'))
+		print prehashStr
+		ha.update(prehashStr)
+		devId = ha.hexdigest()
 		print "devId", devId
 
 		if devId in self.inputDeviceToWidgetDict:
@@ -203,6 +206,11 @@ class GuiSources(QtGui.QFrame):
 
 	def AddSourceFromMeta(self, camInfo):
 		print "AddSourceFromMeta", camInfo
+		if len(camInfo) >= 4 and camInfo[2] == "MJPEG IP Camera":
+			try:
+				self.AddIpCamera(camInfo[2], camInfo[3])
+			except Exception as err:
+				print err
 
 #def CalibrateProgressCallback(progress):
 #	print "progress", progress
