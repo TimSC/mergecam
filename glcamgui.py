@@ -54,7 +54,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.guiSources.sourceToggled.connect(self.VideoSourceToggleEvent)
 		self.guiSources.webcamSignal.connect(self.ProcessFrame)
 		self.guiSources.calibratePressed.connect(self.SourcesCalibratePressed)
-		self.guiSources.deviceListChanged.connect(self.DeviceListChanged)
+		self.guiSources.deviceAdded.connect(self.DeviceAdded)
 		self.guiSources.cameraParamsChanged.connect(self.CameraParamsChanged)
 		self.cameraArrangement.SetCamParams(self.guiSources.GetCamParams())
 
@@ -154,9 +154,8 @@ class MainWindow(QtGui.QMainWindow):
 		self.guiCorrespondences.SetFrames(self.findCorrespondences.calibrationFrames, 
 			self.findCorrespondences.calibrationMeta)
 
-	def DeviceListChanged(self, deviceList):
-		print "DeviceListChanged"
-		self.findCorrespondences.SetDeviceList(deviceList)
+	def DeviceAdded(self, devId):
+		print "DeviceAdded"
 
 	def CameraParamsChanged(self, camParams):
 		self.cameraArrangement.SetCamParams(camParams)

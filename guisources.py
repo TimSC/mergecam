@@ -1,5 +1,5 @@
 from PySide import QtGui, QtCore
-import videolive, vidinput, vidpano, time
+import videolive, vidinput, vidpano, time, vidipcam
 import multiprocessing
 import traceback
 
@@ -7,7 +7,8 @@ class GuiSources(QtGui.QFrame):
 	sourceToggled = QtCore.Signal(str, int)
 	webcamSignal = QtCore.Signal(bytearray, dict, str)
 	calibratePressed = QtCore.Signal(int)
-	deviceListChanged = QtCore.Signal(list)
+	deviceAdded = QtCore.Signal(list)
+	deviceRemoved = QtCore.Signal(list)
 	cameraParamsChanged = QtCore.Signal(dict)
 
 	def __init__(self, devManager):
@@ -105,7 +106,7 @@ class GuiSources(QtGui.QFrame):
 			self.sourceList.addWidget(widget)
 			self.inputDeviceToWidgetDict[fina] = widget
 
-		self.deviceListChanged.emit(self.devNames)
+			self.deviceAdded.emit(fina)
 		
 	def ProcessFrame(self, frame, meta, devName):
 		if 0: #Debug code
@@ -190,6 +191,22 @@ class GuiSources(QtGui.QFrame):
 	def AddIpCamera(self):
 		self.camDialog = AddIpCameraDialog(self)
 		self.camDialog.exec_()
+
+		if self.camDialog.url is None:
+			return
+		
+		devId = "ipCam"
+		friendlyName = "IP Camera"
+		ipCam = vidipcam.IpCamWidget(devId, friendlyName, self.camDialog.camType, self.camDialog.url)
+		
+		ipCam.webcamSignal.connect(self.ProcessFrame)
+		ipCam.sourceToggled.connect(self.VideoSourceToggleEvent)
+		self.sourceList.addWidget(ipCam)
+		self.inputDeviceToWidgetDict[devId] = ipCam
+		self.devNames.append((devId, friendlyName, self.camDialog.camType, self.camDialog.url))
+
+		self.deviceAdded.emit(devId)
+
 
 #def CalibrateProgressCallback(progress):
 #	print "progress", progress
@@ -281,15 +298,18 @@ class AddIpCameraDialog(QtGui.QDialog):
 	def __init__(self, parent):
 		QtGui.QDialog.__init__(self, parent)
 
+		self.url = None
+		self.camType = None
+
 		self.mainLayout = QtGui.QVBoxLayout()
 		self.setLayout(self.mainLayout)
 
-		self.camType = QtGui.QComboBox()
-		self.camType.addItem("MJPEG IP Camera")
-		self.mainLayout.addWidget(self.camType)
+		self.camTypeCombo = QtGui.QComboBox()
+		self.camTypeCombo.addItem("MJPEG IP Camera")
+		self.mainLayout.addWidget(self.camTypeCombo)
 
-		self.text = QtGui.QLineEdit("url")
-		self.mainLayout.addWidget(self.text)
+		self.urlEdit = QtGui.QLineEdit("http://umevakameran.net.umea.se/mjpg/video.mjpg")#("url")
+		self.mainLayout.addWidget(self.urlEdit)
 
 		self.buttonLayout = QtGui.QHBoxLayout()
 		self.mainLayout.addLayout(self.buttonLayout)
@@ -303,6 +323,8 @@ class AddIpCameraDialog(QtGui.QDialog):
 		self.cancelButton.pressed.connect(self.CancelPressed)
 
 	def OkPressed(self):
+		self.url = self.urlEdit.text()
+		self.camType = self.camTypeCombo.currentText()
 		self.close()
 
 	def CancelPressed(self):
