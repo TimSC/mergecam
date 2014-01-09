@@ -174,8 +174,14 @@ class MainWindow(QtGui.QMainWindow):
 			self.cameraArrangement = inData['cams']
 		if 'pairs' in inData:
 			self.guiCorrespondences.SetFramePairs(inData['pairs'])
+		else:
+			self.guiCorrespondences.SetFramePairs([])
 		if 'correspond' in inData:
 			self.findCorrespondences = inData['correspond']
+
+		self.findCorrespondences.SetActiveCams(self.findCorrespondences.devInputs)
+		self.guiPanorama.SetActiveCams(self.findCorrespondences.devInputs)
+		self.guiCorrespondences.SetActiveCams(self.findCorrespondences.devInputs)
 
 		#Estimate final transform
 		outProj = proj.EquirectangularCam()
@@ -184,7 +190,6 @@ class MainWindow(QtGui.QMainWindow):
 		visObj = pano.PanoView(self.cameraArrangement, outProj)
 
 		self.guiPanorama.SetVisObject(visObj)
-		self.guiPanorama.SetActiveCams(self.findCorrespondences.devInputs)
 
 		#Update gui with camera parameters
 		self.guiSources.SetCamParams(self.cameraArrangement.camParams)

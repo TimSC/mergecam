@@ -7,8 +7,8 @@ class GuiPanorama(QtGui.QFrame):
 		QtGui.QFrame.__init__(self)
 
 		self.framesRcvSinceOutput = set()
-		self.currentFrame = {}
-		self.currentMeta = {}
+		self.currentFrame = []
+		self.currentMeta = []
 		self.visObj = None
 		self.activeCams = []
 
@@ -53,9 +53,18 @@ class GuiPanorama(QtGui.QFrame):
 
 	def ProcessFrame(self, frame, meta, devName):
 		
-		if devName not in [devInfo[0] for devInfo in self.activeCams]: return
-		self.currentFrame[devName] = frame
-		self.currentMeta[devName] = meta
+		ind = None
+		for i, devInfo in enumerate(self.activeCams):
+			if devName == devInfo[0]:
+				ind = i
+				break
+
+		if ind is None: return
+		while len(self.currentFrame) < len(self.activeCams): self.currentFrame.append(None)
+		while len(self.currentMeta) < len(self.activeCams): self.currentMeta.append(None)
+		
+		self.currentFrame[ind] = frame
+		self.currentMeta[ind] = meta
 
 		if self.visObj is None: return
 
@@ -65,9 +74,9 @@ class GuiPanorama(QtGui.QFrame):
 			if 1:
 				#print len(self.currentFrame), self.currentMeta
 				startTime = time.time()
-				visPixOut, visMetaOut = self.visObj.Vis(self.currentFrame.values(), self.currentMeta.values())
+				visPixOut, visMetaOut = self.visObj.Vis(self.currentFrame, self.currentMeta)
 				print "Generated panorama in",time.time()-startTime,"sec"
-				#self.visObj.Vis(self.currentFrame.values(), self.currentMeta.values())
+				#self.visObj.Vis(self.currentFrame, self.currentMeta)
 			if 1:
 				#visPixOut = bytearray([128 for i in range(800 * 600 * 3)])
 				#visMetaOut = {"height": 600, "width": 800, "format": "RGB24"}
@@ -83,3 +92,4 @@ class GuiPanorama(QtGui.QFrame):
 	def SetActiveCams(self, activeCams):
 		print "SetActiveCams", activeCams
 		self.activeCams = activeCams
+
