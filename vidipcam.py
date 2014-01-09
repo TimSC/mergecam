@@ -142,9 +142,8 @@ class IpCamWidget(QtGui.QFrame):
 			if len(self.incomingImages.rxBuff) > 0:
 				data = self.incomingImages.get_frame()
 				if data is not None:
-					pass
-					#self.webcamSignal.emit(data[0], data[1], str(self.devId))
-					#self.UpdatePreview(data[0], data[1])
+					self.webcamSignal.emit(data[0], data[1], str(self.devId))
+					self.UpdatePreview(data[0], data[1])
 
 	def UpdatePreview(self, frame, meta):
 		if meta['format'] != "RGB24": return
