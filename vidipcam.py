@@ -25,9 +25,8 @@ class HandleJpegData(object):
 
 		decodedFrame = bytearray()
 		print "test1"
-		#ret = videolive.DecodeAndResizeFrame("MJPEG", 0, 0, bytearray(frameDat), "RGB24", 0, 0, decodedFrame)
+		ret = videolive.DecodeAndResizeFrame("MJPEG", 0, 0, bytearray(frameDat), "RGB24", 0, 0, decodedFrame)
 		print "test2"
-		return None
 		try:
 			print "Do stuff"
 		except Exception as err:
@@ -147,9 +146,9 @@ class IpCamWidget(QtGui.QFrame):
 			if len(self.incomingImages.rxBuff) > 0:
 				data = self.incomingImages.get_frame()
 				if data is not None:
-
-					self.webcamSignal.emit(data[0], data[1], str(self.devId))
-					self.UpdatePreview(data[0], data[1])
+					pass
+					#self.webcamSignal.emit(data[0], data[1], str(self.devId))
+					#self.UpdatePreview(data[0], data[1])
 
 	def UpdatePreview(self, frame, meta):
 		if meta['format'] != "RGB24": return

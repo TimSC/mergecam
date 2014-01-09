@@ -160,18 +160,24 @@ class GuiSources(QtGui.QFrame):
 
 	def IdleEvent(self):
 		for fina in self.inputDeviceToWidgetDict:
+			print "spam"
 			camWidget = self.inputDeviceToWidgetDict[fina]
+			print "eggs"
 			try:
+				print "dead"
 				camWidget.Update()
+				print "parrot"
 			except Exception as err:
 				print err
 
+		print "foo"
 		for fina in self.processingWidgets:
 			procWidget = self.processingWidgets[fina]
 			try:
 				procWidget.Update()
 			except Exception as err:
 				print err
+		print "bar"
 
 	def VideoSourceToggleEvent(self, srcId, srcStatus):
 		self.sourceToggled.emit(srcId, srcStatus)
