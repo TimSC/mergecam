@@ -625,7 +625,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	//Limit display area to bounds
 	if(self->dstXMax > self->outImgW) self->dstXMax = self->outImgW;
 	if(self->dstXMin < 0.) self->dstXMin = 0.;
-	if(self->dstYMax > self->outImgW) self->dstYMax = self->outImgH;
+	if(self->dstYMax > self->outImgH) self->dstYMax = self->outImgH;
 	if(self->dstYMin < 0.) self->dstYMin = 0.;
 
 	//Scale display area to fit
