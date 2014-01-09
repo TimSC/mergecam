@@ -1,7 +1,7 @@
 from PySide import QtGui, QtCore
 import videolive, vidinput, vidpano, time, vidipcam
 import multiprocessing
-import traceback
+import traceback, uuid
 
 class GuiSources(QtGui.QFrame):
 	sourceToggled = QtCore.Signal(str, int)
@@ -180,10 +180,16 @@ class GuiSources(QtGui.QFrame):
 		if self.camDialog.url is None:
 			return
 		
-		devId = "ipCam"
+		camNamespace = uuid.UUID('c58012b7-7020-4418-a389-f79b6f075978')
+		devId = uuid.uuid5(camNamespace, str(self.camDialog.url))
+		print "devId", devId
+
+		if devId in self.inputDeviceToWidgetDict:
+			raise Exception("Device already added")
+
 		friendlyName = "IP Camera"
 		ipCam = vidipcam.IpCamWidget(devId, friendlyName, self.camDialog.camType, self.camDialog.url)
-		
+
 		ipCam.webcamSignal.connect(self.ProcessFrame)
 		ipCam.sourceToggled.connect(self.VideoSourceToggleEvent)
 		self.sourceList.addWidget(ipCam)
@@ -191,7 +197,6 @@ class GuiSources(QtGui.QFrame):
 		self.devNames.append((devId, friendlyName, self.camDialog.camType, self.camDialog.url))
 
 		self.deviceAdded.emit(devId)
-
 
 #def CalibrateProgressCallback(progress):
 #	print "progress", progress
