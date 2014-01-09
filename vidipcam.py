@@ -16,6 +16,7 @@ class HandleJpegData(object):
 		self.count += 1
 
 	def get_frame(self):
+
 		if len(self.rxBuff) == 0:
 			return None
 
@@ -23,8 +24,17 @@ class HandleJpegData(object):
 		self.rxBuff.pop(0)
 
 		decodedFrame = bytearray()
-		ret = videolive.DecodeAndResizeFrame("MJPEG", 0, 0, bytearray(frameDat), "RGB24", 0, 0, decodedFrame)
-		return decodedFrame, {'format': 'RGB24', 'height': 480, 'width': 640}
+		print "test1"
+		#ret = videolive.DecodeAndResizeFrame("MJPEG", 0, 0, bytearray(frameDat), "RGB24", 0, 0, decodedFrame)
+		print "test2"
+		return None
+		try:
+			print "Do stuff"
+		except Exception as err:
+			print err
+
+		return None
+		#return decodedFrame, {'format': 'RGB24', 'height': 480, 'width': 640}
 
 def HandleBinData(contentType, dat):
 	print contentType, len(dat)
