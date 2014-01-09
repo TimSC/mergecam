@@ -83,7 +83,6 @@ class DecodeXMixedReplace(object):
 def Get(url, rx, incomingImages, userpass = None):
 	while not incomingImages.stop:
 		c = pycurl.Curl()
-		print url
 		c.setopt(pycurl.URL, str(url))
 		if userpass is not None: c.setopt(pycurl.USERPWD, userpass)
 

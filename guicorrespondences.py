@@ -40,9 +40,7 @@ class FrameView(QtGui.QWidget):
 		self.frameCombo.clear()
 		devList = [dev[0] for dev in self.activeDevices]
 		devList.reverse()
-		print "Test"
 		for devInfo in self.activeDevices:
-			print "dev", devInfo[0]
 			name = devInfo[0]
 			if len(devInfo) > 2:
 				name = devInfo[1]
