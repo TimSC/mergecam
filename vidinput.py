@@ -43,6 +43,10 @@ class SourceWidget(QtGui.QFrame):
 		#Start video
 		self.ClickedOn()
 	
+	def Stop(self):
+		if self.cameraOn:
+			self.ClickedOn()
+
 	def Update(self):
 		if self.cameraOn:
 			data = self.devManager.get_frame(self.devId)

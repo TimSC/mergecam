@@ -81,6 +81,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.show()
 
 	def __del__(self):
+		self.guiSources.Stop()
 		print "Shutting down"
 
 	def ViewSourcesButtonPressed(self):

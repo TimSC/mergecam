@@ -76,9 +76,15 @@ class GuiSources(QtGui.QFrame):
 
 	def __del__(self):
 		print "GuiSources shutting down"
+		for dev in self.inputDeviceToWidgetDict.values():
+			dev.Stop()
 		#self.timer.stop()
 		#self.close()
 		#del self.devManager
+
+	def Stop(self):
+		for dev in self.inputDeviceToWidgetDict.values():
+			dev.Stop()
 
 	def GetActiveSources(self):
 		activeSources = []

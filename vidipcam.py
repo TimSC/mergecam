@@ -5,15 +5,15 @@ import pycurl, threading, videolive
 
 class HandleJpegData(object):
 	def __init__(self):
-		self.count = 0
 		self.rxBuff = []
+		self.stop = False
 
 	def write(self, contentType, dat):
-		#fi = open("test"+str(self.count)+".jpeg","wb")
-		#fi.write(dat)
-		#fi.close()
 		self.rxBuff.append(dat)
-		self.count += 1
+		if self.stop:
+			return 0 #Stop download
+		else:
+			return None
 
 	def get_frame(self):
 
@@ -62,7 +62,7 @@ class DecodeXMixedReplace(object):
 			eol = self.rxBuff.find("\r\n")
 			if eol < 0: continue
 			li = self.rxBuff[:eol]
-			print eol, "'"+str(li)+"'"
+			#print eol, "'"+str(li)+"'"
 			self.rxBuff = self.rxBuff[eol+2:]
 			if eol == 0 and self.contentLength is not None:
 				self.inBinarySection = True
@@ -80,17 +80,21 @@ class DecodeXMixedReplace(object):
 			self.inBinarySection = False
 			self.contentType = None
 
-def Get(url, rx, userpass = None):
-	c = pycurl.Curl()
-	print url
-	c.setopt(pycurl.URL, str(url))
-	if userpass is not None: c.setopt(pycurl.USERPWD, userpass)
+def Get(url, rx, incomingImages, userpass = None):
+	while not incomingImages.stop:
+		c = pycurl.Curl()
+		print url
+		c.setopt(pycurl.URL, str(url))
+		if userpass is not None: c.setopt(pycurl.USERPWD, userpass)
 
-	c.setopt(pycurl.WRITEFUNCTION, rx.writeBody)
-	c.setopt(pycurl.HEADERFUNCTION, rx.writeHeader)  
+		c.setopt(pycurl.WRITEFUNCTION, rx.writeBody)
+		c.setopt(pycurl.HEADERFUNCTION, rx.writeHeader)  
 
-	c.perform()
+		c.perform()
 
+		#Prevent sending requests too often
+		if not incomingImages.stop:
+			time.sleep(1.)
 
 class IpCamWidget(QtGui.QFrame):
 	webcamSignal = QtCore.Signal(bytearray, dict, str)
@@ -137,6 +141,15 @@ class IpCamWidget(QtGui.QFrame):
 		#Start video
 		self.ClickedOn()
 	
+	def __del__(self):
+		print "Stop ip cam"
+		if self.cameraOn:
+			self.ClickedOn()
+
+	def Stop(self):
+		if self.cameraOn:
+			self.ClickedOn()		
+
 	def Update(self):
 		if self.cameraOn and self.decoder is not None:
 			if len(self.incomingImages.rxBuff) > 0:
@@ -165,12 +178,15 @@ class IpCamWidget(QtGui.QFrame):
 			self.cameraOn = False
 			self.decoder = None
 			self.thread = None
+			self.incomingImages.stop = True
 			self.ClearPreview()
 		else:
 			self.cameraOn = True
+			self.incomingImages.stop = False
 			self.decoder = DecodeXMixedReplace()
 			self.decoder.callback = self.incomingImages.write
-			self.thread = threading.Thread(group=None, target=Get, args=(self.url, self.decoder))
+			self.thread = threading.Thread(group=None, target=Get, args=(self.url, self.decoder, self.incomingImages))
+			self.thread.daemon = 1
 			self.thread.start()
 
 		#self.onButton.setChecked(self.cameraOn)
