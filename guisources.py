@@ -45,7 +45,11 @@ class GuiSources(QtGui.QFrame):
 
 		self.sourcesColumn.addWidget(self.sourceScrollArea, 1)
 
+		self.addIpCameraButton = QtGui.QPushButton("Add IP Camera")
+		self.addIpCameraButton.pressed.connect(self.AddIpCamera)
+
 		self.selectInputsLayout.addLayout(self.sourcesColumn)
+		self.sourcesColumn.addWidget(self.addIpCameraButton)
 		
 		self.pano = vidpano.LensParamsWidget()
 		self.pano.calibratePressed.connect(self.ClickedCalibrate)
@@ -183,6 +187,10 @@ class GuiSources(QtGui.QFrame):
 	def SetCamParams(self, params):
 		self.pano.SetCamParams(params)
 
+	def AddIpCamera(self):
+		self.camDialog = AddIpCameraDialog(self)
+		self.camDialog.exec_()
+
 #def CalibrateProgressCallback(progress):
 #	print "progress", progress
 
@@ -266,4 +274,38 @@ class CalibratePopup(QtGui.QDialog):
 	def closeEvent(self, event):
 		if not self.done:
 			event.ignore()
+
+
+class AddIpCameraDialog(QtGui.QDialog):
+
+	def __init__(self, parent):
+		QtGui.QDialog.__init__(self, parent)
+
+		self.mainLayout = QtGui.QVBoxLayout()
+		self.setLayout(self.mainLayout)
+
+		self.camType = QtGui.QComboBox()
+		self.camType.addItem("MJPEG IP Camera")
+		self.mainLayout.addWidget(self.camType)
+
+		self.text = QtGui.QLineEdit("url")
+		self.mainLayout.addWidget(self.text)
+
+		self.buttonLayout = QtGui.QHBoxLayout()
+		self.mainLayout.addLayout(self.buttonLayout)
+
+		self.okButton = QtGui.QPushButton("OK")
+		self.buttonLayout.addWidget(self.okButton)
+		self.okButton.pressed.connect(self.OkPressed)
+
+		self.cancelButton = QtGui.QPushButton("Cancel")
+		self.buttonLayout.addWidget(self.cancelButton)
+		self.cancelButton.pressed.connect(self.CancelPressed)
+
+	def OkPressed(self):
+		self.close()
+
+	def CancelPressed(self):
+		self.close()
+
 

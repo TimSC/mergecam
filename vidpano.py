@@ -744,7 +744,7 @@ class FindCorrespondences(object):
 	def AddSource(self, devId):
 		if devId not in self.devInputs:
 			self.devInputs.append(devId)
-		print self.devInputs
+		#print self.devInputs
 
 	def RemoveSource(self, devId):
 		if devId in self.devInputs:
@@ -753,7 +753,7 @@ class FindCorrespondences(object):
 				del self.currentFrames[devId]
 			if devId in self.currentMeta:
 				del self.currentMeta[devId]
-		print self.devInputs
+		#print self.devInputs
 
 	def ProcessFrame(self, frame, meta, devName):
 		if devName not in self.devInputs: return
