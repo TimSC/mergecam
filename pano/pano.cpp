@@ -386,7 +386,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				sourceHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, imgRaw);
 			self->openglTxWidthLi[i] = sourceWidth;
 			self->openglTxHeightLi[i] = sourceHeight;
-			std::cout << i << "\t" << sourceWidth << "," << sourceHeight << std::endl;
+			//std::cout << i << "\t" << sourceWidth << "," << sourceHeight << std::endl;
 		}
 		else
 		{
@@ -490,8 +490,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		PyObject *imgPix = PyList_New(0);
 		std::vector<std::vector<double> > texPos;
 		const int numSq = 20;
-
-		std::cout << "xxx" << i << "\t"<<self->openglTxWidthLi[i] << "," << self->openglTxWidthLi[i] << std::endl;
 
 		for(int xstep = 0; xstep < numSq; xstep ++)
 		{
