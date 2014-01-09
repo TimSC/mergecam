@@ -60,6 +60,7 @@ class FrameView(QtGui.QWidget):
 		meta = self.calibrationMeta[0][ind]
 
 		self.scene.clear()
+		self.scene.setSceneRect(0, 0, meta['width'], meta['height'])
 		im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
 		pix = QtGui.QPixmap(im2)
 
