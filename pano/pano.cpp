@@ -343,6 +343,14 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		PyObject *metaObj = PySequence_GetItem(metas, i);
 		if(metaObj==NULL) throw std::runtime_error("metaObj pointer is null");
 
+		if(pyImage == Py_None or metaObj == Py_None)
+		{
+			self->textureIds.push_back(-1);
+			Py_DECREF(pyImage);
+			Py_DECREF(metaObj);
+			continue;
+		}
+
 		PyObject *widthObj = PyDict_GetItemString(metaObj, "width");
 		if(widthObj==NULL) throw std::runtime_error("widthObj pointer is null");
 		long sourceWidth = PyInt_AsLong(widthObj);
@@ -422,6 +430,14 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		if(pyImage==NULL) throw std::runtime_error("pyImage pointer is null");
 		PyObject *metaObj = PySequence_GetItem(metas, i);
 		if(metaObj==NULL) throw std::runtime_error("metaObj pointer is null");
+
+		if(pyImage == Py_None or metaObj == Py_None)
+		{
+			self->displayLists.push_back(-1);
+			Py_DECREF(pyImage);
+			Py_DECREF(metaObj);
+			continue;
+		}
 
 		PyObject *widthObj = PyDict_GetItemString(metaObj, "width");
 		if(widthObj==NULL) throw std::runtime_error("widthObj pointer is null");
@@ -514,7 +530,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		PyObject *dstPos = PyObject_Call(dstProj, projArgs, NULL);
 
 		//Draw images using opengl
-		glBindTexture(GL_TEXTURE_2D, self->textureIds[i]);
+		if(self->textureIds[i] >= 0)
+			glBindTexture(GL_TEXTURE_2D, self->textureIds[i]);
 		glColor3d(1.,1.,1.);
 		
 		for(unsigned sqNum = 0; sqNum < sqInd.size(); sqNum++)
@@ -617,6 +634,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	//Perform actual drawing
 	for(int i=0;i< self->displayLists.size(); i++)
 	{
+		if(self->displayLists[i] < 0)
+			continue;
+
 		glPushMatrix();
 		glTranslatef(-self->outImgW,0.,0.);
 		glCallList(self->displayLists[i]);
@@ -635,7 +655,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	for(int i=0;i<self->textureIds.size(); i++)
 	{
 		//Delete opengl texture
-		glDeleteTextures(1, &self->textureIds[i]);
+		if(self->textureIds[i] >= 0)
+			glDeleteTextures(1, &self->textureIds[i]);
 	}
 	self->textureIds.clear();
 

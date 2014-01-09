@@ -232,7 +232,9 @@ class GuiCorrespondences(QtGui.QFrame):
 		indLeft = self.leftView.CurrentIndex()
 		indRight = self.rightView.CurrentIndex()
 
-		if self.framePairs is None or len(self.framePairs[0]) < 1: return None, None
+		if self.framePairs is None: return None, None
+		if len(self.framePairs)==0: return None, None
+		if len(self.framePairs[0]) < 1: return None, None
 		firstSet = self.framePairs[0]
 
 		for pair in firstSet:

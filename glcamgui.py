@@ -179,9 +179,14 @@ class MainWindow(QtGui.QMainWindow):
 		if 'correspond' in inData:
 			self.findCorrespondences = inData['correspond']
 
-		self.findCorrespondences.SetActiveCams(self.findCorrespondences.devInputs)
+		#self.findCorrespondences.SetActiveCams(self.findCorrespondences.devInputs)
+		devInputs = self.findCorrespondences.devInputs
 		self.guiPanorama.SetActiveCams(self.findCorrespondences.devInputs)
 		self.guiCorrespondences.SetActiveCams(self.findCorrespondences.devInputs)
+
+		#Create cameras if necessary
+		for devInfo in devInputs:
+			self.guiSources.AddSourceFromMeta(devInfo)
 
 		#Estimate final transform
 		outProj = proj.EquirectangularCam()

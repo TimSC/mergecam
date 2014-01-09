@@ -47,7 +47,7 @@ class GuiSources(QtGui.QFrame):
 		self.sourcesColumn.addWidget(self.sourceScrollArea, 1)
 
 		self.addIpCameraButton = QtGui.QPushButton("Add IP Camera")
-		self.addIpCameraButton.pressed.connect(self.AddIpCamera)
+		self.addIpCameraButton.pressed.connect(self.AddIpCameraPressed)
 
 		self.selectInputsLayout.addLayout(self.sourcesColumn)
 		self.sourcesColumn.addWidget(self.addIpCameraButton)
@@ -173,30 +173,36 @@ class GuiSources(QtGui.QFrame):
 	def SetCamParams(self, params):
 		self.pano.SetCamParams(params)
 
-	def AddIpCamera(self):
+	def AddIpCameraPressed(self):
 		self.camDialog = AddIpCameraDialog(self)
 		self.camDialog.exec_()
 
 		if self.camDialog.url is None:
 			return
-		
+
+		self.AddIpCamera(self.camDialog.camType, self.camDialog.url)
+	
+	def AddIpCamera(self, camType, url):
 		camNamespace = uuid.UUID('c58012b7-7020-4418-a389-f79b6f075978')
-		devId = uuid.uuid5(camNamespace, str(self.camDialog.url))
+		devId = str(uuid.uuid5(camNamespace, str(camType+":"+url)))
 		print "devId", devId
 
 		if devId in self.inputDeviceToWidgetDict:
 			raise Exception("Device already added")
 
 		friendlyName = "IP Camera"
-		ipCam = vidipcam.IpCamWidget(devId, friendlyName, self.camDialog.camType, self.camDialog.url)
+		ipCam = vidipcam.IpCamWidget(devId, friendlyName, camType, url)
 
 		ipCam.webcamSignal.connect(self.ProcessFrame)
 		ipCam.sourceToggled.connect(self.VideoSourceToggleEvent)
 		self.sourceList.addWidget(ipCam)
 		self.inputDeviceToWidgetDict[devId] = ipCam
-		self.devNames.append((devId, friendlyName, self.camDialog.camType, self.camDialog.url))
+		self.devNames.append((devId, friendlyName, camType, url))
 
 		self.deviceAdded.emit(devId)
+
+	def AddSourceFromMeta(self, camInfo):
+		print "AddSourceFromMeta", camInfo
 
 #def CalibrateProgressCallback(progress):
 #	print "progress", progress
