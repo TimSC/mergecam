@@ -242,6 +242,13 @@ class CalibratePopup(QtGui.QDialog):
 			self.framePairs = self.findCorrespondences.Calc()
 
 		if self.doCameraPositions:
+
+			#Check there are some points to use for optimisation
+			if len(self.cameraArrangement.addedPhotos) == 0:
+				raise Exception("No points available for camera estimation")
+			if len(self.cameraArrangement.addedPhotos[0]) == 0:
+				raise Exception("No points available for camera estimation")
+
 			#Estimate camera directions and parameters
 			self.resultPipe, childResultPipe = multiprocessing.Pipe()
 			self.progressPipe, childProgressPipe = multiprocessing.Pipe()

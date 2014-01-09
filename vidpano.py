@@ -655,7 +655,9 @@ class FindCorrespondences(object):
 		#Store frame set for calibration use
 		frameSet = []
 		metaSet = []
+		print "Store calibration"
 		for devInfo in self.devInputs:
+			print "dev", devInfo[0]
 			frameSet.append(self.currentFrames[devInfo[0]])
 			metaSet.append(self.currentMeta[devInfo[0]])
 

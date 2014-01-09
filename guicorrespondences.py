@@ -36,20 +36,16 @@ class FrameView(QtGui.QWidget):
 		self.layout.addWidget(self.view, 1)
 		self.controlPoints = []
 
-	def FindFriendlyName(self, devId):
-		print "search", devId
-		for devData in self.activeDevices:
-			if devData[0] != devId: continue
-			if len(devData) >= 2:
-				return devData[1]
-		return devId
-
 	def RefreshList(self):
 		self.frameCombo.clear()
 		devList = [dev[0] for dev in self.activeDevices]
 		devList.reverse()
-		for devId in devList:
-			name = self.FindFriendlyName(devId)
+		print "Test"
+		for devInfo in self.activeDevices:
+			print "dev", devInfo[0]
+			name = devInfo[0]
+			if len(devInfo) > 2:
+				name = devInfo[1]
 			self.frameCombo.addItem(name)
 
 	def FrameChanged(self, ind = None):
