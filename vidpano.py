@@ -137,16 +137,16 @@ def CalcQualityForPair(inliers1, inliers2, corresp1, corresp2):
 
 	transform = np.dot(inliers2homo.transpose(), np.linalg.pinv(inliers1homo.transpose()))
 	#print "inv", transform
+	if 0:
+		proj = np.dot(transform, inliers1homo.transpose())
+		diff = proj - inliers2homo.transpose()
+		errs = np.power(np.power(diff[:2,:].transpose(),2.).sum(axis=1),0.5)
+		#print "inlier av err", errs.mean()
 
-	proj = np.dot(transform, inliers1homo.transpose())
-	diff = proj - inliers2homo.transpose()
-	errs = np.power(np.power(diff[:2,:].transpose(),2.).sum(axis=1),0.5)
-	#print "inlier av err", errs.mean()
-
-	proj = np.dot(transform, corresp1homo.transpose())
-	diff = proj - corresp2homo.transpose()
-	errs2 = np.power(np.power(diff[:2,:].transpose(),2.).sum(axis=1),0.5)
-	#print "corresp av err", errs2.mean()
+		proj = np.dot(transform, corresp1homo.transpose())
+		diff = proj - corresp2homo.transpose()
+		errs2 = np.power(np.power(diff[:2,:].transpose(),2.).sum(axis=1),0.5)
+		#print "corresp av err", errs2.mean()
 
 	#plt.plot(proj[0,:], proj[1,:],'x')
 	#plt.plot(inliers2homo[:,0], inliers2homo[:,1],'o')
