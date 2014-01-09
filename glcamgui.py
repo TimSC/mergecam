@@ -136,14 +136,16 @@ class MainWindow(QtGui.QMainWindow):
 		if self.cameraArrangement is None:
 			raise Exception("Camera arrangement not found")
 
-		#Estimate final transform
-		outProj = proj.EquirectangularCam()
-		outProj.imgW = 800
-		outProj.imgH = 600
-		visObj = pano.PanoView(self.cameraArrangement, outProj)
+		if len(self.cameraArrangement.addedPhotos):
+			#Estimate final transform
+			outProj = proj.EquirectangularCam()
+			outProj.imgW = 800
+			outProj.imgH = 600
+			visObj = pano.PanoView(self.cameraArrangement, outProj)
 
-		self.guiPanorama.SetVisObject(visObj)
-		
+			self.guiPanorama.SetVisObject(visObj)
+		else:
+			self.guiPanorama.SetVisObject(None)
 
 		#Update gui with camera parameters
 		self.guiSources.SetCamParams(self.cameraArrangement.camParams)

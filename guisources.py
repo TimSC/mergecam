@@ -244,6 +244,7 @@ class CalibratePopup(QtGui.QDialog):
 		if self.doCameraPositions:
 
 			#Check there are some points to use for optimisation
+			print self.cameraArrangement.addedPhotos
 			if len(self.cameraArrangement.addedPhotos) == 0:
 				raise Exception("No points available for camera estimation")
 			if len(self.cameraArrangement.addedPhotos[0]) == 0:
