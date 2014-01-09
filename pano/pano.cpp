@@ -381,6 +381,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				sourceHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, imgRaw);
 			self->openglTxWidthLi.push_back(sourceWidth);
 			self->openglTxHeightLi.push_back(sourceHeight);
+			std::cout << i << "\t" << sourceWidth << "," << sourceHeight << std::endl;
 		}
 		else
 		{

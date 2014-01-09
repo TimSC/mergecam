@@ -1,5 +1,7 @@
 from PySide import QtGui, QtCore
 import time, vidoutput, vidwriter, videolive
+import scipy.misc as misc
+import numpy as np
 
 class GuiPanorama(QtGui.QFrame):
 
@@ -72,7 +74,17 @@ class GuiPanorama(QtGui.QFrame):
 
 		if devName in self.framesRcvSinceOutput:
 			#We have received this frame again; it is time to write output
-			
+	
+			if 0:
+				#Save input images
+				for i, (frame, meta) in enumerate(zip(self.currentFrame,self.currentMeta)):
+					if frame is None:
+						continue
+					img = np.fromstring(str(frame), np.uint8, meta['width'] * meta['height'] * 3)
+					img = img.reshape((meta['height'], meta['width'], 3))
+					print img.shape
+					misc.imsave("test{0}.png".format(i), img)
+
 			if 1:
 				#print len(self.currentFrame), self.currentMeta
 				startTime = time.time()
