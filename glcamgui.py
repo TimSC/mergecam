@@ -122,9 +122,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.calibratePopup.doCorrespondence = doCorrespondence
 		self.calibratePopup.doCameraPositions = doCameraPositions
 		self.calibratePopup.activeSources = activeSources
-		startTime = time.time()
 		self.calibratePopup.Do()
-		print "Start worker in",time.time()-startTime,"sec"
 		self.calibratePopup.exec_() #Block until done
 		if self.calibratePopup.framePairs is not None:
 			self.guiCorrespondences.SetFramePairs(self.calibratePopup.framePairs)
