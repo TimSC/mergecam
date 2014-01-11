@@ -653,7 +653,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	if(showEntire || !self->dstXRangeSet)
 	{
 		glTranslated(-1.0, -1.0, 0.);
-		std::cout << "x" << self->outImgW << "," << self->outImgH << std::endl;
+		//std::cout << "x" << self->outImgW << "," << self->outImgH << std::endl;
 		glScaled(2./self->outImgW, 2./self->outImgH, 1.);
 	}
 	else
