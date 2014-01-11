@@ -180,7 +180,12 @@ class GuiSources(QtGui.QFrame):
 		if self.camDialog.url is None:
 			return
 
-		self.AddIpCamera(self.camDialog.camType, self.camDialog.url)
+		try:
+			self.AddIpCamera(self.camDialog.camType, self.camDialog.url)
+		except Exception as err:
+			msgBox = QtGui.QMessageBox()
+			msgBox.setText("Adding camera failed (is it already present?)")
+			msgBox.exec_()
 	
 	def AddIpCamera(self, camType, url):
 		ha = hashlib.sha256()
