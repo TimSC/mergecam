@@ -42,7 +42,7 @@ class FrameView(QtGui.QWidget):
 		devList.reverse()
 		for devInfo in self.activeDevices:
 			name = devInfo[0]
-			if len(devInfo) > 2:
+			if len(devInfo) >= 2:
 				name = devInfo[1]
 			self.frameCombo.addItem(name)
 
