@@ -32,7 +32,7 @@ class GuiSources(QtGui.QFrame):
 		self.sourceFrame = QtGui.QFrame();
 		#self.sourceFrame.setFrameStyle(QtGui.QFrame.Box)
 		self.sourceFrame.setContentsMargins(0, 0, 0, 0)
-		#self.sourceFrame.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
+		self.sourceFrame.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
 
 		self.sourceList = QtGui.QVBoxLayout()
 		self.sourceList.setContentsMargins(0, 0, 0, 0)
@@ -204,13 +204,19 @@ class GuiSources(QtGui.QFrame):
 
 		friendlyName = "IP Camera"
 		ipCam = vidipcam.IpCamWidget(devId, friendlyName, camType, url)
+		self.inputDeviceToWidgetDict[devId] = ipCam
 
 		ipCam.webcamSignal.connect(self.ProcessFrame)
 		ipCam.sourceToggled.connect(self.VideoSourceToggleEvent)
 		self.sourceList.addWidget(ipCam)
-		self.inputDeviceToWidgetDict[devId] = ipCam
-		self.devNames.append((devId, friendlyName, camType, url))
+		
+		#Resize parent frame
+		pix = 0
+		for widget in self.inputDeviceToWidgetDict.values():
+			pix += widget.sizeHint().height()
+		self.sourceFrame.setFixedHeight(pix)
 
+		self.devNames.append((devId, friendlyName, camType, url))
 		self.deviceAdded.emit(devId)
 
 	def AddSourceFromMeta(self, camInfo):
@@ -229,10 +235,17 @@ class GuiSources(QtGui.QFrame):
 
 		ipCam.webcamSignal.connect(self.ProcessFrame)
 		ipCam.sourceToggled.connect(self.VideoSourceToggleEvent)
+		
 		self.sourceList.addWidget(ipCam)
 		self.inputDeviceToWidgetDict[devId] = ipCam
-		self.devNames.append((devId, friendlyName, camType))
 
+		#Resize parent frame
+		pix = 0
+		for widget in self.inputDeviceToWidgetDict.values():
+			pix += widget.sizeHint().height()
+		self.sourceFrame.setFixedHeight(pix)
+		
+		self.devNames.append((devId, friendlyName, camType))
 		self.deviceAdded.emit(devId)
 
 #def CalibrateProgressCallback(progress):
