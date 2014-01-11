@@ -145,9 +145,9 @@ class MainWindow(QtGui.QMainWindow):
 			outProj.imgH = imgH
 			visObj = pano.PanoView(self.cameraArrangement, outProj)
 
-			self.guiPanorama.SetVisObject(visObj)
+			self.guiPanorama.SetVisObject(visObj, outProj)
 		else:
-			self.guiPanorama.SetVisObject(None)
+			self.guiPanorama.SetVisObject(None, None)
 
 		#Update gui with camera parameters
 		self.guiSources.SetCamParams(self.cameraArrangement.camParams)
@@ -197,7 +197,7 @@ class MainWindow(QtGui.QMainWindow):
 		outProj.imgH = imgH
 		visObj = pano.PanoView(self.cameraArrangement, outProj)
 
-		self.guiPanorama.SetVisObject(visObj)
+		self.guiPanorama.SetVisObject(visObj, outProj)
 
 		#Update gui with camera parameters
 		self.guiSources.SetCamParams(self.cameraArrangement.camParams)

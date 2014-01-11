@@ -85,18 +85,20 @@ class GuiPanorama(QtGui.QFrame):
 			gpm = QtGui.QGraphicsPixmapItem(pix)
 			self.scene.addItem(gpm)
 
-	def SetVisObject(self, visobj):
+	def SetVisObject(self, visobj, outProj):
 		self.visObj = visobj
 
 		#Update visualisation sizes
-		
-
+		if outProj is not None:
+			w = outProj.imgW
+			h = outProj.imgH
+			self.vidOutStreamWidget.VideoSizeChanged(w, h)
+			self.vidOutFileWidget.VideoSizeChanged(w, h)
 
 	def FrameGenerated(self, frame, meta):
 		self.SetFrame(frame, meta)
 		self.vidOutStreamWidget.SendFrame(frame, meta, "pano")
 		self.vidOutFileWidget.SendFrame(frame, meta, "pano")
-		pass
 
 	def ProcessFrame(self, frame, meta, devName):
 		

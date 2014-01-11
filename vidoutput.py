@@ -78,3 +78,6 @@ class VideoOutWidget(QtGui.QFrame):
 				self.emit(QtCore.SIGNAL('webcam_frame'), data[0], data[1], self.devId)
 				self.UpdatePreview(data[0], data[1])
 
+	def VideoSizeChanged(self, w, h):
+		pass
+

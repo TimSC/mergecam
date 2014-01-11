@@ -101,3 +101,5 @@ class VideoWriterWidget(QtGui.QFrame):
 		if len(choice[0]) > 0:
 			self.filenameEntry.setText(choice[0])
 
+	def VideoSizeChanged(self, w, h):
+		pass
