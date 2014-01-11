@@ -109,14 +109,9 @@ class MainWindow(QtGui.QMainWindow):
 		self.Calibration(False, True)
 
 	def Calibration(self, doCorrespondence = True, doCameraPositions = True):
-		#Clear old calibration
-		self.cameraArrangement.Clear()
-		if doCorrespondence:
-			self.findCorrespondences.Clear()
 
-			#Establish which cameras are used
-			activeSources = self.guiSources.GetActiveSources()
-			self.findCorrespondences.SetActiveCams(activeSources)
+		activeSources = self.guiSources.GetActiveSources()
+		if doCorrespondence:
 			self.guiPanorama.SetActiveCams(activeSources)
 			self.guiCorrespondences.SetActiveCams(activeSources)
 
@@ -126,14 +121,22 @@ class MainWindow(QtGui.QMainWindow):
 		self.calibratePopup.framePairs = self.guiCorrespondences.framePairs
 		self.calibratePopup.doCorrespondence = doCorrespondence
 		self.calibratePopup.doCameraPositions = doCameraPositions
+		self.calibratePopup.activeSources = activeSources
+		startTime = time.time()
 		self.calibratePopup.Do()
+		print "Start worker in",time.time()-startTime,"sec"
 		self.calibratePopup.exec_() #Block until done
-		self.guiCorrespondences.SetFramePairs(self.calibratePopup.framePairs)
-		self.guiCorrespondences.UpdateFrames()
-		self.guiCorrespondences.SelectionChanged()
+		if self.calibratePopup.framePairs is not None:
+			self.guiCorrespondences.SetFramePairs(self.calibratePopup.framePairs)
+			self.guiCorrespondences.UpdateFrames()
+			self.guiCorrespondences.SelectionChanged()
 
 		#Read back results
-		self.cameraArrangement = self.calibratePopup.cameraArrangement
+		if self.calibratePopup.cameraArrangement is not None:
+			self.cameraArrangement = self.calibratePopup.cameraArrangement
+		if self.calibratePopup.framePairs is not None:
+			self.framePairs = self.calibratePopup.cameraArrangement
+
 		if self.cameraArrangement is None:
 			raise Exception("Camera arrangement not found")
 

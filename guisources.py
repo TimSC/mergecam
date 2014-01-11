@@ -215,11 +215,26 @@ class GuiSources(QtGui.QFrame):
 #def CalibrateProgressCallback(progress):
 #	print "progress", progress
 
-def WorkerProcess(cameraArrangement, framePairs, childResultPipe, childProgressPipe):
+def WorkerProcess(findCorrespondences, cameraArrangement, framePairs, childResultPipe, childProgressPipe,
+	doCorrespondence, doCameraPositions):
 	try:
-		cameraArrangement.OptimiseCameraPositions(framePairs, childProgressPipe.send)
-		cameraArrangement.PrepareForPickle()
-		childResultPipe.send(cameraArrangement)
+		framePairs = None
+
+		if doCorrespondence or len(findCorrespondences.calibrationFrames) == 0:
+			#Store calibration frames
+			findCorrespondences.StoreCalibration()
+
+		if doCorrespondence:
+			#Find point correspondances
+			framePairs = findCorrespondences.Calc()
+
+		if doCameraPositions:
+			cameraArrangement.OptimiseCameraPositions(framePairs, childProgressPipe.send)
+			cameraArrangement.PrepareForPickle()
+			childResultPipe.send((framePairs, cameraArrangement))
+		else:
+			childResultPipe.send((framePairs, None))
+
 	except Exception as err:
 		print err
 		print traceback.format_exc()
@@ -252,15 +267,15 @@ class CalibratePopup(QtGui.QDialog):
 		self.progressBar.setValue(0.)
 		self.layout.addWidget(self.progressBar)
 
-		if self.doCorrespondence or len(self.findCorrespondences.calibrationFrames) == 0:
-			#Store calibration frames
-			self.findCorrespondences.StoreCalibration()
-
+		#Clear old calibration
+		self.cameraArrangement.Clear()
 		if self.doCorrespondence:
-			#Find point correspondances
-			self.framePairs = self.findCorrespondences.Calc()
+			self.findCorrespondences.Clear()
 
-		if self.doCameraPositions:
+			#Establish which cameras are used
+			self.findCorrespondences.SetActiveCams(self.activeSources)
+
+		if self.doCameraPositions and self.framePairs is not None:
 
 			#Check there are some points to use for optimisation
 			validPairFound = False
@@ -271,15 +286,13 @@ class CalibratePopup(QtGui.QDialog):
 			if not validPairFound:
 				raise Exception("No points available for camera estimation")
 
-			#Estimate camera directions and parameters
-			self.resultPipe, childResultPipe = multiprocessing.Pipe()
-			self.progressPipe, childProgressPipe = multiprocessing.Pipe()
-			self.process = multiprocessing.Process(target=WorkerProcess, args=(self.cameraArrangement, 
-				self.framePairs, childResultPipe, childProgressPipe))
-			self.process.start()
-			#self.cameraArrangement.OptimiseCameraPositions(self.framePairs)
-		else:
-			self.done = True
+		#Estimate camera directions and parameters
+		self.resultPipe, childResultPipe = multiprocessing.Pipe()
+		self.progressPipe, childProgressPipe = multiprocessing.Pipe()
+		self.process = multiprocessing.Process(target=WorkerProcess, args=(self.findCorrespondences, self.cameraArrangement, 
+			self.framePairs, childResultPipe, childProgressPipe, self.doCorrespondence, self.doCameraPositions))
+		self.process.start()
+		#self.cameraArrangement.OptimiseCameraPositions(self.framePairs)
 
 		self.timer = QtCore.QTimer()
 		self.timer.timeout.connect(self.IdleEvent)
@@ -292,9 +305,12 @@ class CalibratePopup(QtGui.QDialog):
 			self.progressBar.setValue(progress * 100.)
 
 		if self.resultPipe is not None and self.resultPipe.poll(0.01):
-			self.cameraArrangement = self.resultPipe.recv()
-			print "Data received from worker", self.cameraArrangement
-			if self.cameraArrangement is not None:
+			ret = self.resultPipe.recv()
+			print "Data received from worker", ret
+			if ret is not None and ret[0] is not None:
+				self.imagePairs = ret[0]
+			if ret is not None and ret[1] is not None:
+				self.cameraArrangement = ret[1]
 				print self.cameraArrangement.addedPhotos
 
 			self.done = True
