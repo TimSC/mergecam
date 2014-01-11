@@ -10,6 +10,7 @@
 
 #include <Python.h>
 #include <string.h>
+#include <stdio.h>
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -219,6 +220,7 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	PyObject *outHeightObj = PyObject_GetAttrString(outProj, "imgH");
 	long outWidth = PyInt_AsLong(outWidthObj);
 	long outHeight = PyInt_AsLong(outHeightObj);
+	std::cout << "PanoView_init: " << outWidth << "," << outHeight << std::endl;
 	self->outImgW = outWidth;
 	self->outImgH = outHeight;
 	Py_DECREF(outWidthObj);
@@ -232,9 +234,10 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	{
 		glutInit(&argc, argv);
 		glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
-		glutInitWindowSize(outWidth, outHeight);
 		gGlutInitDone = 1;
 	}
+	glutInitWindowSize(outWidth, outHeight);
+	
 	int glut_id = glutCreateWindow("VWGL");
 	int hideOpenGL = 1;
 	if(hideOpenGL)
@@ -257,6 +260,7 @@ static int PanoView_init(PanoView *self, PyObject *args,
 
 	glClearColor(0,0,0,0);
 	glClear(GL_COLOR_BUFFER_BIT);
+	glViewport(0, 0, outWidth, outHeight);
 
 	std::string extensions = (const char *)glGetString(GL_EXTENSIONS);
 	std::vector<std::string> splitExt = ::split(extensions, ' ');
@@ -482,7 +486,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		GLuint dl = glGenLists(1);
 		glNewList(dl,GL_COMPILE);
-		std::cout << "Generating display list " << dl << std::endl;
+		std::cout << "Generating display list " << dl << " for cam " << i << std::endl;
+		std::cout.flush();
 
 		//Check positions in source image of world positions
 		PyObject *camDataTup = PySequence_GetItem(addedPhotosItems, i);
@@ -545,7 +550,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		if(camUnProj==NULL)
 			throw std::runtime_error("UnProj method not defined");
 
-		PyObject_Print(camUnProj,stdout,Py_PRINT_RAW);
+		//PyObject_Print(camUnProj,stdout,Py_PRINT_RAW); printf("\n");
 
 		PyObject *unprojArgs = PyTuple_New(1);
 		PyTuple_SetItem(unprojArgs, 0, imgPix);
@@ -563,7 +568,11 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		PyTuple_SetItem(projArgs, 0, worldPos);
 		//Py_INCREF(worldPos);
 
+		//PyObject_Print(dstProj,stdout,Py_PRINT_RAW); printf("\n");
+
 		PyObject *dstPos = PyObject_Call(dstProj, projArgs, NULL);
+
+		//PyObject_Print(dstPos,stdout,Py_PRINT_RAW); printf("\n");
 
 		//Draw images using opengl
 		if(self->textureIds[i] >= 0)
@@ -644,6 +653,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	if(showEntire || !self->dstXRangeSet)
 	{
 		glTranslated(-1.0, -1.0, 0.);
+		std::cout << "x" << self->outImgW << "," << self->outImgH << std::endl;
 		glScaled(2./self->outImgW, 2./self->outImgH, 1.);
 	}
 	else

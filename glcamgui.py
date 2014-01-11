@@ -64,6 +64,7 @@ class MainWindow(QtGui.QMainWindow):
 
 		self.guiPanorama = guipanorama.GuiPanorama()
 		self.guiPanorama.setShown(0)
+		self.guiPanorama.outputSizeChanged.connect(self.PanoramaSizeChanged)
 
 		self.mainLayout.addWidget(self.guiSources, 1)
 		self.mainLayout.addWidget(self.guiCorrespondences, 1)
@@ -216,6 +217,20 @@ class MainWindow(QtGui.QMainWindow):
 		outData['correspond'] = self.findCorrespondences
 
 		pickle.dump(outData, open(choice[0], "wb"), protocol = -1)
+
+	def PanoramaSizeChanged(self, width, height):
+		print "PanoramaSizeChanged", width, height
+
+		if len(self.cameraArrangement.addedPhotos):
+			#Estimate final transform
+			outProj = proj.EquirectangularCam()
+			outProj.imgW = width
+			outProj.imgH = height
+			visObj = pano.PanoView(self.cameraArrangement, outProj)
+
+			self.guiPanorama.SetVisObject(visObj)
+		else:
+			self.guiPanorama.SetVisObject(None)		
 
 def main():
 	app = QtGui.QApplication(sys.argv)

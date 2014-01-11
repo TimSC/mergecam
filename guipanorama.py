@@ -5,6 +5,8 @@ import numpy as np
 
 class GuiPanorama(QtGui.QFrame):
 
+	outputSizeChanged = QtCore.Signal(int, int)
+
 	def __init__(self):
 		QtGui.QFrame.__init__(self)
 
@@ -27,6 +29,25 @@ class GuiPanorama(QtGui.QFrame):
 		#Output bar
 		self.outputBar = QtGui.QHBoxLayout()
 		self.layout.addLayout(self.outputBar)
+
+		self.outsizeLayout = QtGui.QHBoxLayout()
+		self.outputBar.addLayout(self.outsizeLayout)
+
+		self.outputSizeWCombo = QtGui.QComboBox()
+		self.outputSizeWCombo.addItem("640")
+		self.outputSizeWCombo.addItem("800")
+		self.outputSizeWCombo.addItem("1024")
+		self.outsizeLayout.addWidget(self.outputSizeWCombo)	
+
+		self.outputSizeHCombo = QtGui.QComboBox()
+		self.outputSizeHCombo.addItem("640")
+		self.outputSizeHCombo.addItem("800")
+		self.outputSizeHCombo.addItem("1024")
+		self.outsizeLayout.addWidget(self.outputSizeHCombo)	
+
+		self.outputSizeChangeButton = QtGui.QPushButton("Change")
+		self.outsizeLayout.addWidget(self.outputSizeChangeButton)
+		self.outputSizeChangeButton.pressed.connect(self.OutputChangeSizePressed)
 
 		self.vidOutStreamWidget = vidoutput.VideoOutWidget(self.outStreamsManager)
 		self.outputBar.addWidget(self.vidOutStreamWidget)
@@ -108,3 +129,8 @@ class GuiPanorama(QtGui.QFrame):
 		print "SetActiveCams", activeCams
 		self.activeCams = activeCams
 
+	def OutputChangeSizePressed(self):
+		outw = int(self.outputSizeWCombo.currentText())
+		outh = int(self.outputSizeHCombo.currentText())
+
+		self.outputSizeChanged.emit(outw, outh)

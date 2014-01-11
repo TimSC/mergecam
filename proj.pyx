@@ -21,6 +21,12 @@ class EquirectangularCam(object):
 		self.limitRange = 0
 		
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
+		print self.hFov, self.vFov, self.imgW, self.imgH
+
+		#lats = [pt[0] for pt in ptsLatLon]
+		#lons = [pt[1] for pt in ptsLatLon]
+		#print "lats:", min(lats), max(lats), "lons:", min(lons), max(lons)
+
 		out = []
 		for pt in ptsLatLon:
 			centred = (pt[1]-self.cLon, pt[0]-self.cLat)
@@ -31,6 +37,11 @@ class EquirectangularCam(object):
 			else:
 				imgPos = ((scaled[0] + 1.) * self.imgW * 0.5, (scaled[1] + 1.) * self.imgH * 0.5)
 			out.append(imgPos)
+
+		#xs = [pt[0] for pt in out]
+		#ys = [pt[1] for pt in out]
+		#print "x:", min(xs), max(xs), "y:", min(ys), max(ys)
+
 		return out
 
 	def UnProj(self, ptsPix): #Image px to Lat, lon radians
@@ -41,6 +52,13 @@ class EquirectangularCam(object):
 			worldPos = (scaled[1] + self.cLon, scaled[0] + self.cLon)
 			out.append(worldPos)
 		return out
+
+	def __repr__(self):
+		return "EquirectangularCam"+str(self.GetParams())
+
+	def GetParams(self):
+		return {'imgW': self.imgW, 'imgH': self.imgH, 'cLat': self.cLat, 'cLon': self.cLon, 'hFov': self.hFov, 'vFov': self.vFov, 
+			'limitRange': self.limitRange}
 
 # ************************************************************************************
 
