@@ -35,32 +35,37 @@ class GuiPanorama(QtGui.QFrame):
 		self.outputBar.addLayout(self.sizeAndRegisterLayout)
 		self.sizeAndRegisterLayout.addWidget(QtGui.QLabel("Output Size"))
 
-		self.outsizeLayout = QtGui.QHBoxLayout()
+		self.outsizeLayout = QtGui.QVBoxLayout()
 		self.sizeAndRegisterLayout.addLayout(self.outsizeLayout)
 
+		allowedSizes = [480, 640, 800, 1024, 1200, 1600, 2048]
+
+		self.widthLabelAndCombo = QtGui.QHBoxLayout()
+		self.outsizeLayout.addLayout(self.widthLabelAndCombo)	
+		self.heightLabelAndCombo = QtGui.QHBoxLayout()
+		self.outsizeLayout.addLayout(self.heightLabelAndCombo)	
+
 		self.outputSizeWCombo = QtGui.QComboBox()
-		self.outputSizeWCombo.addItem("480")
-		self.outputSizeWCombo.addItem("640")
-		self.outputSizeWCombo.addItem("800")
-		self.outputSizeWCombo.addItem("1024")
+		for si in allowedSizes:
+			self.outputSizeWCombo.addItem(str(si))
 		if self.fullVersion:
 			self.outputSizeWCombo.setCurrentIndex(2)
 		else:
 			self.outputSizeWCombo.setCurrentIndex(1)
 		self.outputSizeWCombo.setEnabled(self.fullVersion)
-		self.outsizeLayout.addWidget(self.outputSizeWCombo)	
+		self.widthLabelAndCombo.addWidget(QtGui.QLabel("Width:"))	
+		self.widthLabelAndCombo.addWidget(self.outputSizeWCombo)	
 
 		self.outputSizeHCombo = QtGui.QComboBox()
-		self.outputSizeHCombo.addItem("480")
-		self.outputSizeHCombo.addItem("640")
-		self.outputSizeHCombo.addItem("800")
-		self.outputSizeHCombo.addItem("1024")
+		for si in allowedSizes:
+			self.outputSizeHCombo.addItem(str(si))
 		if self.fullVersion:
 			self.outputSizeHCombo.setCurrentIndex(1)
 		else:
-			self.outputSizeHCombo.setCurrentIndex(0)	
+			self.outputSizeHCombo.setCurrentIndex(0)
 		self.outputSizeHCombo.setEnabled(self.fullVersion)
-		self.outsizeLayout.addWidget(self.outputSizeHCombo)	
+		self.heightLabelAndCombo.addWidget(QtGui.QLabel("Height:"))	
+		self.heightLabelAndCombo.addWidget(self.outputSizeHCombo)	
 
 		self.outputSizeChangeButton = QtGui.QPushButton("Change")
 		self.outsizeLayout.addWidget(self.outputSizeChangeButton)

@@ -21,10 +21,9 @@ class VideoWriterWidget(QtGui.QFrame):
 		label = QtGui.QLabel("Video File Writer")
 		self.toolbar.addWidget(label, 1)
 
-		self.onButton = QtGui.QPushButton("Record")
-		self.toolbar.addWidget(self.onButton, 0)
-		self.onButton.setCheckable(True)
-		self.onButton.clicked.connect(self.ClickedOn)
+		self.chooseFileButton = QtGui.QPushButton("Select Output File")
+		self.toolbar.addWidget(self.chooseFileButton, 1)
+		self.chooseFileButton.clicked.connect(self.ChooseFilePressed)
 
 		#Create text box for file name
 		self.fileLineLayout = QtGui.QHBoxLayout()
@@ -34,9 +33,10 @@ class VideoWriterWidget(QtGui.QFrame):
 		self.filenameEntry.setText("out.mp4")
 		self.fileLineLayout.addWidget(self.filenameEntry, 1)
 
-		self.chooseFileButton = QtGui.QPushButton("Select Output File")
-		self.fileLineLayout.addWidget(self.chooseFileButton, 1)
-		self.chooseFileButton.clicked.connect(self.ChooseFilePressed)
+		self.onButton = QtGui.QPushButton("Record")
+		self.fileLineLayout.addWidget(self.onButton, 0)
+		self.onButton.setCheckable(True)
+		self.onButton.clicked.connect(self.ClickedOn)
 
 		self.setFrameStyle(QtGui.QFrame.Box)
 		self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
