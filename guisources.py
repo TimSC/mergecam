@@ -222,7 +222,7 @@ class GuiSources(QtGui.QFrame):
 				print err
 
 	def AddDemoCameraPressed(self):
-		devId = uuid.uuid4()
+		devId = str(uuid.uuid4())
 		camType = "Demo Camera"
 		friendlyName = "Demo Camera"
 		ipCam = viddemocam.DemoCamWidget(devId)

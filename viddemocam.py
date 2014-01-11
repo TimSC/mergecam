@@ -74,7 +74,7 @@ class DemoCamWidget(QtGui.QFrame):
 					img = QtGui.QImage(fina)
 					meta = {'width': img.size().width(), 'height': img.size().height(), "format": "RGB24"}
 					self.UpdatePreview(img, img.size().width(), img.size().height())
-					self.webcamSignal.emit(img.constBits(), meta, str(self.devId))
+					self.webcamSignal.emit(str(img.constBits()), meta, str(self.devId))
 
 				self.lastFrame = timeNow
 

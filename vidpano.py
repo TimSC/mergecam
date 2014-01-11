@@ -655,12 +655,12 @@ class FindCorrespondences(object):
 	def StoreCalibration(self):
 
 		#Check frames from each camera are stored
-		framesReady = True
+		framesNotReady = []
 		for devInfo in self.devInputs:
 			if devInfo[0] not in self.currentFrames:
-				framesReady = False
-		if not framesReady:
-			print "Frames not ready"
+				framesNotReady.append(devInfo[0])
+		if len(framesNotReady) != 0:
+			print "Frames not ready", framesNotReady
 			return
 		
 		#Store frame set for calibration use
