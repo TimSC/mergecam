@@ -228,6 +228,16 @@ def WorkerProcess(findCorrespondences, cameraArrangement, framePairs, childResul
 			#Find point correspondances
 			framePairs = findCorrespondences.Calc()
 
+		if framePairs is not None:
+			#Check there are some points to use for optimisation
+			validPairFound = False
+			for s in self.framePairs:
+				for pair in s:
+					if len(pair[3]) > 0 or len(pair[4]) > 0:
+						validPairFound = True
+			if not validPairFound:
+				raise Exception("No points available for camera estimation")
+
 		if doCameraPositions:
 			cameraArrangement.OptimiseCameraPositions(framePairs, childProgressPipe.send)
 			cameraArrangement.PrepareForPickle()
@@ -255,6 +265,7 @@ class CalibratePopup(QtGui.QDialog):
 		self.resultPipe = None
 
 	def Do(self):
+		startTime = time.time()
 
 		#Create gui
 		self.layout = QtGui.QVBoxLayout()
@@ -267,6 +278,9 @@ class CalibratePopup(QtGui.QDialog):
 		self.progressBar.setValue(0.)
 		self.layout.addWidget(self.progressBar)
 
+		print "test1",time.time()-startTime,"sec"
+		startTime = time.time()
+
 		#Clear old calibration
 		self.cameraArrangement.Clear()
 		if self.doCorrespondence:
@@ -275,16 +289,11 @@ class CalibratePopup(QtGui.QDialog):
 			#Establish which cameras are used
 			self.findCorrespondences.SetActiveCams(self.activeSources)
 
-		if self.doCameraPositions and self.framePairs is not None:
+		print "test2",time.time()-startTime,"sec"
+		startTime = time.time()
 
-			#Check there are some points to use for optimisation
-			validPairFound = False
-			for s in self.framePairs:
-				for pair in s:
-					if len(pair[3]) > 0 or len(pair[4]) > 0:
-						validPairFound = True
-			if not validPairFound:
-				raise Exception("No points available for camera estimation")
+		print "test3",time.time()-startTime,"sec"
+		startTime = time.time()
 
 		#Estimate camera directions and parameters
 		self.resultPipe, childResultPipe = multiprocessing.Pipe()
@@ -294,9 +303,14 @@ class CalibratePopup(QtGui.QDialog):
 		self.process.start()
 		#self.cameraArrangement.OptimiseCameraPositions(self.framePairs)
 
+		print "test4",time.time()-startTime,"sec"
+		startTime = time.time()
+
 		self.timer = QtCore.QTimer()
 		self.timer.timeout.connect(self.IdleEvent)
 		self.timer.start(10)
+
+		print "test5",time.time()-startTime,"sec"
 
 	def IdleEvent(self):
 		if self.progressPipe is not None and self.progressPipe.poll(0.01):
