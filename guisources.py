@@ -1,7 +1,7 @@
 from PySide import QtGui, QtCore
-import videolive, vidinput, vidpano, time, vidipcam
+import videolive, vidinput, vidpano, time, vidipcam, viddemocam
 import multiprocessing
-import traceback, hashlib
+import traceback, hashlib, uuid
 
 class GuiSources(QtGui.QFrame):
 	sourceToggled = QtCore.Signal(str, int)
@@ -49,8 +49,12 @@ class GuiSources(QtGui.QFrame):
 		self.addIpCameraButton = QtGui.QPushButton("Add IP Camera")
 		self.addIpCameraButton.pressed.connect(self.AddIpCameraPressed)
 
+		self.addDemoCameraButton = QtGui.QPushButton("Add Demo Camera")
+		self.addDemoCameraButton.pressed.connect(self.AddDemoCameraPressed)
+
 		self.selectInputsLayout.addLayout(self.sourcesColumn)
 		self.sourcesColumn.addWidget(self.addIpCameraButton)
+		self.sourcesColumn.addWidget(self.addDemoCameraButton)
 		
 		self.pano = vidpano.LensParamsWidget()
 		self.pano.calibratePressed.connect(self.ClickedCalibrate)
@@ -217,6 +221,20 @@ class GuiSources(QtGui.QFrame):
 			except Exception as err:
 				print err
 
+	def AddDemoCameraPressed(self):
+		devId = uuid.uuid4()
+		camType = "Demo Camera"
+		friendlyName = "Demo Camera"
+		ipCam = viddemocam.DemoCamWidget(devId)
+
+		ipCam.webcamSignal.connect(self.ProcessFrame)
+		ipCam.sourceToggled.connect(self.VideoSourceToggleEvent)
+		self.sourceList.addWidget(ipCam)
+		self.inputDeviceToWidgetDict[devId] = ipCam
+		self.devNames.append((devId, friendlyName, camType))
+
+		self.deviceAdded.emit(devId)
+
 #def CalibrateProgressCallback(progress):
 #	print "progress", progress
 
@@ -232,7 +250,7 @@ def WorkerProcess(findCorrespondences, cameraArrangement, framePairs,
 			#Find point correspondances
 			framePairs = findCorrespondences.Calc()
 
-		if framePairs is not None:
+		if framePairs is not None and doCameraPositions:
 			#Check there are some points to use for optimisation
 			validPairFound = False
 			for s in framePairs:
