@@ -104,5 +104,9 @@ class VideoWriterWidget(QtGui.QFrame):
 
 	def VideoSizeChanged(self, w, h):
 		
+		#Stop if active
+		if (w != self.imgW or h != self.imgH) and self.devOn:
+			self.ClickedOn()
+
 		self.imgW = w
 		self.imgH = h
