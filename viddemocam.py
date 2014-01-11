@@ -72,10 +72,11 @@ class DemoCamWidget(QtGui.QFrame):
 					ind = random.randint(0, len(demoList)-1)
 					fina = folder + os.sep + demoList[ind]
 					img = QtGui.QImage(fina)
+					if img.format() != QtGui.QImage.Format_RGB888:
+						img = img.convertToFormat(QtGui.QImage.Format_RGB888)
 					meta = {'width': img.size().width(), 'height': img.size().height(), "format": "RGB24"}
 					self.UpdatePreview(img, img.size().width(), img.size().height())
-					print img.format()
-					self.webcamSignal.emit(str(img.constBits()), meta, str(self.devId))
+					self.webcamSignal.emit(bytearray(img.constBits()), meta, str(self.devId))
 
 				self.lastFrame = timeNow
 

@@ -244,8 +244,6 @@ def WorkerProcess(findCorrespondences, cameraArrangement, framePairs,
 	doCorrespondence, doCameraPositions):
 
 	try:
-		framePairs = None
-
 		if doCorrespondence:
 			#Find point correspondances
 			framePairs = findCorrespondences.Calc()
