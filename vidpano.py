@@ -513,10 +513,18 @@ class LensParamsWidget(QtGui.QFrame):
 		
 		self.widgetLayout.addWidget(self.presetWidget, 0)
 
+		self.projSelectAndHelp = QtGui.QHBoxLayout()
+		self.presetLayout.addLayout(self.projSelectAndHelp, 0)
+
 		self.projectionType = QtGui.QComboBox()
 		self.projectionType.addItem("Rectilinear")
 		self.projectionType.addItem("Fisheye")
-		self.presetLayout.addWidget(self.projectionType, 0)
+		self.projectionType.activated.connect(self.EditCustomButton)
+		self.projSelectAndHelp.addWidget(self.projectionType, 1)
+
+		self.projHelpButton = QtGui.QPushButton("Help")
+		self.projHelpButton.pressed.connect(self.ProjHelpPressed)
+		self.projSelectAndHelp.addWidget(self.projHelpButton, 0)
 
 		self.paramLayout = QtGui.QGridLayout()
 		self.presetLayout.addLayout(self.paramLayout)
@@ -632,6 +640,9 @@ class LensParamsWidget(QtGui.QFrame):
 
 	def CameraParamsChanged(self):
 		self.cameraParamsChanged.emit(self.GetCamParams())
+
+	def ProjHelpPressed(self):
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/"))
 
 class FindCorrespondences(object):
 	def __init__(self):
