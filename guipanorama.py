@@ -43,7 +43,10 @@ class GuiPanorama(QtGui.QFrame):
 		self.outputSizeWCombo.addItem("640")
 		self.outputSizeWCombo.addItem("800")
 		self.outputSizeWCombo.addItem("1024")
-		self.outputSizeWCombo.setCurrentIndex(1)
+		if self.fullVersion:
+			self.outputSizeWCombo.setCurrentIndex(2)
+		else:
+			self.outputSizeWCombo.setCurrentIndex(1)
 		self.outputSizeWCombo.setEnabled(self.fullVersion)
 		self.outsizeLayout.addWidget(self.outputSizeWCombo)	
 
@@ -52,7 +55,10 @@ class GuiPanorama(QtGui.QFrame):
 		self.outputSizeHCombo.addItem("640")
 		self.outputSizeHCombo.addItem("800")
 		self.outputSizeHCombo.addItem("1024")
-		self.outputSizeHCombo.setCurrentIndex(0)
+		if self.fullVersion:
+			self.outputSizeHCombo.setCurrentIndex(1)
+		else:
+			self.outputSizeHCombo.setCurrentIndex(0)	
 		self.outputSizeHCombo.setEnabled(self.fullVersion)
 		self.outsizeLayout.addWidget(self.outputSizeHCombo)	
 
@@ -79,6 +85,7 @@ class GuiPanorama(QtGui.QFrame):
 		#Update GUI with new frame
 		if meta['format'] == "RGB24":
 			self.scene.clear()
+			self.scene.setSceneRect(0, 0, meta['width'], meta['height'])
 			im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
 			pix = QtGui.QPixmap(im2)
 

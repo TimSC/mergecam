@@ -481,7 +481,7 @@ class LensParamsWidget(QtGui.QFrame):
 		self.widgetLayout = QtGui.QVBoxLayout()
 		self.setLayout(self.widgetLayout)
 
-		label = QtGui.QLabel("Panorama")
+		label = QtGui.QLabel("Select Preset Lens Parameters")
 		label.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
 		self.widgetLayout.addWidget(label, stretch = 0)
 
