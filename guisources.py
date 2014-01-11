@@ -329,9 +329,9 @@ class CalibratePopup(QtGui.QDialog):
 
 		if self.resultPipe is not None and self.resultPipe.poll(0.01):
 			ret = self.resultPipe.recv()
-			print "Data received from worker", ret
+			#print "Data received from worker", ret
 			if ret is not None and ret[0] is not None:
-				self.imagePairs = ret[0]
+				self.framePairs = ret[0]
 			if ret is not None and ret[1] is not None:
 				self.cameraArrangement = ret[1]
 				print self.cameraArrangement.addedPhotos

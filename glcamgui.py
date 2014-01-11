@@ -124,10 +124,10 @@ class MainWindow(QtGui.QMainWindow):
 		self.calibratePopup.activeSources = activeSources
 		self.calibratePopup.Do()
 		self.calibratePopup.exec_() #Block until done
-		if self.calibratePopup.framePairs is not None:
-			self.guiCorrespondences.SetFramePairs(self.calibratePopup.framePairs)
-			self.guiCorrespondences.UpdateFrames()
-			self.guiCorrespondences.SelectionChanged()
+
+		self.guiCorrespondences.SetFramePairs(self.calibratePopup.framePairs)
+		self.guiCorrespondences.UpdateFrames()
+		self.guiCorrespondences.SelectionChanged()
 
 		#Read back results
 		if self.calibratePopup.cameraArrangement is not None:
