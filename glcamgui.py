@@ -111,6 +111,13 @@ class MainWindow(QtGui.QMainWindow):
 	def Calibration(self, doCorrespondence = True, doCameraPositions = True):
 
 		activeSources = self.guiSources.GetActiveSources()
+		
+		if len(activeSources) < 2:
+			msgBox = QtGui.QMessageBox()
+			msgBox.setText("Please select at least two input sources")
+			msgBox.exec_()
+			return
+
 		if doCorrespondence:
 			self.guiPanorama.SetActiveCams(activeSources)
 			self.guiCorrespondences.SetActiveCams(activeSources)
@@ -135,8 +142,11 @@ class MainWindow(QtGui.QMainWindow):
 		if self.calibratePopup.framePairs is not None:
 			self.framePairs = self.calibratePopup.cameraArrangement
 
-		if self.cameraArrangement is None:
-			raise Exception("Camera arrangement not found")
+		if self.cameraArrangement is None and doCameraPositions:
+			msgBox = QtGui.QMessageBox()
+			msgBox.setText("Camera arrangement not found")
+			msgBox.exec_()
+			return
 
 		if len(self.cameraArrangement.addedPhotos):
 			#Estimate final transform
