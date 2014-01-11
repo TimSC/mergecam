@@ -16,7 +16,7 @@ class VideoWriterWidget(QtGui.QFrame):
 		self.toolbar = QtGui.QHBoxLayout()
 		self.widgetLayout.addLayout(self.toolbar)
 
-		label = QtGui.QLabel("Video Writer")
+		label = QtGui.QLabel("Video File Writer")
 		self.toolbar.addWidget(label, 1)
 
 		self.onButton = QtGui.QPushButton("Record")

@@ -10,6 +10,8 @@ class VideoOutWidget(QtGui.QFrame):
 		self.widgetLayout = QtGui.QVBoxLayout()
 		self.setLayout(self.widgetLayout)
 
+		self.widgetLayout.addWidget(QtGui.QLabel("Video Output Stream"))
+
 		#Create toolbar
 		self.toolbar = QtGui.QHBoxLayout()
 		self.widgetLayout.addLayout(self.toolbar)

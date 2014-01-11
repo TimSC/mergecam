@@ -140,8 +140,9 @@ class MainWindow(QtGui.QMainWindow):
 		if len(self.cameraArrangement.addedPhotos):
 			#Estimate final transform
 			outProj = proj.EquirectangularCam()
-			outProj.imgW = 800
-			outProj.imgH = 600
+			imgW, imgH = self.guiPanorama.GetOutputSize()
+			outProj.imgW = imgW
+			outProj.imgH = imgH
 			visObj = pano.PanoView(self.cameraArrangement, outProj)
 
 			self.guiPanorama.SetVisObject(visObj)
@@ -191,8 +192,9 @@ class MainWindow(QtGui.QMainWindow):
 
 		#Estimate final transform
 		outProj = proj.EquirectangularCam()
-		outProj.imgW = 800
-		outProj.imgH = 600
+		imgW, imgH = self.guiPanorama.GetOutputSize()
+		outProj.imgW = imgW
+		outProj.imgH = imgH
 		visObj = pano.PanoView(self.cameraArrangement, outProj)
 
 		self.guiPanorama.SetVisObject(visObj)

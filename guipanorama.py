@@ -15,6 +15,7 @@ class GuiPanorama(QtGui.QFrame):
 		self.currentMeta = []
 		self.visObj = None
 		self.activeCams = []
+		self.fullVersion = True
 
 		self.outStreamsManager = videolive.Video_out_stream_manager()
 		self.outFilesManager = videolive.Video_out_file_manager()
@@ -30,24 +31,42 @@ class GuiPanorama(QtGui.QFrame):
 		self.outputBar = QtGui.QHBoxLayout()
 		self.layout.addLayout(self.outputBar)
 
+		self.sizeAndRegisterLayout = QtGui.QVBoxLayout()
+		self.outputBar.addLayout(self.sizeAndRegisterLayout)
+		self.sizeAndRegisterLayout.addWidget(QtGui.QLabel("Output Size"))
+
 		self.outsizeLayout = QtGui.QHBoxLayout()
-		self.outputBar.addLayout(self.outsizeLayout)
+		self.sizeAndRegisterLayout.addLayout(self.outsizeLayout)
 
 		self.outputSizeWCombo = QtGui.QComboBox()
+		self.outputSizeWCombo.addItem("480")
 		self.outputSizeWCombo.addItem("640")
 		self.outputSizeWCombo.addItem("800")
 		self.outputSizeWCombo.addItem("1024")
+		self.outputSizeWCombo.setCurrentIndex(1)
+		self.outputSizeWCombo.setEnabled(self.fullVersion)
 		self.outsizeLayout.addWidget(self.outputSizeWCombo)	
 
 		self.outputSizeHCombo = QtGui.QComboBox()
+		self.outputSizeHCombo.addItem("480")
 		self.outputSizeHCombo.addItem("640")
 		self.outputSizeHCombo.addItem("800")
 		self.outputSizeHCombo.addItem("1024")
+		self.outputSizeHCombo.setCurrentIndex(0)
+		self.outputSizeHCombo.setEnabled(self.fullVersion)
 		self.outsizeLayout.addWidget(self.outputSizeHCombo)	
 
 		self.outputSizeChangeButton = QtGui.QPushButton("Change")
 		self.outsizeLayout.addWidget(self.outputSizeChangeButton)
 		self.outputSizeChangeButton.pressed.connect(self.OutputChangeSizePressed)
+		self.outputSizeChangeButton.setEnabled(self.fullVersion)
+
+		if not self.fullVersion:
+			self.purchaseButton = QtGui.QPushButton("Purchase PRO Version to Increase Size")
+			self.sizeAndRegisterLayout.addWidget(self.purchaseButton)
+			self.purchaseButton.pressed.connect(self.PurchasePressed)
+		else:
+			self.purchaseButton = None
 
 		self.vidOutStreamWidget = vidoutput.VideoOutWidget(self.outStreamsManager)
 		self.outputBar.addWidget(self.vidOutStreamWidget)
@@ -68,6 +87,10 @@ class GuiPanorama(QtGui.QFrame):
 
 	def SetVisObject(self, visobj):
 		self.visObj = visobj
+
+		#Update visualisation sizes
+		
+
 
 	def FrameGenerated(self, frame, meta):
 		self.SetFrame(frame, meta)
@@ -134,3 +157,11 @@ class GuiPanorama(QtGui.QFrame):
 		outh = int(self.outputSizeHCombo.currentText())
 
 		self.outputSizeChanged.emit(outw, outh)
+
+	def PurchasePressed(self):
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/"))
+
+	def GetOutputSize(self):
+		outw = int(self.outputSizeWCombo.currentText())
+		outh = int(self.outputSizeHCombo.currentText())
+		return outw, outh
