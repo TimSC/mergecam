@@ -52,6 +52,7 @@ class GuiPanorama(QtGui.QFrame):
 		self.SetFrame(frame, meta)
 		self.vidOutStreamWidget.SendFrame(frame, meta, "pano")
 		self.vidOutFileWidget.SendFrame(frame, meta, "pano")
+		pass
 
 	def ProcessFrame(self, frame, meta, devName):
 		

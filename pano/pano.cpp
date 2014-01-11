@@ -450,9 +450,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			continue;
 		}
 
-		PyObject *widthObj = PyDict_GetItemString(metaObj, "width");
+		PyObject *widthObj = PyDict_GetItemString(metaObj, "width"); //Returns borrowed ref
 		if(widthObj==NULL) throw std::runtime_error("widthObj pointer is null");
-		long sourceWidth = PyInt_AsLong(widthObj);
+		long sourceWidth = PyInt_AsLong(widthObj); //Returns borrowed ref
 		PyObject *heightObj = PyDict_GetItemString(metaObj, "height");
 		if(heightObj==NULL) throw std::runtime_error("heightObj pointer is null");
 		long sourceHeight = PyInt_AsLong(heightObj);
@@ -474,7 +474,11 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		//Existing display list is fine, continue
 		if(self->displayLists[i] != 0)
+		{
+			Py_DECREF(pyImage);
+			Py_DECREF(metaObj);
 			continue;
+		}
 
 		GLuint dl = glGenLists(1);
 		glNewList(dl,GL_COMPILE);
