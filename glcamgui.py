@@ -230,9 +230,9 @@ class MainWindow(QtGui.QMainWindow):
 			outProj.imgH = height
 			visObj = pano.PanoView(self.cameraArrangement, outProj)
 
-			self.guiPanorama.SetVisObject(visObj)
+			self.guiPanorama.SetVisObject(visObj, outProj)
 		else:
-			self.guiPanorama.SetVisObject(None)		
+			self.guiPanorama.SetVisObject(None, None)		
 
 def main():
 	app = QtGui.QApplication(sys.argv)
