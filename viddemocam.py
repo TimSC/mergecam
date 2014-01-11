@@ -12,6 +12,7 @@ class DemoCamWidget(QtGui.QFrame):
 		self.widgetLayout = QtGui.QVBoxLayout()
 		self.setLayout(self.widgetLayout)
 		self.lastFrame = time.time()
+		self.imgs = None
 
 		self.devId = devId
 		self.cameraOn = False
@@ -33,6 +34,7 @@ class DemoCamWidget(QtGui.QFrame):
 		demoList = os.listdir("demo")
 		for folder in demoList:
 			self.camSelection.addItem(folder)
+		self.camSelection.activated.connect(self.CameraSelectionChanged)
 		self.widgetLayout.addWidget(self.camSelection, 0)
 
 		#Create video preview
@@ -63,20 +65,30 @@ class DemoCamWidget(QtGui.QFrame):
 
 	def Update(self):
 		if self.cameraOn:
-			timeNow = time.time()
-			if timeNow - self.lastFrame > 0.1:
+			#Cache images in memory
+			if self.imgs is None:
+				self.imgs = []
 				camSelected = self.camSelection.currentText()
 				folder = os.path.join("demo", camSelected)
-				demoList = os.listdir(folder)
-				if len(demoList) > 0:
-					ind = random.randint(0, len(demoList)-1)
-					fina = folder + os.sep + demoList[ind]
+				demoList = os.listdir(folder)				
+				for fina1 in demoList:
+					fina = folder + os.sep + fina1
 					img = QtGui.QImage(fina)
 					if img.format() != QtGui.QImage.Format_RGB888:
 						img = img.convertToFormat(QtGui.QImage.Format_RGB888)
+					self.imgs.append(img)
+
+			timeNow = time.time()
+			if timeNow - self.lastFrame > 0.1:
+
+				if len(self.imgs) > 0:
+					ind = random.randint(0, len(self.imgs)-1)
+					img = self.imgs[ind]
 					meta = {'width': img.size().width(), 'height': img.size().height(), "format": "RGB24"}
 					self.UpdatePreview(img, img.size().width(), img.size().height())
 					self.webcamSignal.emit(bytearray(img.constBits()), meta, str(self.devId))
+				else:
+					self.ClearPreview()
 
 				self.lastFrame = timeNow
 
@@ -107,3 +119,6 @@ class DemoCamWidget(QtGui.QFrame):
 
 	def IsChecked(self):
 		return self.checkbox.isChecked()
+
+	def CameraSelectionChanged(self):
+		self.imgs = None
