@@ -231,7 +231,7 @@ def WorkerProcess(findCorrespondences, cameraArrangement, framePairs, childResul
 		if framePairs is not None:
 			#Check there are some points to use for optimisation
 			validPairFound = False
-			for s in self.framePairs:
+			for s in framePairs:
 				for pair in s:
 					if len(pair[3]) > 0 or len(pair[4]) > 0:
 						validPairFound = True
@@ -263,9 +263,7 @@ class CalibratePopup(QtGui.QDialog):
 		self.framePairs = None
 		self.progressPipe = None
 		self.resultPipe = None
-
-	def Do(self):
-		startTime = time.time()
+		self.startWorkerThread = False
 
 		#Create gui
 		self.layout = QtGui.QVBoxLayout()
@@ -278,41 +276,34 @@ class CalibratePopup(QtGui.QDialog):
 		self.progressBar.setValue(0.)
 		self.layout.addWidget(self.progressBar)
 
-		print "test1",time.time()-startTime,"sec"
-		startTime = time.time()
-
-		#Clear old calibration
-		self.cameraArrangement.Clear()
-		if self.doCorrespondence:
-			self.findCorrespondences.Clear()
-
-			#Establish which cameras are used
-			self.findCorrespondences.SetActiveCams(self.activeSources)
-
-		print "test2",time.time()-startTime,"sec"
-		startTime = time.time()
-
-		print "test3",time.time()-startTime,"sec"
-		startTime = time.time()
-
-		#Estimate camera directions and parameters
-		self.resultPipe, childResultPipe = multiprocessing.Pipe()
-		self.progressPipe, childProgressPipe = multiprocessing.Pipe()
-		self.process = multiprocessing.Process(target=WorkerProcess, args=(self.findCorrespondences, self.cameraArrangement, 
-			self.framePairs, childResultPipe, childProgressPipe, self.doCorrespondence, self.doCameraPositions))
-		self.process.start()
-		#self.cameraArrangement.OptimiseCameraPositions(self.framePairs)
-
-		print "test4",time.time()-startTime,"sec"
-		startTime = time.time()
+	def Do(self):
+		self.startWorkerThread = True
 
 		self.timer = QtCore.QTimer()
 		self.timer.timeout.connect(self.IdleEvent)
 		self.timer.start(10)
 
-		print "test5",time.time()-startTime,"sec"
-
 	def IdleEvent(self):
+
+		if self.startWorkerThread:
+			#Clear old calibration
+			self.cameraArrangement.Clear()
+			if self.doCorrespondence:
+				self.findCorrespondences.Clear()
+
+				#Establish which cameras are used
+				self.findCorrespondences.SetActiveCams(self.activeSources)
+
+			#Estimate camera directions and parameters
+			self.resultPipe, childResultPipe = multiprocessing.Pipe()
+			self.progressPipe, childProgressPipe = multiprocessing.Pipe()
+			self.process = multiprocessing.Process(target=WorkerProcess, args=(self.findCorrespondences, self.cameraArrangement, 
+				self.framePairs, childResultPipe, childProgressPipe, self.doCorrespondence, self.doCameraPositions))
+			self.process.start()
+			#self.cameraArrangement.OptimiseCameraPositions(self.framePairs)
+
+			self.startWorkerThread = False
+
 		if self.progressPipe is not None and self.progressPipe.poll(0.01):
 			progress = self.progressPipe.recv()
 			print "progress", progress
