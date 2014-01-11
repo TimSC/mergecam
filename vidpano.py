@@ -666,7 +666,8 @@ class FindCorrespondences(object):
 		#self.calibrationCount.setText(str(len(self.calibrationFrames)))
 
 	def PrepareForPickle(self):
-		pass
+		self.currentFrames = {}
+		self.currentMeta = {}
 
 	def Clear(self):
 		self.calibrationFrames = []
