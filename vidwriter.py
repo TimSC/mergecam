@@ -8,6 +8,8 @@ class VideoWriterWidget(QtGui.QFrame):
 		self.devOn = False
 		self.outFilesManager = outFilesManagerIn
 		self.startTime = None
+		self.imgW = 800
+		self.imgH = 600
 
 		self.widgetLayout = QtGui.QVBoxLayout()
 		self.setLayout(self.widgetLayout)
@@ -54,7 +56,7 @@ class VideoWriterWidget(QtGui.QFrame):
 			self.chooseFileButton.setEnabled(True)
 			try:
 				fina = str(self.filenameEntry.text())
-				self.outFilesManager.open(fina, 800, 600)
+				self.outFilesManager.open(fina, self.imgW, self.imgH)
 				#self.outFilesManager.set_video_codec(fina, "H264", 800000)
 				#self.outFilesManager.enable_real_time_frame_rate(fina, True)
 			except Exception as err:
@@ -66,10 +68,9 @@ class VideoWriterWidget(QtGui.QFrame):
 		if not self.devOn: return
 		if meta['format'] != "RGB24": return
 
-		print meta
 		#im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
 		#pix = QtGui.QPixmap(im2)
-		#pixmap2 = pix.scaled(640, 480)
+		#pixmap2 = pix.scaled(self.imgW, self.imgH)
 		#img = pixmap2.toImage()
 		#img2 = img.convertToFormat(QtGui.QImage.Format_RGB888)
 		#raw = img2.bits().asstring(img2.numBytes())
@@ -102,4 +103,10 @@ class VideoWriterWidget(QtGui.QFrame):
 			self.filenameEntry.setText(choice[0])
 
 	def VideoSizeChanged(self, w, h):
-		pass
+		
+		#Stop if active
+		if (w != self.imgW or h != self.imgH) and self.devOn:
+			self.ClickedOn()
+
+		self.imgW = w
+		self.imgH = h

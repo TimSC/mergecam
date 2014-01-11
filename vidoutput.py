@@ -6,6 +6,8 @@ class VideoOutWidget(QtGui.QFrame):
 		QtGui.QFrame.__init__(self)
 		self.devOn = False
 		self.videoOutManager = videoOutManager
+		self.imgW = 800
+		self.imgH = 600
 
 		self.widgetLayout = QtGui.QVBoxLayout()
 		self.setLayout(self.widgetLayout)
@@ -41,7 +43,7 @@ class VideoOutWidget(QtGui.QFrame):
 			self.devOn = True
 			self.devId = self.devCombo.currentText()
 			self.devCombo.setEnabled(False)
-			self.videoOutManager.open(self.devId, "YUYV", 640, 480)
+			self.videoOutManager.open(self.devId, "YUYV", self.imgW, self.imgH)
 
 			if self.standbyGraphic is None:
 				img = QtGui.QImage("standby_graphic.jpg")
@@ -63,7 +65,7 @@ class VideoOutWidget(QtGui.QFrame):
 
 		#im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
 		#pix = QtGui.QPixmap(im2)
-		#pixmap2 = pix.scaled(640, 480)
+		#pixmap2 = pix.scaled(self.imgW, self.imgH)
 		#img = pixmap2.toImage()
 		#img2 = img.convertToFormat(QtGui.QImage.Format_RGB888)
 		#raw = img2.bits().asstring(img2.numBytes())
@@ -79,5 +81,10 @@ class VideoOutWidget(QtGui.QFrame):
 				self.UpdatePreview(data[0], data[1])
 
 	def VideoSizeChanged(self, w, h):
-		pass
+		
+		#Stop if active
+		if (w != self.imgW or h != self.imgH) and self.devOn:
+			self.ClickedOn()
 
+		self.imgW = w
+		self.imgH = h
