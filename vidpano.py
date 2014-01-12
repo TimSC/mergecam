@@ -470,6 +470,7 @@ class LensParamsWidget(QtGui.QFrame):
 	def __init__(self):
 		QtGui.QFrame.__init__(self)
 
+		self.setContentsMargins(0, 0, 0, 0)
 		self.devOn = True
 		self.devId = uuid.uuid4()
 		#self.canvas = QtGui.QImage(640*2, 480*2, QtGui.QImage.Format_RGB888)

@@ -321,6 +321,7 @@ class CalibratePopup(QtGui.QDialog):
 	def __init__(self, parent, findCorrespondences, cameraArrangement):
 		QtGui.QDialog.__init__(self, parent)
 
+		self.setWindowTitle('Calibration')
 		self.findCorrespondences = findCorrespondences
 		self.cameraArrangement = cameraArrangement
 		self.done = False

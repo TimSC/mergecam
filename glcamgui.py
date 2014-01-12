@@ -12,22 +12,78 @@ import videolive, vidpano, pickle, proj, pano
 
 class SplashDialog(QtGui.QDialog):
 
-	def __init__(self, parent = None):
+	def __init__(self, parent = None, registered = 0):
 		QtGui.QDialog.__init__(self, parent)
 
-		self.setWindowTitle('Register')
+		self.setWindowTitle('PanoView')
+		self.setMinimumWidth(500)
+		self.mayClose = registered
 
 		self.mainLayout = QtGui.QVBoxLayout()
 		self.setLayout(self.mainLayout)
 
-		
+		self.titleLayout = QtGui.QHBoxLayout()
+		self.mainLayout.addLayout(self.titleLayout)
 
+		logo = QtGui.QImage("resources/Kinatomic-Logo-Square.png")
+		logo = logo.scaled(100,100)
+		lbl = QtGui.QLabel()
+		lbl.setPixmap(QtGui.QPixmap.fromImage(logo))
+		lbl.setFixedSize(100, 100)
+		self.titleLayout.addWidget(lbl)
+
+		title = QtGui.QLabel("PanoVid by Kinatomic Technology")
+		self.titleLayout.addWidget(title)
+
+		if not registered:
+			registerLink = QtGui.QPushButton("Register")
+			registerLink.pressed.connect(self.RegisterPressed)
+			self.mainLayout.addWidget(registerLink)
+
+		self.continueLayout = QtGui.QHBoxLayout()
+		self.mainLayout.addLayout(self.continueLayout)
+
+		self.countDown = QtGui.QLineEdit()
+		self.countDown.setReadOnly(1)
+		if not registered:
+			self.continueLayout.addWidget(self.countDown, 0)
+
+		self.continueButton = QtGui.QPushButton("Continue")
+		self.continueButton.pressed.connect(self.ContinuePressed)
+		self.continueButton.setEnabled(registered)
+		self.continueLayout.addWidget(self.continueButton, 1)
+
+		self.timer = QtCore.QTimer()
+		self.timer.timeout.connect(self.IdleEvent)
+		self.timer.start(10)
+
+		self.startTime = time.time()
+
+	def RegisterPressed(self):
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/progurl/register"))
+
+	def closeEvent(self, event):
+		if not self.mayClose:
+			event.ignore()
+
+	def ContinuePressed(self):
+		self.close()
+
+	def IdleEvent(self):
+		elapseTime = time.time() - self.startTime
+		remainTime = 5. - elapseTime
+		if remainTime < 0.: 
+			self.continueButton.setEnabled(1)
+			self.mayClose = 1
+			remainTime = 0.
+		self.countDown.setText(str(int(round(remainTime))))
+		
 # *********** About Popup *******************
 
 
 class AboutDialog(QtGui.QDialog):
 
-	def __init__(self, parent = None):
+	def __init__(self, parent = None, registered = 0):
 		QtGui.QDialog.__init__(self, parent)
 
 		self.setWindowTitle('About')
@@ -56,9 +112,10 @@ class AboutDialog(QtGui.QDialog):
 		self.titleRight.addWidget(websiteLink)
 		websiteLink.pressed.connect(self.WebsitePressed)
 
-		registerLink = QtGui.QPushButton("Register")
-		self.titleRight.addWidget(registerLink)
-		registerLink.pressed.connect(self.RegisterPressed)
+		if not registered:
+			registerLink = QtGui.QPushButton("Register")
+			self.titleRight.addWidget(registerLink)
+			registerLink.pressed.connect(self.RegisterPressed)
 
 		legal = QtGui.QTextEdit()
 		legal.setText(open("legal.txt", "rt").read())
@@ -103,13 +160,13 @@ class MainWindow(QtGui.QMainWindow):
 		loadAction = QtGui.QAction('Load', self)
 		loadAction.setShortcut('Ctrl+L')
 		loadAction.setStatusTip('Load panorama')
-		loadAction.triggered.connect(self.SaveButtonPressed)
+		loadAction.triggered.connect(self.LoadButtonPressed)
 		fileMenu.addAction(loadAction)
 
 		saveAction = QtGui.QAction('Save', self)
 		saveAction.setShortcut('Ctrl+S')
 		saveAction.setStatusTip('Save panorama')
-		saveAction.triggered.connect(self.close)
+		saveAction.triggered.connect(self.SaveButtonPressed)
 		fileMenu.addAction(saveAction)
 
 		exitAction = QtGui.QAction('Exit', self)
@@ -175,6 +232,9 @@ class MainWindow(QtGui.QMainWindow):
 		self.setCentralWidget(centralWidget)
 
 		self.show()
+
+		splashDialog = SplashDialog()
+		splashDialog.exec_()
 
 	def __del__(self):
 		self.guiSources.Stop()
