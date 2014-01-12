@@ -6,7 +6,7 @@ class DemoCamWidget(QtGui.QFrame):
 	webcamSignal = QtCore.Signal(bytearray, dict, str)
 	sourceToggled = QtCore.Signal(str, int)
 
-	def __init__(self, devId):
+	def __init__(self, devId, camFolder = None):
 		QtGui.QFrame.__init__(self)
 		
 		self.widgetLayout = QtGui.QVBoxLayout()
@@ -38,6 +38,11 @@ class DemoCamWidget(QtGui.QFrame):
 			self.camSelection.addItem(folder)
 		self.camSelection.activated.connect(self.CameraSelectionChanged)
 		self.widgetLayout.addWidget(self.camSelection, 0)
+
+		if camFolder is not None:
+			ind = self.camSelection.findText(camFolder)
+			if ind >= 0:
+				self.camSelection.setCurrentIndex(ind)
 
 		#Create video preview
 		img = QtGui.QImage(300, 200, QtGui.QImage.Format_RGB888)

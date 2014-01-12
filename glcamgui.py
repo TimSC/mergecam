@@ -368,6 +368,7 @@ class MainWindow(QtGui.QMainWindow):
 
 		#self.findCorrespondences.SetActiveCams(self.findCorrespondences.devInputs)
 		devInputs = self.findCorrespondences.devInputs
+		print "devInputs", devInputs
 		self.guiPanorama.SetActiveCams(self.findCorrespondences.devInputs)
 		self.guiCorrespondences.SetActiveCams(self.findCorrespondences.devInputs)
 

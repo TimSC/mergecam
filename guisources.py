@@ -255,7 +255,7 @@ class GuiSources(QtGui.QFrame):
 
 		camType = "Demo Camera"
 		friendlyName = "Demo Camera"
-		ipCam = viddemocam.DemoCamWidget(devId)
+		ipCam = viddemocam.DemoCamWidget(devId, camFolder)
 
 		ipCam.webcamSignal.connect(self.ProcessFrame)
 		ipCam.sourceToggled.connect(self.VideoSourceToggleEvent)
