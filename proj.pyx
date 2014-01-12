@@ -17,7 +17,7 @@ class EquirectangularCam(object):
 		self.cLat = 0.
 		self.cLon = 0.
 		self.hFov = math.radians(360.0)
-		self.vFov = math.radians(180.4)
+		self.vFov = math.radians(180.0)
 		self.limitRange = 0
 		
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
@@ -153,7 +153,6 @@ class BaseCam(object):
 		self.d = 0. / 1280.
 		self.e = 0. / 1024.
 		self.hfov = 118.75
-		self.halfVfov = self.imgH * math.radians(self.hfov / 2.) / self.imgW
 		self.cLat = 0.
 		self.cLon = 0.
 		self.rot = 0.
@@ -203,6 +202,7 @@ class BaseCam(object):
 	
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
 		out = []
+		halfVfov = self.imgH * math.radians(self.hfov / 2.) / self.imgW
 
 		for pt in ptsLatLon:
 
@@ -270,6 +270,8 @@ class BaseCam(object):
 	def UnProj(self, ptsPix): #Image px to Lat, lon radians
 
 		out = [] 
+		halfVfov = self.imgH * math.radians(self.hfov / 2.) / self.imgW
+
 		for pt in ptsPix:
 			#Centre image
 			centImgX = pt[0] - (self.imgW / 2.) + self.d * self.imgW
