@@ -60,7 +60,7 @@ class SplashDialog(QtGui.QDialog):
 		self.startTime = time.time()
 
 	def RegisterPressed(self):
-		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/progurl/register"))
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/progurl/register.php"))
 
 	def closeEvent(self, event):
 		if not self.mayClose:
@@ -126,7 +126,7 @@ class AboutDialog(QtGui.QDialog):
 		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/"))
 
 	def RegisterPressed(self):
-		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/progurl/register"))
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/progurl/register.php"))
 
 # *********** Main Window *******************
 
@@ -423,10 +423,10 @@ class MainWindow(QtGui.QMainWindow):
 			self.guiPanorama.SetVisObject(None, None)		
 
 	def HelpPressed(self):
-		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/"))
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/progurl/panosupport.php"))
 
 	def RegisterPressed(self):
-		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/"))
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/progurl/register.php"))
 
 	def AboutPressed(self):
 		aboutDlg = AboutDialog()

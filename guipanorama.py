@@ -188,7 +188,7 @@ class GuiPanorama(QtGui.QFrame):
 		self.watermark = None
 
 	def PurchasePressed(self):
-		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/"))
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/progurl/register.php"))
 
 	def GetOutputSize(self):
 		outw = int(self.outputSizeWCombo.currentText())
