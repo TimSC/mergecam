@@ -32,7 +32,9 @@ class DemoCamWidget(QtGui.QFrame):
 
 		self.camSelection = QtGui.QComboBox()
 		demoList = os.listdir("demo")
+		demoList.sort()
 		for folder in demoList:
+			if not os.path.isdir("demo"+os.sep+folder): continue
 			self.camSelection.addItem(folder)
 		self.camSelection.activated.connect(self.CameraSelectionChanged)
 		self.widgetLayout.addWidget(self.camSelection, 0)

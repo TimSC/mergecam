@@ -21,7 +21,7 @@ class EquirectangularCam(object):
 		self.limitRange = 0
 		
 	def Proj(self, ptsLatLon): #Lat, lon radians to image px
-		print self.hFov, self.vFov, self.imgW, self.imgH
+		#print self.hFov, self.vFov, self.imgW, self.imgH
 
 		#lats = [pt[0] for pt in ptsLatLon]
 		#lons = [pt[1] for pt in ptsLatLon]
@@ -220,7 +220,7 @@ class BaseCam(object):
 
 			ang = math.atan2(screenX, screenY)
 			radius = (screenX ** 2. + screenY ** 2.) ** 0.5
-			theta = math.atan2(radius, math.tan(self.halfVfov)) / math.atan(1.)
+			theta = math.atan2(radius, math.tan(halfVfov)) / math.atan(1.)
 			R = self.CoreProjFunc(theta)
 
 			#print "a1", ang, R
@@ -303,7 +303,7 @@ class BaseCam(object):
 			theta = self.CoreProjFuncInv(Rcorrected)
 
 			#Calculate x and y in screen plane
-			radius = math.tan(theta * math.atan(1.)) * math.tan(self.halfVfov)
+			radius = math.tan(theta * math.atan(1.)) * math.tan(halfVfov)
 			screenX = radius * math.sin(ang)
 			screenY = radius * math.cos(ang)
 			screenDistOnGnd = (screenX**2+1.)**0.5
