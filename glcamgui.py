@@ -25,7 +25,7 @@ class SplashDialog(QtGui.QDialog):
 		self.titleLayout = QtGui.QHBoxLayout()
 		self.mainLayout.addLayout(self.titleLayout)
 
-		logo = QtGui.QImage("resources/Kinatomic-Logo-Square.png")
+		logo = QtGui.QImage("resources/Kinatomic-Logo-Square-whitebackground300.png")
 		logo = logo.scaled(100,100)
 		lbl = QtGui.QLabel()
 		lbl.setPixmap(QtGui.QPixmap.fromImage(logo))
@@ -95,7 +95,7 @@ class AboutDialog(QtGui.QDialog):
 		self.titleLayout = QtGui.QHBoxLayout()
 		self.mainLayout.addLayout(self.titleLayout)
 
-		logo = QtGui.QImage("resources/Kinatomic-Logo-Square.png")
+		logo = QtGui.QImage("resources/Kinatomic-Logo-Square-whitebackground300.png")
 		logo = logo.scaled(100,100)
 		lbl = QtGui.QLabel()
 		lbl.setPixmap(QtGui.QPixmap.fromImage(logo))

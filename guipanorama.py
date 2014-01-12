@@ -102,11 +102,13 @@ class GuiPanorama(QtGui.QFrame):
 
 			#Watermark
 			if not self.fullVersion:
-				if self.watermark is None:
-					logo = QtGui.QImage("resources/Kinatomic-Logo-Square.png")
-					logo = logo.scaled(50,50)
+				logoSize = int(round(meta['width'] * 0.08))
+				if self.watermark is None:					
+					logo = QtGui.QImage("resources/Kinatomic-Logo-Square-whitebackground300.png")
+					logo = logo.scaled(logoSize,logoSize)
 					self.watermark = QtGui.QPixmap(logo)
 				wm = QtGui.QGraphicsPixmapItem(self.watermark)
+				wm.setOffset(meta['width']-2*logoSize, meta['height']-2*logoSize)
 				self.scene.addItem(wm)
 
 	def SetVisObject(self, visobj, outProj):
@@ -183,6 +185,7 @@ class GuiPanorama(QtGui.QFrame):
 		outh = int(self.outputSizeHCombo.currentText())
 
 		self.outputSizeChanged.emit(outw, outh)
+		self.watermark = None
 
 	def PurchasePressed(self):
 		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/"))
