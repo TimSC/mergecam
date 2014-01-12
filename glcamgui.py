@@ -35,10 +35,14 @@ class MainWindow(QtGui.QMainWindow):
 		self.mainLayout.addLayout(self.mainToolbarLayout)
 		self.viewSourcesButton = QtGui.QPushButton("Sources")
 		self.viewSourcesButton.pressed.connect(self.ViewSourcesButtonPressed)
+		self.viewSourcesButton.setCheckable(True)
+		self.viewSourcesButton.setChecked(1)
 		self.correspondencesButton = QtGui.QPushButton("Correspondences")
 		self.correspondencesButton.pressed.connect(self.ViewCorrespondencesButtonPressed)
+		self.correspondencesButton.setCheckable(True)
 		self.panoramaButton = QtGui.QPushButton("Panorama")
 		self.panoramaButton.pressed.connect(self.ViewPanoramaButtonPressed)
+		self.panoramaButton.setCheckable(True)
 		self.loadButton = QtGui.QPushButton("Load")
 		self.loadButton.pressed.connect(self.LoadButtonPressed)
 		self.saveButton = QtGui.QPushButton("Save")
@@ -85,15 +89,24 @@ class MainWindow(QtGui.QMainWindow):
 		self.guiCorrespondences.setShown(0)
 		self.guiPanorama.setShown(0)
 
+		self.correspondencesButton.setChecked(0)
+		self.panoramaButton.setChecked(0)
+
 	def ViewCorrespondencesButtonPressed(self):
 		self.guiSources.setShown(0)
 		self.guiCorrespondences.setShown(1)
 		self.guiPanorama.setShown(0)
 
+		self.viewSourcesButton.setChecked(0)
+		self.panoramaButton.setChecked(0)
+
 	def ViewPanoramaButtonPressed(self):
 		self.guiSources.setShown(0)
 		self.guiCorrespondences.setShown(0)
 		self.guiPanorama.setShown(1)
+
+		self.viewSourcesButton.setChecked(0)
+		self.correspondencesButton.setChecked(0)
 
 	def VideoSourceToggleEvent(self, srcId, srcStatus):
 		pass
