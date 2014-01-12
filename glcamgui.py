@@ -8,6 +8,71 @@ import guisources, guicorrespondences, guipanorama
 import numpy as np
 import videolive, vidpano, pickle, proj, pano
 
+# *********** Splash Popup *******************
+
+class SplashDialog(QtGui.QDialog):
+
+	def __init__(self, parent = None):
+		QtGui.QDialog.__init__(self, parent)
+
+		self.setWindowTitle('Register')
+
+		self.mainLayout = QtGui.QVBoxLayout()
+		self.setLayout(self.mainLayout)
+
+		
+
+# *********** About Popup *******************
+
+
+class AboutDialog(QtGui.QDialog):
+
+	def __init__(self, parent = None):
+		QtGui.QDialog.__init__(self, parent)
+
+		self.setWindowTitle('About')
+		self.setMinimumWidth(500)
+
+		self.mainLayout = QtGui.QVBoxLayout()
+		self.setLayout(self.mainLayout)
+
+		self.titleLayout = QtGui.QHBoxLayout()
+		self.mainLayout.addLayout(self.titleLayout)
+
+		logo = QtGui.QImage("resources/Kinatomic-Logo-Square.png")
+		logo = logo.scaled(100,100)
+		lbl = QtGui.QLabel()
+		lbl.setPixmap(QtGui.QPixmap.fromImage(logo))
+		lbl.setFixedSize(100, 100)
+		self.titleLayout.addWidget(lbl)
+		
+		self.titleRight = QtGui.QVBoxLayout()
+		self.titleLayout.addLayout(self.titleRight)
+
+		title = QtGui.QLabel("PanoVid by Kinatomic Technology")
+		self.titleRight.addWidget(title)
+
+		websiteLink = QtGui.QPushButton("Website")
+		self.titleRight.addWidget(websiteLink)
+		websiteLink.pressed.connect(self.WebsitePressed)
+
+		registerLink = QtGui.QPushButton("Register")
+		self.titleRight.addWidget(registerLink)
+		registerLink.pressed.connect(self.RegisterPressed)
+
+		legal = QtGui.QTextEdit()
+		legal.setText(open("legal.txt", "rt").read())
+		legal.setReadOnly(1)
+		self.mainLayout.addWidget(legal)
+
+	def WebsitePressed(self):
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/"))
+
+	def RegisterPressed(self):
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/progurl/register"))
+
+# *********** Main Window *******************
+
 class MainWindow(QtGui.QMainWindow):
 	def __init__(self):
 		super(MainWindow, self).__init__() 
@@ -27,8 +92,45 @@ class MainWindow(QtGui.QMainWindow):
 	
 		self.resize(700, 550)
 		self.move(300, 300)
-		self.setWindowTitle('Kinatomic PanoramaVid')
+		self.setWindowTitle('PanoramaVid')
 		self.mainLayout = QtGui.QVBoxLayout()
+
+		#Menu
+		self.menubar = self.menuBar()
+		fileMenu = self.menubar.addMenu('&File')
+		helpMenu = self.menubar.addMenu('&About')
+
+		loadAction = QtGui.QAction('Load', self)
+		loadAction.setShortcut('Ctrl+L')
+		loadAction.setStatusTip('Load panorama')
+		loadAction.triggered.connect(self.SaveButtonPressed)
+		fileMenu.addAction(loadAction)
+
+		saveAction = QtGui.QAction('Save', self)
+		saveAction.setShortcut('Ctrl+S')
+		saveAction.setStatusTip('Save panorama')
+		saveAction.triggered.connect(self.close)
+		fileMenu.addAction(saveAction)
+
+		exitAction = QtGui.QAction('Exit', self)
+		exitAction.setStatusTip('Exit application')
+		exitAction.triggered.connect(self.close)
+		fileMenu.addAction(exitAction)
+
+		helpAction = QtGui.QAction('Online Help', self)
+		helpAction.setStatusTip('Exit application')
+		helpAction.triggered.connect(self.HelpPressed)
+		helpMenu.addAction(helpAction)
+
+		registerAction = QtGui.QAction('Register', self)
+		registerAction.setStatusTip('Exit application')
+		registerAction.triggered.connect(self.RegisterPressed)
+		helpMenu.addAction(registerAction)
+
+		aboutAction = QtGui.QAction('About', self)
+		aboutAction.setStatusTip('Exit application')
+		aboutAction.triggered.connect(self.AboutPressed)
+		helpMenu.addAction(aboutAction)
 
 		#Main toolbar
 		self.mainToolbarLayout = QtGui.QHBoxLayout()
@@ -43,16 +145,10 @@ class MainWindow(QtGui.QMainWindow):
 		self.panoramaButton = QtGui.QPushButton("Panorama")
 		self.panoramaButton.pressed.connect(self.ViewPanoramaButtonPressed)
 		self.panoramaButton.setCheckable(True)
-		self.loadButton = QtGui.QPushButton("Load")
-		self.loadButton.pressed.connect(self.LoadButtonPressed)
-		self.saveButton = QtGui.QPushButton("Save")
-		self.saveButton.pressed.connect(self.SaveButtonPressed)
 
 		self.mainToolbarLayout.addWidget(self.viewSourcesButton)
 		self.mainToolbarLayout.addWidget(self.correspondencesButton)
 		self.mainToolbarLayout.addWidget(self.panoramaButton)
-		self.mainToolbarLayout.addWidget(self.loadButton)
-		self.mainToolbarLayout.addWidget(self.saveButton)
 
 		self.guiSources = guisources.GuiSources(self.devManager)
 		self.guiSources.sourceToggled.connect(self.VideoSourceToggleEvent)
@@ -265,6 +361,16 @@ class MainWindow(QtGui.QMainWindow):
 			self.guiPanorama.SetVisObject(visObj, outProj)
 		else:
 			self.guiPanorama.SetVisObject(None, None)		
+
+	def HelpPressed(self):
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/"))
+
+	def RegisterPressed(self):
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/"))
+
+	def AboutPressed(self):
+		aboutDlg = AboutDialog()
+		aboutDlg.exec_()
 
 def main():
 	app = QtGui.QApplication(sys.argv)
