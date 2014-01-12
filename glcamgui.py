@@ -40,6 +40,11 @@ class SplashDialog(QtGui.QDialog):
 			registerLink.pressed.connect(self.RegisterPressed)
 			self.mainLayout.addWidget(registerLink)
 
+			registerBenefits = QtGui.QTextEdit()
+			registerBenefits.setText(open("benefits.txt", "rt").read())
+			registerBenefits.setReadOnly(1)
+			self.mainLayout.addWidget(registerBenefits)
+
 		self.continueLayout = QtGui.QHBoxLayout()
 		self.mainLayout.addLayout(self.continueLayout)
 

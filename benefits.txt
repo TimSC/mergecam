@@ -1,0 +1,6 @@
+Benefits of full version:
+
+* Increase video output size
+* No watermarks
+* Remove nag popup windows
+
