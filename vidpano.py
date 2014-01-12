@@ -643,7 +643,7 @@ class LensParamsWidget(QtGui.QFrame):
 		self.cameraParamsChanged.emit(self.GetCamParams())
 
 	def ProjHelpPressed(self):
-		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/"))
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/progurl/lenshelp.php"))
 
 class FindCorrespondences(object):
 	def __init__(self):
