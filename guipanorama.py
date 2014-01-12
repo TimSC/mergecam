@@ -15,7 +15,8 @@ class GuiPanorama(QtGui.QFrame):
 		self.currentMeta = []
 		self.visObj = None
 		self.activeCams = []
-		self.fullVersion = True
+		self.fullVersion = False
+		self.watermark = None
 
 		self.outStreamsManager = videolive.Video_out_stream_manager()
 		self.outFilesManager = videolive.Video_out_file_manager()
@@ -91,11 +92,22 @@ class GuiPanorama(QtGui.QFrame):
 		if meta['format'] == "RGB24":
 			self.scene.clear()
 			self.scene.setSceneRect(0, 0, meta['width'], meta['height'])
+
+			#Add merged image to scene
 			im2 = QtGui.QImage(frame, meta['width'], meta['height'], QtGui.QImage.Format_RGB888)
 			pix = QtGui.QPixmap(im2)
 
 			gpm = QtGui.QGraphicsPixmapItem(pix)
 			self.scene.addItem(gpm)
+
+			#Watermark
+			if not self.fullVersion:
+				if self.watermark is None:
+					logo = QtGui.QImage("resources/Kinatomic-Logo-Square.png")
+					logo = logo.scaled(50,50)
+					self.watermark = QtGui.QPixmap(logo)
+				wm = QtGui.QGraphicsPixmapItem(self.watermark)
+				self.scene.addItem(wm)
 
 	def SetVisObject(self, visobj, outProj):
 		self.visObj = visobj
