@@ -122,3 +122,7 @@ class DemoCamWidget(QtGui.QFrame):
 
 	def CameraSelectionChanged(self):
 		self.imgs = None
+
+	def GetSaveParams(self):
+		return {'cam':self.camSelection.currentText()}
+

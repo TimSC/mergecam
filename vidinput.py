@@ -90,6 +90,9 @@ class SourceWidget(QtGui.QFrame):
 	def IsChecked(self):
 		return self.checkbox.isChecked()
 
+	def GetSaveParams(self):
+		return {}
+
 class EmulateFixedRateVideoSource(SourceWidget):
 	def __init__(self, devId, devManager, friendlyName):
 		SourceWidget.__init__(self, devId, devManager, friendlyName)

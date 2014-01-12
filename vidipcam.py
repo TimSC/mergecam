@@ -197,4 +197,5 @@ class IpCamWidget(QtGui.QFrame):
 	def IsChecked(self):
 		return self.checkbox.isChecked()
 
-
+	def GetSaveParams(self):
+		return {'url':self.url}

@@ -224,6 +224,14 @@ class MainWindow(QtGui.QMainWindow):
 		self.findCorrespondences.PrepareForPickle()
 		self.cameraArrangement.PrepareForPickle()
 
+		#Getting widget settings and update the device list
+		for devInfo in self.findCorrespondences.devInputs:
+			if devInfo[0] not in self.guiSources.inputDeviceToWidgetDict: continue
+			widget = self.guiSources.inputDeviceToWidgetDict[devInfo[0]]
+			devInfo[3] = widget.GetSaveParams()
+
+		print self.findCorrespondences.devInputs
+
 		outData = {}
 		outData['cams'] = self.cameraArrangement
 		outData['pairs'] = self.guiCorrespondences.framePairs

@@ -100,14 +100,24 @@ class GuiSources(QtGui.QFrame):
 
 	def UpdateSourceList(self):
 		print "UpdateSourceList"
-		self.devNames = self.devManager.list_devices()
+		devWebcamNames = self.devManager.list_devices()
 
-		for devInfo in self.devNames[:]:
+		#Convert to list so items can be updated
+		self.devNames = []
+		for devInfo in devWebcamNames:
+			devInfo = list(devInfo)
+			while len(devInfo) < 4: devInfo.append(None)
+			if devInfo[2] == None: devInfo[2] = "Local Capture Source"
+			self.devNames.append(devInfo)
+
+		#Create camera input widgets
+		for devInfo in self.devNames:
 
 			fina = devInfo[0]
 			friendlyName = devInfo[0]
 			if len(devInfo) >= 2:
 				friendlyName = devInfo[1]
+
 			widget = vidinput.SourceWidget(fina, self.devManager, friendlyName)
 			#widget = vidinput.EmulateFixedRateVideoSource(fina, self.devManager, friendlyName)
 
@@ -191,12 +201,14 @@ class GuiSources(QtGui.QFrame):
 			msgBox.setText("Adding camera failed (is it already present?)")
 			msgBox.exec_()
 	
-	def AddIpCamera(self, camType, url):
-		ha = hashlib.sha256()
-		prehashStr = str(camType+":"+url.encode('utf-8'))
-		print prehashStr
-		ha.update(prehashStr)
-		devId = ha.hexdigest()
+	def AddIpCamera(self, camType, url, devId = None):
+
+		if devId is None:
+			ha = hashlib.sha256()
+			prehashStr = str(camType+":"+url.encode('utf-8'))
+			print prehashStr
+			ha.update(prehashStr)
+			devId = ha.hexdigest()
 		print "devId", devId
 
 		if devId in self.inputDeviceToWidgetDict:
@@ -216,19 +228,31 @@ class GuiSources(QtGui.QFrame):
 			pix += widget.sizeHint().height()
 		self.sourceFrame.setFixedHeight(pix)
 
-		self.devNames.append((devId, friendlyName, camType, url))
+		self.devNames.append([devId, friendlyName, camType, {}])
 		self.deviceAdded.emit(devId)
 
 	def AddSourceFromMeta(self, camInfo):
 		print "AddSourceFromMeta", camInfo
 		if len(camInfo) >= 4 and camInfo[2] == "MJPEG IP Camera":
 			try:
-				self.AddIpCamera(camInfo[2], camInfo[3])
+				self.AddIpCamera(camInfo[2], camInfo[3]['url'], camInfo[0])
 			except Exception as err:
 				print err
 
-	def AddDemoCameraPressed(self):
-		devId = str(uuid.uuid4())
+		if len(camInfo) >= 4 and camInfo[2] == "Local Capture Source":
+			pass #This should have been done on init
+
+		if len(camInfo) >= 4 and camInfo[2] == "Demo Camera":
+			try:
+				self.AddDemoCamera(camInfo[0], camInfo[3]['cam'])
+			except Exception as err:
+				print err
+			
+	def AddDemoCamera(self, devId, camFolder = None):
+
+		if devId in self.inputDeviceToWidgetDict:
+			raise Exception("Device already added")
+
 		camType = "Demo Camera"
 		friendlyName = "Demo Camera"
 		ipCam = viddemocam.DemoCamWidget(devId)
@@ -245,8 +269,15 @@ class GuiSources(QtGui.QFrame):
 			pix += widget.sizeHint().height()
 		self.sourceFrame.setFixedHeight(pix)
 		
-		self.devNames.append((devId, friendlyName, camType))
+		self.devNames.append([devId, friendlyName, camType, {}])
 		self.deviceAdded.emit(devId)
+
+	def AddDemoCameraPressed(self):
+		devId = str(uuid.uuid4())
+		try:
+			self.AddDemoCamera(devId)
+		except Exception as err:
+			print err
 
 #def CalibrateProgressCallback(progress):
 #	print "progress", progress
