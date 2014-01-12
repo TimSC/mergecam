@@ -115,7 +115,7 @@ class GuiSources(QtGui.QFrame):
 
 			fina = devInfo[0]
 			friendlyName = devInfo[0]
-			if len(devInfo) >= 2:
+			if len(devInfo) >= 2 and devInfo[1] is not None:
 				friendlyName = devInfo[1]
 
 			widget = vidinput.SourceWidget(fina, self.devManager, friendlyName)
