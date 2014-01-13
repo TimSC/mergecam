@@ -83,7 +83,7 @@ class GuiPanorama(QtGui.QFrame):
 		self.vidOutStreamWidget = vidoutput.VideoOutWidget(self.outStreamsManager)
 		self.outputBar.addWidget(self.vidOutStreamWidget)
 		
-		self.vidOutFileWidget = vidwriter.VideoWriterWidget(self.outFilesManager)
+		self.vidOutFileWidget = vidwriter.VideoWriterWidget(self.outFilesManager, self.fullVersion)
 		self.outputBar.addWidget(self.vidOutFileWidget)
 		
 	def SetFrame(self, frame, meta):
@@ -194,3 +194,17 @@ class GuiPanorama(QtGui.QFrame):
 		outw = int(self.outputSizeWCombo.currentText())
 		outh = int(self.outputSizeHCombo.currentText())
 		return outw, outh
+
+# ***************************************************************
+
+class ConfigDialog(QtGui.QDialog):
+
+	def __init__(self, parent = None):
+		QtGui.QDialog.__init__(self, parent)
+
+		self.setWindowTitle('PanoView')
+		self.setMinimumWidth(500)
+
+		
+
+

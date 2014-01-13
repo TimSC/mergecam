@@ -3,13 +3,14 @@ from PySide import QtGui, QtCore
 import time, math
 
 class VideoWriterWidget(QtGui.QFrame):
-	def __init__(self, outFilesManagerIn):
+	def __init__(self, outFilesManagerIn, fullVersion):
 		QtGui.QFrame.__init__(self)
 		self.devOn = False
 		self.outFilesManager = outFilesManagerIn
 		self.startTime = None
 		self.imgW = 800
 		self.imgH = 600
+		self.fullVersion = fullVersion
 
 		self.widgetLayout = QtGui.QVBoxLayout()
 		self.setLayout(self.widgetLayout)
@@ -36,7 +37,13 @@ class VideoWriterWidget(QtGui.QFrame):
 		self.onButton = QtGui.QPushButton("Record")
 		self.fileLineLayout.addWidget(self.onButton, 0)
 		self.onButton.setCheckable(True)
+		self.onButton.setEnabled(self.fullVersion)
 		self.onButton.clicked.connect(self.ClickedOn)
+
+		if not self.fullVersion:
+			self.purchaseButton = QtGui.QPushButton("Purchase PRO Version to Record")
+			self.widgetLayout.addWidget(self.purchaseButton)
+			self.purchaseButton.pressed.connect(self.PurchasePressed)
 
 		self.setFrameStyle(QtGui.QFrame.Box)
 		self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
@@ -110,3 +117,8 @@ class VideoWriterWidget(QtGui.QFrame):
 
 		self.imgW = w
 		self.imgH = h
+
+	def PurchasePressed(self):
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/progurl/register.php"))
+
+
