@@ -238,8 +238,9 @@ class MainWindow(QtGui.QMainWindow):
 
 		self.show()
 
-		splashDialog = SplashDialog()
-		splashDialog.exec_()
+		if not config.FULL_VERSION:
+			splashDialog = SplashDialog(self, config.FULL_VERSION)
+			splashDialog.exec_()
 
 	def __del__(self):
 		self.guiSources.Stop()
@@ -435,7 +436,7 @@ class MainWindow(QtGui.QMainWindow):
 		QtGui.QDesktopServices.openUrl(QtCore.QUrl(config.REGISTER_URL))
 
 	def AboutPressed(self):
-		aboutDlg = AboutDialog()
+		aboutDlg = AboutDialog(self, config.FULL_VERSION)
 		aboutDlg.exec_()
 
 def main():

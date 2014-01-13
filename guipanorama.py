@@ -148,7 +148,7 @@ class GuiPanorama(QtGui.QFrame):
 		return self.outw, self.outh
 
 	def ConfigurePressed(self):
-		dlg = ConfigDialog()
+		dlg = ConfigDialog(self, config.FULL_VERSION)
 		dlg.outputSizeChanged.connect(self.outputSizeChanged)
 		dlg.blendCheckBox.setChecked(self.blend)
 		dlg.SetOutputSize(self.outw, self.outh)
