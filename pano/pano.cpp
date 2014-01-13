@@ -52,6 +52,14 @@ static PyObject *TestFunc(PyObject *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
+
+// Calculates log2 of number.  
+double Log2( double n )  
+{  
+    // log(n)/log(2) is log2.  
+    return log( n ) / log( 2. );  
+}
+
 int ResizeToPowersOfTwo(unsigned char *imgRaw, 
 	long sourceWidth, long sourceHeight, 
 	const char *sourceFmt, 
@@ -64,8 +72,8 @@ int ResizeToPowersOfTwo(unsigned char *imgRaw,
 	if(outBuff == NULL || openglTexLen == NULL || openglTxWidth == NULL || openglTxHeight == NULL)
 		throw std::runtime_error("An output pointer is null");
 
-	int roundWidth = pow(2, (int)ceil(log2(sourceWidth)));
-	int roundHeight = pow(2, (int)ceil(log2(sourceHeight)));
+	int roundWidth = pow(2., (int)ceil(Log2(sourceWidth)));
+	int roundHeight = pow(2., (int)ceil(Log2(sourceHeight)));
 	int requiredMem = roundWidth * roundHeight * 3;
 
 	*openglTxWidth = roundWidth;
@@ -221,6 +229,7 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	long outWidth = PyInt_AsLong(outWidthObj);
 	long outHeight = PyInt_AsLong(outHeightObj);
 	std::cout << "PanoView_init: " << outWidth << "," << outHeight << std::endl;
+
 	self->outImgW = outWidth;
 	self->outImgH = outHeight;
 	Py_DECREF(outWidthObj);
@@ -237,7 +246,7 @@ static int PanoView_init(PanoView *self, PyObject *args,
 		gGlutInitDone = 1;
 	}
 	glutInitWindowSize(outWidth, outHeight);
-	
+
 	int glut_id = glutCreateWindow("VWGL");
 	int hideOpenGL = 1;
 	if(hideOpenGL)
@@ -266,6 +275,11 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	std::vector<std::string> splitExt = ::split(extensions, ' ');
 
 	self->nonPowerTwoTexSupported = FindStringInVector("GL_ARB_texture_non_power_of_two", splitExt);
+
+	const GLubyte *ven = glGetString(GL_VENDOR);
+	std::cout << "opengl vendor: " << ven << std::endl;
+	const GLubyte *ren = glGetString(GL_RENDERER);
+	std::cout << "opengl renderer: " << ren << std::endl;
 
 	return 0;
 }
@@ -360,7 +374,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		PyObject *metaObj = PySequence_GetItem(metas, i);
 		if(metaObj==NULL) throw std::runtime_error("metaObj pointer is null");
 
-		if(pyImage == Py_None or metaObj == Py_None)
+		if(pyImage == Py_None || metaObj == Py_None)
 		{
 			self->textureIds.push_back(0);
 			Py_DECREF(pyImage);
@@ -460,7 +474,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		PyObject *metaObj = PySequence_GetItem(metas, i);
 		if(metaObj==NULL) throw std::runtime_error("metaObj pointer is null");
 
-		if(pyImage == Py_None or metaObj == Py_None)
+		if(pyImage == Py_None || metaObj == Py_None)
 		{
 			//Skip if camera data is missing
 			Py_DECREF(pyImage);
