@@ -1,7 +1,7 @@
 from PySide import QtGui, QtCore
 import videolive, vidinput, vidpano, time, vidipcam, viddemocam
 import multiprocessing
-import traceback, hashlib, uuid
+import traceback, hashlib, uuid, config
 
 class GuiSources(QtGui.QFrame):
 	sourceToggled = QtCore.Signal(str, int)
@@ -427,7 +427,7 @@ class AddIpCameraDialog(QtGui.QDialog):
 		self.camTypeCombo.addItem("MJPEG IP Camera")
 		self.mainLayout.addWidget(self.camTypeCombo)
 
-		self.urlEdit = QtGui.QLineEdit("url") #http://umevakameran.net.umea.se/mjpg/video.mjpg
+		self.urlEdit = QtGui.QLineEdit("type url here") #http://umevakameran.net.umea.se/mjpg/video.mjpg
 		self.mainLayout.addWidget(self.urlEdit)
 
 		self.getWebcamUrlsButton = QtGui.QPushButton("Get Example Webcam URLs")
