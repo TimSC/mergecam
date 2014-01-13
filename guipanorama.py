@@ -17,6 +17,9 @@ class GuiPanorama(QtGui.QFrame):
 		self.activeCams = []
 		self.fullVersion = False
 		self.watermark = None
+		self.blend = False
+		self.outw = 640
+		self.outh = 480
 
 		self.outStreamsManager = videolive.Video_out_stream_manager()
 		self.outFilesManager = videolive.Video_out_file_manager()
@@ -31,54 +34,10 @@ class GuiPanorama(QtGui.QFrame):
 		#Output bar
 		self.outputBar = QtGui.QHBoxLayout()
 		self.layout.addLayout(self.outputBar)
-
-		self.sizeAndRegisterLayout = QtGui.QVBoxLayout()
-		self.outputBar.addLayout(self.sizeAndRegisterLayout)
-		self.sizeAndRegisterLayout.addWidget(QtGui.QLabel("Output Size"))
-
-		self.outsizeLayout = QtGui.QVBoxLayout()
-		self.sizeAndRegisterLayout.addLayout(self.outsizeLayout)
-
-		allowedSizes = [480, 640, 800, 1024, 1200, 1600, 2048]
-
-		self.widthLabelAndCombo = QtGui.QHBoxLayout()
-		self.outsizeLayout.addLayout(self.widthLabelAndCombo)	
-		self.heightLabelAndCombo = QtGui.QHBoxLayout()
-		self.outsizeLayout.addLayout(self.heightLabelAndCombo)	
-
-		self.outputSizeWCombo = QtGui.QComboBox()
-		for si in allowedSizes:
-			self.outputSizeWCombo.addItem(str(si))
-		if self.fullVersion:
-			self.outputSizeWCombo.setCurrentIndex(2)
-		else:
-			self.outputSizeWCombo.setCurrentIndex(1)
-		self.outputSizeWCombo.setEnabled(self.fullVersion)
-		self.widthLabelAndCombo.addWidget(QtGui.QLabel("Width:"))	
-		self.widthLabelAndCombo.addWidget(self.outputSizeWCombo)	
-
-		self.outputSizeHCombo = QtGui.QComboBox()
-		for si in allowedSizes:
-			self.outputSizeHCombo.addItem(str(si))
-		if self.fullVersion:
-			self.outputSizeHCombo.setCurrentIndex(1)
-		else:
-			self.outputSizeHCombo.setCurrentIndex(0)
-		self.outputSizeHCombo.setEnabled(self.fullVersion)
-		self.heightLabelAndCombo.addWidget(QtGui.QLabel("Height:"))	
-		self.heightLabelAndCombo.addWidget(self.outputSizeHCombo)	
-
-		self.outputSizeChangeButton = QtGui.QPushButton("Change")
-		self.outsizeLayout.addWidget(self.outputSizeChangeButton)
-		self.outputSizeChangeButton.pressed.connect(self.OutputChangeSizePressed)
-		self.outputSizeChangeButton.setEnabled(self.fullVersion)
-
-		if not self.fullVersion:
-			self.purchaseButton = QtGui.QPushButton("Purchase PRO Version to Increase Size")
-			self.sizeAndRegisterLayout.addWidget(self.purchaseButton)
-			self.purchaseButton.pressed.connect(self.PurchasePressed)
-		else:
-			self.purchaseButton = None
+		
+		self.configure = QtGui.QPushButton("Configure View")
+		self.configure.pressed.connect(self.ConfigurePressed)
+		self.outputBar.addWidget(self.configure)		
 
 		self.vidOutStreamWidget = vidoutput.VideoOutWidget(self.outStreamsManager)
 		self.outputBar.addWidget(self.vidOutStreamWidget)
@@ -161,7 +120,7 @@ class GuiPanorama(QtGui.QFrame):
 			if 1:
 				#print len(self.currentFrame), self.currentMeta
 				startTime = time.time()
-				visPixOut, visMetaOut = self.visObj.Vis(self.currentFrame, self.currentMeta)
+				visPixOut, visMetaOut = self.visObj.Vis(self.currentFrame, self.currentMeta, self.blend)
 				print "Generated panorama in",time.time()-startTime,"sec"
 				#self.visObj.Vis(self.currentFrame, self.currentMeta)
 			if 1:
@@ -180,31 +139,108 @@ class GuiPanorama(QtGui.QFrame):
 		print "SetActiveCams", activeCams
 		self.activeCams = activeCams
 
-	def OutputChangeSizePressed(self):
-		outw = int(self.outputSizeWCombo.currentText())
-		outh = int(self.outputSizeHCombo.currentText())
+	def OutputChangeSizePressed(self, w, h):
 
-		self.outputSizeChanged.emit(outw, outh)
+		self.outputSizeChanged.emit(w, h)
 		self.watermark = None
 
-	def PurchasePressed(self):
-		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/progurl/register.php"))
-
 	def GetOutputSize(self):
-		outw = int(self.outputSizeWCombo.currentText())
-		outh = int(self.outputSizeHCombo.currentText())
-		return outw, outh
+		return self.outw, self.outh
+
+	def ConfigurePressed(self):
+		dlg = ConfigDialog()
+		dlg.outputSizeChanged.connect(self.outputSizeChanged)
+		dlg.blendCheckBox.setChecked(self.blend)
+		dlg.SetOutputSize(self.outw, self.outh)
+		dlg.exec_()
+		self.blend = dlg.blendCheckBox.isChecked()
+		self.outw, self.outh = dlg.GetOutputSize()
 
 # ***************************************************************
 
 class ConfigDialog(QtGui.QDialog):
 
-	def __init__(self, parent = None):
+	outputSizeChanged = QtCore.Signal(int, int)
+
+	def __init__(self, parent = None, fullVersion = 0):
 		QtGui.QDialog.__init__(self, parent)
 
 		self.setWindowTitle('PanoView')
 		self.setMinimumWidth(500)
 
+		self.mainLayout = QtGui.QVBoxLayout()
+		self.setLayout(self.mainLayout)
 		
+		self.mainLayout.addWidget(QtGui.QLabel("Output Size"))
 
+		self.outsizeLayout = QtGui.QVBoxLayout()
+		self.mainLayout.addLayout(self.outsizeLayout)
+
+		self.allowedSizes = [480, 640, 800, 1024, 1200, 1600, 2048]
+
+		self.widthLabelAndCombo = QtGui.QHBoxLayout()
+		self.outsizeLayout.addLayout(self.widthLabelAndCombo)	
+		self.heightLabelAndCombo = QtGui.QHBoxLayout()
+		self.outsizeLayout.addLayout(self.heightLabelAndCombo)	
+
+		self.outputSizeWCombo = QtGui.QComboBox()
+		for si in self.allowedSizes:
+			self.outputSizeWCombo.addItem(str(si))
+
+		self.outputSizeWCombo.setEnabled(fullVersion)
+		self.widthLabelAndCombo.addWidget(QtGui.QLabel("Width:"))	
+		self.widthLabelAndCombo.addWidget(self.outputSizeWCombo)	
+
+		self.outputSizeHCombo = QtGui.QComboBox()
+		for si in self.allowedSizes:
+			self.outputSizeHCombo.addItem(str(si))
+
+		self.outputSizeHCombo.setEnabled(fullVersion)
+		self.heightLabelAndCombo.addWidget(QtGui.QLabel("Height:"))	
+		self.heightLabelAndCombo.addWidget(self.outputSizeHCombo)	
+
+		self.outputSizeChangeButton = QtGui.QPushButton("Change")
+		self.outsizeLayout.addWidget(self.outputSizeChangeButton)
+		self.outputSizeChangeButton.pressed.connect(self.OutputChangeSizePressed)
+		self.outputSizeChangeButton.setEnabled(fullVersion)
+
+		if not fullVersion:
+			self.purchaseButton = QtGui.QPushButton("Purchase PRO Version to Increase Size")
+			self.mainLayout.addWidget(self.purchaseButton)
+			self.purchaseButton.pressed.connect(self.PurchasePressed)
+		else:
+			self.purchaseButton = None
+
+		self.blendLayout = QtGui.QHBoxLayout()
+		self.mainLayout.addLayout(self.blendLayout)
+
+		self.blendCheckBox = QtGui.QCheckBox()
+		self.blendLayout.addWidget(self.blendCheckBox)
+	
+		self.blendLabel = QtGui.QLabel("Smooth Blend")
+		self.blendLayout.addWidget(self.blendLabel)
+
+		self.closeButton = QtGui.QPushButton("Close")
+		self.mainLayout.addWidget(self.closeButton)
+		self.closeButton.pressed.connect(self.close)
+	
+	def SetOutputSize(self, w, h):
+		if w in self.allowedSizes:
+			wi = self.allowedSizes.index(w)
+			self.outputSizeWCombo.setCurrentIndex(wi)
+		if h in self.allowedSizes:
+			hi = self.allowedSizes.index(h)
+			self.outputSizeHCombo.setCurrentIndex(hi)
+
+	def GetOutputSize(self):
+		return int(self.outputSizeWCombo.currentText()), int(self.outputSizeHCombo.currentText())
+
+	def OutputChangeSizePressed(self):
+		outw = int(self.outputSizeWCombo.currentText())
+		outh = int(self.outputSizeHCombo.currentText())
+
+		self.outputSizeChanged.emit(outw, outh)
+
+	def PurchasePressed(self):
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/progurl/register.php"))
 

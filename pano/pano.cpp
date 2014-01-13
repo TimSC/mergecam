@@ -312,6 +312,13 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	PyObject *images = PyTuple_GetItem(args, 0);
 	PyObject *metas = PyTuple_GetItem(args, 1);
+
+	int blend = 1;
+	if(PyTuple_Size(args) >= 3)
+	{
+		PyObject *blendObj = PyTuple_GetItem(args, 2);
+		if(blendObj == Py_False) blend = 0;
+	}
 	
 	Py_ssize_t numSources = PySequence_Size(images);
 	Py_ssize_t numMetas = PySequence_Size(metas);
@@ -375,8 +382,15 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		if(imgRaw==NULL) throw std::runtime_error("imgRaw pointer is null");
 
 		glEnable(GL_TEXTURE_2D);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_DST_ALPHA);
+		if(blend)
+		{
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_DST_ALPHA);
+		}
+		else
+		{
+			glDisable(GL_BLEND);
+		}
 		//glBlendEquation(GL_FUNC_ADD);
 
 		//Get texture handle
