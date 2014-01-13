@@ -2,6 +2,6 @@ Benefits of full version:
 
 * Increase video output size
 * No watermarks
-* Remove nag popup windows
+* Remove upgrade reminders popup windows
 * Save output to video file
 

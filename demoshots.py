@@ -32,13 +32,14 @@ def GetSourceImg(inImg, src, cLon):
 
 if __name__=="__main__":
 
-	inImg = misc.imread("tech/1439853045_a6f02c40be_o.jpg")
+	#inImg = misc.imread("tech/1439853045_a6f02c40be_o.jpg")
+	inImg = misc.imread("tech/448663110_723f42f5bb_o.jpg")
 
 	src = proj.EquirectangularCam()
 	src.imgW = inImg.shape[1]
 	src.imgH = inImg.shape[0]
 	
-	src.hFov = math.radians(140.0)
+	src.hFov = math.radians(100.0)
 	src.vFov = src.hFov * float(inImg.shape[0]) / float(inImg.shape[1])
 
 	outImg = GetSourceImg(inImg, src, math.radians(-30))

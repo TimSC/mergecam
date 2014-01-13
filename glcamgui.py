@@ -6,7 +6,7 @@ import sys, time, os, random, copy
 from PySide import QtGui, QtCore
 import guisources, guicorrespondences, guipanorama
 import numpy as np
-import videolive, vidpano, pickle, proj, pano
+import videolive, vidpano, pickle, proj, pano, config
 
 # *********** Splash Popup *******************
 
@@ -15,7 +15,7 @@ class SplashDialog(QtGui.QDialog):
 	def __init__(self, parent = None, registered = 0):
 		QtGui.QDialog.__init__(self, parent)
 
-		self.setWindowTitle('PanoView')
+		self.setWindowTitle(config.PROGRAM_NAME)
 		self.setMinimumWidth(500)
 		self.mayClose = registered
 
@@ -32,7 +32,7 @@ class SplashDialog(QtGui.QDialog):
 		lbl.setFixedSize(100, 100)
 		self.titleLayout.addWidget(lbl)
 
-		title = QtGui.QLabel("PanoVid by Kinatomic Technology")
+		title = QtGui.QLabel(config.LONG_PROGRAM_NAME)
 		self.titleLayout.addWidget(title)
 
 		if not registered:
@@ -65,7 +65,7 @@ class SplashDialog(QtGui.QDialog):
 		self.startTime = time.time()
 
 	def RegisterPressed(self):
-		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/progurl/register.php"))
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl(config.REGISTER_URL))
 
 	def closeEvent(self, event):
 		if not self.mayClose:
@@ -110,7 +110,7 @@ class AboutDialog(QtGui.QDialog):
 		self.titleRight = QtGui.QVBoxLayout()
 		self.titleLayout.addLayout(self.titleRight)
 
-		title = QtGui.QLabel("PanoVid by Kinatomic Technology")
+		title = QtGui.QLabel(config.LONG_PROGRAM_NAME)
 		self.titleRight.addWidget(title)
 
 		websiteLink = QtGui.QPushButton("Website")
@@ -128,10 +128,10 @@ class AboutDialog(QtGui.QDialog):
 		self.mainLayout.addWidget(legal)
 
 	def WebsitePressed(self):
-		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/"))
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl(config.WEBSITE_URL))
 
 	def RegisterPressed(self):
-		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/progurl/register.php"))
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl(config.REGISTER_URL))
 
 # *********** Main Window *******************
 
@@ -154,7 +154,7 @@ class MainWindow(QtGui.QMainWindow):
 	
 		self.resize(700, 550)
 		self.move(300, 300)
-		self.setWindowTitle('PanoramaVid')
+		self.setWindowTitle(config.PROGRAM_NAME)
 		self.mainLayout = QtGui.QVBoxLayout()
 
 		#Menu
@@ -298,7 +298,7 @@ class MainWindow(QtGui.QMainWindow):
 
 		#Estimate correspondences and camera positions
 		self.calibratePopup = guisources.CalibratePopup(self, self.findCorrespondences, self.cameraArrangement)
-		self.calibratePopup.setGeometry(QtCore.QRect(100, 100, 400, 200))
+		#self.calibratePopup.setGeometry(QtCore.QRect(100, 100, 400, 200))
 		self.calibratePopup.framePairs = self.guiCorrespondences.framePairs
 		self.calibratePopup.doCorrespondence = doCorrespondence
 		self.calibratePopup.doCameraPositions = doCameraPositions
@@ -429,10 +429,10 @@ class MainWindow(QtGui.QMainWindow):
 			self.guiPanorama.SetVisObject(None, None)		
 
 	def HelpPressed(self):
-		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/progurl/panosupport.php"))
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl(config.SUPPORT_URL))
 
 	def RegisterPressed(self):
-		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/progurl/register.php"))
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl(config.REGISTER_URL))
 
 	def AboutPressed(self):
 		aboutDlg = AboutDialog()

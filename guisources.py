@@ -427,8 +427,12 @@ class AddIpCameraDialog(QtGui.QDialog):
 		self.camTypeCombo.addItem("MJPEG IP Camera")
 		self.mainLayout.addWidget(self.camTypeCombo)
 
-		self.urlEdit = QtGui.QLineEdit("http://umevakameran.net.umea.se/mjpg/video.mjpg")#("url")
+		self.urlEdit = QtGui.QLineEdit("url") #http://umevakameran.net.umea.se/mjpg/video.mjpg
 		self.mainLayout.addWidget(self.urlEdit)
+
+		self.getWebcamUrlsButton = QtGui.QPushButton("Get Example Webcam URLs")
+		self.getWebcamUrlsButton.pressed.connect(self.GetWebcamUrlsPressed)
+		self.mainLayout.addWidget(self.getWebcamUrlsButton)
 
 		self.buttonLayout = QtGui.QHBoxLayout()
 		self.mainLayout.addLayout(self.buttonLayout)
@@ -449,4 +453,6 @@ class AddIpCameraDialog(QtGui.QDialog):
 	def CancelPressed(self):
 		self.close()
 
+	def GetWebcamUrlsPressed(self):
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl(config.EXAMPLE_WEBCAMS_URL))
 

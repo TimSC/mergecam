@@ -1,5 +1,5 @@
 from PySide import QtGui, QtCore
-import time, vidoutput, vidwriter, videolive
+import time, vidoutput, vidwriter, videolive, config
 import scipy.misc as misc
 import numpy as np
 
@@ -15,7 +15,7 @@ class GuiPanorama(QtGui.QFrame):
 		self.currentMeta = []
 		self.visObj = None
 		self.activeCams = []
-		self.fullVersion = False
+		self.fullVersion = config.FULL_VERSION
 		self.watermark = None
 		self.blend = False
 		self.outw = 640
@@ -242,5 +242,5 @@ class ConfigDialog(QtGui.QDialog):
 		self.outputSizeChanged.emit(outw, outh)
 
 	def PurchasePressed(self):
-		QtGui.QDesktopServices.openUrl(QtCore.QUrl("http://www.kinatomic.com/progurl/register.php"))
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl(config.REGISTER_URL))
 
