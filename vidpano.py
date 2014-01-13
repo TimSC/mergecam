@@ -4,7 +4,7 @@ import uuid
 import cv2, cv, proj, math, random, time
 import numpy as np
 import scipy.optimize as optimize
-import pano
+import pano, config
 
 ### Utility functions
 
