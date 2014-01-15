@@ -44,6 +44,7 @@ public:
 	double dstXMin, dstXMax;
 	double dstYMin, dstYMax;
 	std::vector<int> displayListImgWidth, displayListImgHeight;
+	int textureFaultDetected;
 };
 typedef PanoView_cl PanoView;
 
@@ -204,6 +205,7 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	self->dstXMax = 0.;
 	self->dstYMin = 0.;
 	self->dstYMax = 0.;
+	self->textureFaultDetected = 0;
 
 	if(PyTuple_Size(args) < 2)
 	{
@@ -279,6 +281,11 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	std::string extensions = (const char *)glGetString(GL_EXTENSIONS);
 	PrintGlErrors("get extensions");
 	std::vector<std::string> splitExt = ::split(extensions, ' ');
+
+	for(unsigned i=0; i< splitExt.size(); i++)
+	{
+		std::cout << splitExt[i] << std::endl;
+	}
 
 	self->nonPowerTwoTexSupported = FindStringInVector("GL_ARB_texture_non_power_of_two", splitExt);
 
@@ -421,14 +428,19 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		//Get texture handle
 		GLuint texture;
 		glGenTextures(1, &texture);
+		PrintGlErrors("allocate a texture");
 
 		glBindTexture(GL_TEXTURE_2D, texture);
-		if(self->nonPowerTwoTexSupported)
+		if(self->nonPowerTwoTexSupported && !self->textureFaultDetected)
 		{
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, sourceWidth, 
 				sourceHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, imgRaw);
 			self->openglTxWidthLi[i] = sourceWidth;
 			self->openglTxHeightLi[i] = sourceHeight;
+
+			GLenum err = glGetError();
+			if(err == GL_INVALID_VALUE)
+				self->textureFaultDetected = 1;
 			PrintGlErrors("transfer tex");
 			//std::cout << i << "\t" << sourceWidth << "," << sourceHeight << std::endl;
 		}
