@@ -365,7 +365,13 @@ class GuiCorrespondences(QtGui.QFrame):
 		rightPt = self.rightView.GetClickedPointPos()		
 		if leftPt is None: return
 		if rightPt is None: return
-		
+
+		left, right = self.FindCurrentFramePair()
+		if left is None or right is None:
+                        self.leftView.ClearClickedPoint()
+                        self.rightView.ClearClickedPoint()
+                        return
+                        
 		#Insert extra row into table
 		self.ignoreTableChanges = True
 		row = self.table.rowCount()
@@ -385,14 +391,14 @@ class GuiCorrespondences(QtGui.QFrame):
 		self.ignoreTableChanges = False
 
 		#Reduce size of memory struct by one
-		left, right = self.FindCurrentFramePair()
-		left = list(left) #Possibly cast from numpy array to list
-		right = list(right)
 
-		left.append(leftPt)
-		right.append(rightPt)
+                left = list(left) #Possibly cast from numpy array to list
+                right = list(right)
 
-		self.SetCurrentFramePair(left, right)
+                left.append(leftPt)
+                right.append(rightPt)
+
+                self.SetCurrentFramePair(left, right)
 
 		#Refresh visualisation
 		self.leftView.SetControlPoints(left)
