@@ -97,10 +97,17 @@ def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descript
 		mat = matcher.match(descriptors1, descriptors2)
 	
 	if 1:
-		matcher = cv2.BFMatcher(cv2.NORM_HAMMING, 1)
-		mat = matcher.match(descriptors1, descriptors2)
+		matcher = cv2.BFMatcher(cv2.NORM_HAMMING, 0)
+		mat = matcher.knnMatch(descriptors1, descriptors2, k=2)
 
 	print "num points matched", len(mat)
+
+	#Filter based on ratios as per Lowe's paper
+	filteredMatches = []
+	for i,(m,n) in enumerate(mat):
+		if m.distance < 0.7*n.distance:
+			filteredMatches.append(m)
+	mat = filteredMatches
 	
 	#for dmat in mat:
 	#	print dmat.distance, dmat.imgIdx, dmat.queryIdx, dmat.trainIdx
@@ -127,7 +134,7 @@ def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descript
 	#Transform keypoints from rectilinear to polar space
 	#pts = TransformKeyPoints(ptsPos1, 49.0, 35.4, im1.shape[1], im1.shape[0])
 
-	if 1:
+	if 0:
 		imjoin = np.hstack((im1, im2))
 		import matplotlib.pyplot as plt
 		plt.imshow(imjoin)
