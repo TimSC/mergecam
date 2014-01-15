@@ -33,6 +33,7 @@ class GuiSources(QtGui.QFrame):
 		#self.sourceFrame.setFrameStyle(QtGui.QFrame.Box)
 		self.sourceFrame.setContentsMargins(0, 0, 0, 0)
 		self.sourceFrame.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
+		self.sourceFrame.setFixedWidth(320)
 
 		self.sourceList = QtGui.QVBoxLayout()
 		self.sourceList.setContentsMargins(0, 0, 0, 0)
@@ -198,7 +199,7 @@ class GuiSources(QtGui.QFrame):
 			self.AddIpCamera(self.camDialog.camType, self.camDialog.url)
 		except Exception as err:
 			msgBox = QtGui.QMessageBox()
-			msgBox.setText("Adding camera failed (is it already present?)")
+			msgBox.setText("Adding camera failed (is it already present?): " +str(err))
 			msgBox.exec_()
 	
 	def AddIpCamera(self, camType, url, devId = None):
@@ -264,10 +265,11 @@ class GuiSources(QtGui.QFrame):
 		self.inputDeviceToWidgetDict[devId] = ipCam
 
 		#Resize parent frame
-		pix = 0
+		pixh = 0
 		for widget in self.inputDeviceToWidgetDict.values():
-			pix += widget.sizeHint().height()
-		self.sourceFrame.setFixedHeight(pix)
+			pixh += widget.sizeHint().height()
+		self.sourceFrame.setFixedHeight(pixh)
+
 		
 		self.devNames.append([devId, friendlyName, camType, {}])
 		self.deviceAdded.emit(devId)
