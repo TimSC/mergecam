@@ -104,12 +104,12 @@ int ResizeToPowersOfTwo(unsigned char *imgRaw,
 	return 1;
 }
 
-void PrintGlErrors()
+void PrintGlErrors(const char *codeLocation)
 {	
 	GLenum err = glGetError();
 	while(err!=GL_NO_ERROR)
 	{
-		std::cout << "opengl error: " << gluErrorString(err) << std::endl;
+		std::cout << "opengl error ("<<codeLocation<<"): " << gluErrorString(err) << std::endl;
 		err = glGetError();
 	}
 }
@@ -268,18 +268,26 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
 
 	glClearColor(0,0,0,0);
+	PrintGlErrors("set clear colour");
+
 	glClear(GL_COLOR_BUFFER_BIT);
+	PrintGlErrors("clear colour buff");
+
 	glViewport(0, 0, outWidth, outHeight);
+	PrintGlErrors("set viewport");
 
 	std::string extensions = (const char *)glGetString(GL_EXTENSIONS);
+	PrintGlErrors("get extensions");
 	std::vector<std::string> splitExt = ::split(extensions, ' ');
 
 	self->nonPowerTwoTexSupported = FindStringInVector("GL_ARB_texture_non_power_of_two", splitExt);
 
 	const GLubyte *ven = glGetString(GL_VENDOR);
-	std::cout << "opengl vendor: " << ven << std::endl;
+	PrintGlErrors("get vendor");
+	if(ven!=NULL) std::cout << "opengl vendor: " << ven << std::endl;
 	const GLubyte *ren = glGetString(GL_RENDERER);
-	std::cout << "opengl renderer: " << ren << std::endl;
+	PrintGlErrors("get renderer");
+	if(ren!=NULL) std::cout << "opengl renderer: " << ren << std::endl;
 
 	return 0;
 }
@@ -352,6 +360,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	memset(pxOutRaw, 0x00, pxOutSize);
 
 	glClear(GL_COLOR_BUFFER_BIT);
+	PrintGlErrors("clear colour buff");
 
 	//Iterate over cameras in arrangement
 	PyObject *addedPhotos = PyObject_GetAttrString(self->cameraArrangement, "addedPhotos");
@@ -400,10 +409,12 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		{
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_DST_ALPHA);
+			PrintGlErrors("set blend mode");
 		}
 		else
 		{
 			glDisable(GL_BLEND);
+			PrintGlErrors("disable blending");
 		}
 		//glBlendEquation(GL_FUNC_ADD);
 
@@ -418,6 +429,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				sourceHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, imgRaw);
 			self->openglTxWidthLi[i] = sourceWidth;
 			self->openglTxHeightLi[i] = sourceHeight;
+			PrintGlErrors("transfer tex");
 			//std::cout << i << "\t" << sourceWidth << "," << sourceHeight << std::endl;
 		}
 		else
@@ -440,6 +452,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 					//Load texture into opengl
 					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, openglTxWidth, 
 						openglTxHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, openglTex);
+
+					PrintGlErrors("transfer tex2");
 				}
 				delete [] openglTex;
 				openglTex = NULL;
@@ -448,6 +462,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		PrintGlErrors("set texture params");
 
 		self->textureIds.push_back(texture);
 
@@ -513,7 +528,11 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		}
 
 		GLuint dl = glGenLists(1);
+		PrintGlErrors("create display list");
+
 		glNewList(dl,GL_COMPILE);
+		PrintGlErrors("compile display list");
+
 		std::cout << "Generating display list " << dl << " for cam " << i << std::endl;
 		std::cout.flush();
 
@@ -664,6 +683,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		Py_DECREF(camDataTup);
 
 		glEndList();
+		PrintGlErrors("end display list");
 		self->displayLists[i] = dl;
 		self->displayListImgWidth[i] = sourceWidth;
 		self->displayListImgHeight[i] = sourceHeight;
@@ -705,6 +725,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		glScaled(2./xrange, 2./yrange, 1.);
 		glTranslated(-avx, -avy, 0.);
 	}
+	PrintGlErrors("scale view");
 	
 	//Perform actual drawing
 	for(int i=0;i< self->displayLists.size(); i++)
@@ -726,6 +747,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		glCallList(self->displayLists[i]);
 		glPopMatrix();
 	}
+	PrintGlErrors("draw display list");
 
 	for(int i=0;i<self->textureIds.size(); i++)
 	{
@@ -734,10 +756,12 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			glDeleteTextures(1, &self->textureIds[i]);
 	}
 	self->textureIds.clear();
+	PrintGlErrors("clear old textures");
 
-	PrintGlErrors();
 	glReadBuffer(GL_BACK);
 	glReadPixels(0,0,self->outImgW,self->outImgH,GL_RGB,GL_UNSIGNED_BYTE,pxOutRaw);
+	PrintGlErrors("read back buffer");
+
 	glutSwapBuffers();
 
 	//Format meta data
