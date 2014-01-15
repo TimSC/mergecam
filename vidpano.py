@@ -64,8 +64,8 @@ def GetKeypointsAndDescriptors(im1):
 	print "Get descriptors"
 	descriptor = cv2.DescriptorExtractor_create("ORB")
 	#print "Extracting points of interest 1"
-	#keypoints1 = detector.detect(grey1)
-	keypoints1 = DetectAcrossImage(grey1, detector)
+	keypoints1 = detector.detect(grey1)
+	#keypoints1 = DetectAcrossImage(grey1, detector)
 	#VisualiseKeypoints(grey1, keypoints1)
 	(keypoints1, descriptors1) = descriptor.compute(grey1, keypoints1)
 	print "Get descriptors done"
@@ -100,6 +100,8 @@ def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descript
 		matcher = cv2.BFMatcher(cv2.NORM_HAMMING, 1)
 		mat = matcher.match(descriptors1, descriptors2)
 
+	print "num points matched", len(mat)
+	
 	#for dmat in mat:
 	#	print dmat.distance, dmat.imgIdx, dmat.queryIdx, dmat.trainIdx
 		
@@ -113,10 +115,11 @@ def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descript
 			print ptr
 			cv2.circle(im1,tuple(ptr),2,col,-1)
 		cv2.imshow('im1',im1)
-		#cv2.waitKey(0)
-		#cv2.destroyAllWindows()
+		cv2.waitKey(0)
+		cv2.destroyAllWindows()
 
 	if 0:
+		import matplotlib.pyplot as plt
 		pts = np.array(ptsPos1)
 		plt.plot(pts[:,0], -pts[:,1], '.')
 		plt.show()
@@ -124,9 +127,17 @@ def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descript
 	#Transform keypoints from rectilinear to polar space
 	#pts = TransformKeyPoints(ptsPos1, 49.0, 35.4, im1.shape[1], im1.shape[0])
 
-	if 0:
-		pts = np.array(pts)
-		plt.plot(pts[:,1], -pts[:,0], '.')
+	if 1:
+		imjoin = np.hstack((im1, im2))
+		import matplotlib.pyplot as plt
+		plt.imshow(imjoin)
+		pts = np.array(ptsPos1)
+
+		for m in mat: #random.sample(mat,100):
+			pt1 = keypoints1[m.queryIdx].pt
+			pt2 = keypoints2[m.trainIdx].pt
+
+			plt.plot([pt1[0], pt2[0] + im1.shape[1]], [pt1[1], pt2[1]], '-')
 		plt.show()
 
 	#VisualiseMatches(im1, im2, keypoints1, keypoints2, mat)
@@ -140,7 +151,9 @@ def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descript
 	corresp2 = np.array(corresp2)
 
 	#Determine homography using ransac
-	H = cv2.findHomography(corresp1, corresp2, cv2.RANSAC, ransacReprojThreshold=3.)
+	homoThresh = ((im1.shape[1] + im2.shape[1]) * 0.5) * 0.05
+	print "homoThresh", homoThresh
+	H = cv2.findHomography(corresp1, corresp2, cv2.RANSAC, ransacReprojThreshold=homoThresh)
 	#VisualiseMatches(im1, im2, keypoints1, keypoints2, mat, H[1])
 	mask = np.array(H[1], dtype=np.bool)[:,0]
 	corresp1Inliers = corresp1[mask]
@@ -177,6 +190,7 @@ def CalcQualityForPair(inliers1, inliers2, corresp1, corresp2):
 	#plt.hist(errs, bins=10)
 	#plt.show()
 
+	print transform
 	transformA = abs(1. - transform[0,0])
 	transformB = abs(transform[1,0])
 	transformC = abs(transform[0,1])
@@ -188,16 +202,6 @@ def CalcQualityForPair(inliers1, inliers2, corresp1, corresp2):
 	transformScore = (1.-transformA) * (1.-transformB) * (1.-transformC) * (1.-transformD)
 	return transformScore
 	#return 1. / errs.mean()
-
-def HomographyQualityScore(hom):
-	cost = [abs(hom[0,0]- 1.)]
-	cost.append(abs(hom[1,1]- 1.))
-	cost.append(abs(hom[1,0]))
-	cost.append(abs(hom[0,1]))
-	costsum = np.array(cost).sum()
-	if costsum == 0.:
-		return 1000.
-	return 1./costsum
 
 def StringToFloat(s):
     try:
@@ -753,6 +757,8 @@ class FindCorrespondences(object):
 					if len(keyp1) == 0 or len(keyp2) == 0:
 						print "Warning: No keypoints in frame"
 						continue
+
+					print "num key pts", len(keyp1), len(keyp2)
 
 					frac, inliers1, inliers2, corresp1, corresp2 = FindRobustMatchesForImagePair(keyp1, desc1, 
 						keyp2, desc2, img1, img2)
