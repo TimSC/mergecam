@@ -62,7 +62,7 @@ def GetKeypointsAndDescriptors(im1):
 	print "GetKeypoints done"
 
 	print "Get descriptors"
-	descriptor = cv2.DescriptorExtractor_create("FREAK")
+	descriptor = cv2.DescriptorExtractor_create("BRISK")
 	#print "Extracting points of interest 1"
 	keypoints1 = detector.detect(grey1)
 	#keypoints1 = DetectAcrossImage(grey1, detector)
