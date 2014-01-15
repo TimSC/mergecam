@@ -4,7 +4,8 @@ from Cython.Distutils import build_ext
 
 import numpy as np
 
-ext_modules = [Extension("proj", ["proj.pyx"])]
+ext_modules = [Extension("proj", ["proj.pyx"]),
+               Extension("config", ["config.pyx"])]
 
 setup(
   name = 'Lens-Projection',
