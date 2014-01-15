@@ -1,4 +1,4 @@
-
+﻿
 KINATOMIC TECHNOLOGY CLICK-WRAP SOFTWARE LICENCE
 
 WARNING. BEFORE PROCEEDING PLEASE READ THE TERMS OF THIS LICENCE AGREEMENT CAREFULLY. YOU MAY OBTAIN A COPY OF THIS SOFTWARE PRODUCT EITHER BY DOWNLOADING IT REMOTELY FROM OUR SERVER OR BY COPYING IT FROM AN AUTHORISED DISKETTE, CD-ROM OR OTHER MEDIUM ("THE MEDIUM"). ALL INTELLECTUAL PROPERTY RIGHTS IN THE PROGRAMS AND DATA WHICH CONSTITUTE THIS SOFTWARE PRODUCT ("THE MATERIALS") ARE AND REMAIN THE PROPERTY OF THE LICENSOR. YOU ARE LICENSED TO USE THE SOFTWARE ON THE CONDITION THAT YOU ACCEPT ALL THE TERMS CONTAINED IN THIS LICENCE AGREEMENT.
@@ -215,6 +215,28 @@ the use of this software, even if advised of the possibility of such damage.
 
 libjpeg
 This software is based in part on the work of the Independent JPEG Group.
+
+===
+
+Copyright (c) 2012 MinGW.org project
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice, this permission notice and the below disclaimer
+shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
 
 ===
 
