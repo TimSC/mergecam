@@ -44,7 +44,6 @@ public:
 	double dstXMin, dstXMax;
 	double dstYMin, dstYMax;
 	std::vector<int> displayListImgWidth, displayListImgHeight;
-	int textureFaultDetected;
 };
 typedef PanoView_cl PanoView;
 
@@ -125,8 +124,9 @@ int FindStringInVector(const char *needle, std::vector<std::string> haystack)
 {
 	for(unsigned int i=0;i<haystack.size();i++)
 	{
-		int hit = haystack[i].compare(needle);
-		if(hit) return true;
+		std::string &ext = haystack[i];
+		int hit = ext.compare(needle);
+		if(!hit) return true;
 	}
 	return false;
 }
@@ -205,7 +205,6 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	self->dstXMax = 0.;
 	self->dstYMin = 0.;
 	self->dstYMax = 0.;
-	self->textureFaultDetected = 0;
 
 	if(PyTuple_Size(args) < 2)
 	{
@@ -282,9 +281,9 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	PrintGlErrors("get extensions");
 	std::vector<std::string> splitExt = ::split(extensions, ' ');
 
-	for(unsigned i=0; i< splitExt.size(); i++)
+	if(0) for(unsigned i=0; i< splitExt.size(); i++)
 	{
-		std::cout << splitExt[i] << std::endl;
+		std::cout << i << ": " << splitExt[i] << std::endl;
 	}
 
 	self->nonPowerTwoTexSupported = FindStringInVector("GL_ARB_texture_non_power_of_two", splitExt);
@@ -431,16 +430,13 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		PrintGlErrors("allocate a texture");
 
 		glBindTexture(GL_TEXTURE_2D, texture);
-		if(self->nonPowerTwoTexSupported && !self->textureFaultDetected)
+		if(self->nonPowerTwoTexSupported)
 		{
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, sourceWidth, 
 				sourceHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, imgRaw);
 			self->openglTxWidthLi[i] = sourceWidth;
 			self->openglTxHeightLi[i] = sourceHeight;
 
-			GLenum err = glGetError();
-			if(err == GL_INVALID_VALUE)
-				self->textureFaultDetected = 1;
 			PrintGlErrors("transfer tex");
 			//std::cout << i << "\t" << sourceWidth << "," << sourceHeight << std::endl;
 		}
