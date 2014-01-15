@@ -47,8 +47,11 @@ def GetKeypointsAndDescriptors(im1):
 
 	return (keypoints1scaled, descriptors1)
 
-im1 = misc.imread("../demo/TrainA/test1.jpg")
-im2 = misc.imread("../demo/TrainB/test2.jpg")
+#im1 = misc.imread("../demo/TrainA/test1.jpg")
+#im2 = misc.imread("../demo/TrainB/test2.jpg")
+
+im1 = misc.imread("../demo/StadiumA/test1a.png")
+im2 = misc.imread("../demo/StadiumB/test2a.png")
 
 kp1, des1 = GetKeypointsAndDescriptors(im1)
 kp2, des2 = GetKeypointsAndDescriptors(im2)
@@ -61,8 +64,8 @@ if 0:
 
 	matcher = cv2.FlannBasedMatcher(index_params,search_params)
 if 1:
-	matcher = cv2.BFMatcher(cv2.NORM_L2, 0)
-	#matcher = cv2.BFMatcher(cv2.NORM_HAMMING, 0)
+	#matcher = cv2.BFMatcher(cv2.NORM_L2, 0)
+	matcher = cv2.BFMatcher(cv2.NORM_HAMMING, 0)
 
 print "match"
 matches = matcher.knnMatch(des1,des2,k=2)
@@ -75,7 +78,7 @@ matchesMask = [[0,0] for i in xrange(len(matches))]
 # ratio test as per Lowe's paper
 hit = 0
 for i,(m,n) in enumerate(matches):
-	if m.distance < 0.8*n.distance:
+	if m.distance < 0.7*n.distance:
 		matchesMask[i]=[1,0]
 		hit += 1
 
