@@ -103,10 +103,16 @@ def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descript
 	print "num points matched", len(mat)
 
 	#Filter based on ratios as per Lowe's paper
+	#Use adaptive threshold to ensure there is at least 10 points
 	filteredMatches = []
-	for i,(m,n) in enumerate(mat):
-		if m.distance < 0.7*n.distance:
-			filteredMatches.append(m)
+	ratioThreshold = 0.3
+	while len(filteredMatches) < 10 and ratioThreshold < 1.:
+		filteredMatches = []
+		for i,(m,n) in enumerate(mat):
+			if m.distance < ratioThreshold * n.distance:
+				filteredMatches.append(m)
+		if len(filteredMatches) < 10:
+			ratioThreshold += 0.05
 	mat = filteredMatches
 	
 	#for dmat in mat:
