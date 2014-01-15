@@ -40,6 +40,17 @@ def DetectAcrossImage(img, detector, targetPatchSize = 100.):
 
 def GetKeypointsAndDescriptors(im1):
 
+	originalSize = im1.shape
+	scaleImage = 0
+
+	if scaleImage:
+		targetw = 640
+		targeth = 480
+
+	if scaleImage and (originalSize[0] != targeth or originalSize[1] != targetw):
+		print "Resizing image to find keypoints", originalSize
+		im1 = cv2.resize(im1, (targeth, targetw))
+
 	print "Convert to grey"
 	grey1 = cv2.cvtColor(im1,cv2.COLOR_BGR2GRAY)
 	print "Conversion done"
@@ -59,7 +70,18 @@ def GetKeypointsAndDescriptors(im1):
 	(keypoints1, descriptors1) = descriptor.compute(grey1, keypoints1)
 	print "Get descriptors done"
 
-	return (keypoints1, descriptors1)
+	if not scaleImage:
+		return (keypoints1, descriptors1)
+
+	keypoints1scaled = []
+	for kp in keypoints1:
+		orpt = kp.pt
+		scpt = (kp.pt[0] * originalSize[0] / 480., kp.pt[1] * originalSize[1] / 640.)
+		#print orpt, scpt
+		kps = cv2.KeyPoint(scpt[0], scpt[1], kp.size, kp.angle, kp.response, kp.octave, kp.class_id)
+		keypoints1scaled.append(kps)
+
+	return (keypoints1scaled, descriptors1)
 
 def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descriptors2, im1, im2):
 	
