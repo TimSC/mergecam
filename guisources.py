@@ -290,6 +290,7 @@ def WorkerProcess(findCorrespondences, cameraArrangement, framePairs,
 	doCorrespondence, doCameraPositions):
 
 	try:
+		tmpStdOut = sys.stdout
 		sys.stdout = StringIO.StringIO()
 		sys.stderr = StringIO.StringIO()
 
@@ -297,17 +298,27 @@ def WorkerProcess(findCorrespondences, cameraArrangement, framePairs,
 			#Find point correspondances
 			framePairs = findCorrespondences.Calc()
 
+		print tmpStdOut.write(str(sys.stdout.getvalue()))
+		print tmpStdOut.write(str(sys.stderr.getvalue()))
+		sys.stdout = StringIO.StringIO()
+		sys.stderr = StringIO.StringIO()
+
 		if framePairs is not None and doCameraPositions:
 			#Check there are some points to use for optimisation
 			validPairFound = False
 			for s in framePairs:
 				for pair in s:
-					print pair[0], len(pair[3]), len(pair[4])
+					print str((pair[0], len(pair[3]), len(pair[4])))
 					if len(pair[3]) > 0 or len(pair[4]) > 0:
 						validPairFound = True
 			if not validPairFound:
 				childErrorPipe.send("No points available for camera estimation")
 				return
+
+		print tmpStdOut.write(str(sys.stdout.getvalue()))
+		print tmpStdOut.write(str(sys.stderr.getvalue()))
+		sys.stdout = StringIO.StringIO()
+		sys.stderr = StringIO.StringIO()
 
 		if doCameraPositions:
 			cameraArrangement.OptimiseCameraPositions(framePairs, childProgressPipe.send)
@@ -316,8 +327,11 @@ def WorkerProcess(findCorrespondences, cameraArrangement, framePairs,
 		else:
 			childResultPipe.send((framePairs, None))
 
+		#print tmpStdOut.write(str(sys.stdout.getvalue()))
+		#print tmpStdOut.write(str(sys.stderr.getvalue()))
+
 	except Exception as err:
-                childErrorPipe.send(str(err) + str(traceback.format_exc()))
+		childErrorPipe.send(str(err) + str(traceback.format_exc()))
 		print err
 		print traceback.format_exc()
 		childResultPipe.send(None)
