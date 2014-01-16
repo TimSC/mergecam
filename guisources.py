@@ -1,7 +1,7 @@
 from PySide import QtGui, QtCore
 import videolive, vidinput, vidpano, time, vidipcam, viddemocam
 import multiprocessing
-import traceback, hashlib, uuid, config
+import traceback, hashlib, uuid, config, sys, StringIO
 
 class GuiSources(QtGui.QFrame):
 	sourceToggled = QtCore.Signal(str, int)
@@ -290,6 +290,9 @@ def WorkerProcess(findCorrespondences, cameraArrangement, framePairs,
 	doCorrespondence, doCameraPositions):
 
 	try:
+		sys.stdout = StringIO.StringIO()
+		sys.stderr = StringIO.StringIO()
+
 		if doCorrespondence:
 			#Find point correspondances
 			framePairs = findCorrespondences.Calc()

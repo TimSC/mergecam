@@ -1,7 +1,7 @@
 
 from PySide import QtGui, QtCore
 import uuid
-import cv2, cv, proj, math, random, time
+import cv2, cv, proj, math, random, time, os
 import numpy as np
 import scipy.optimize as optimize
 import pano, config
@@ -30,7 +30,7 @@ def DetectAcrossImage(img, detector, targetPatchSize = 100.):
 			assert patch.shape[0] > 0
 			assert patch.shape[1] > 0
 
-			#print wvals[w], hvals[h], patch.shape
+			#print str((wvals[w], hvals[h], patch.shape))
 			kps = detector.detect(patch)
 			for kp in kps:
 				kp.pt = (kp.pt[0]+wvals[w]-margin, kp.pt[1]+hvals[h]-margin)
@@ -48,7 +48,7 @@ def GetKeypointsAndDescriptors(im1):
 		targeth = 480
 
 	if scaleImage and (originalSize[0] != targeth or originalSize[1] != targetw):
-		print "Resizing image to find keypoints", originalSize
+		print str(("Resizing image to find keypoints", originalSize))
 		im1 = cv2.resize(im1, (targeth, targetw))
 
 	print "Convert to grey"
@@ -57,7 +57,7 @@ def GetKeypointsAndDescriptors(im1):
 
 	print "GetKeypoints"
 	detector = cv2.FeatureDetector_create("BRISK")
-	#print detector.getParams()
+	#print str(detector.getParams())
 	#detector.setInt("nFeatures", 50)
 	print "GetKeypoints done"
 
@@ -77,7 +77,7 @@ def GetKeypointsAndDescriptors(im1):
 	for kp in keypoints1:
 		orpt = kp.pt
 		scpt = (kp.pt[0] * originalSize[0] / 480., kp.pt[1] * originalSize[1] / 640.)
-		#print orpt, scpt
+		#print str((orpt, scpt))
 		kps = cv2.KeyPoint(scpt[0], scpt[1], kp.size, kp.angle, kp.response, kp.octave, kp.class_id)
 		keypoints1scaled.append(kps)
 
@@ -100,7 +100,7 @@ def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descript
 		matcher = cv2.BFMatcher(cv2.NORM_HAMMING, 0)
 		mat = matcher.knnMatch(descriptors1, descriptors2, k=2)
 
-	print "num points matched", len(mat)
+	print str(("num points matched", len(mat)))
 
 	#Filter based on ratios as per Lowe's paper
 	#Use adaptive threshold to ensure there is at least 10 points
@@ -116,7 +116,7 @@ def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descript
 	mat = filteredMatches
 	
 	#for dmat in mat:
-	#	print dmat.distance, dmat.imgIdx, dmat.queryIdx, dmat.trainIdx
+	#	print str((dmat.distance, dmat.imgIdx, dmat.queryIdx, dmat.trainIdx))
 		
 	ptsPos1 = [a.pt for a in keypoints1]
 	ptsPos2 = [a.pt for a in keypoints2]
@@ -125,7 +125,7 @@ def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descript
 		for pt in ptsPos1:
 			ptr = map(int,map(round,pt))
 			col = (255,0,0)
-			print ptr
+			print str(ptr)
 			cv2.circle(im1,tuple(ptr),2,col,-1)
 		cv2.imshow('im1',im1)
 		cv2.waitKey(0)
@@ -165,7 +165,7 @@ def FindRobustMatchesForImagePair(keypoints1, descriptors1, keypoints2, descript
 
 	#Determine homography using ransac
 	homoThresh = ((im1.shape[1] + im2.shape[1]) * 0.5) * 0.05
-	print "homoThresh", homoThresh
+	print str(("homoThresh", homoThresh))
 	H = cv2.findHomography(corresp1, corresp2, cv2.RANSAC, ransacReprojThreshold=homoThresh)
 	#VisualiseMatches(im1, im2, keypoints1, keypoints2, mat, H[1])
 	mask = np.array(H[1], dtype=np.bool)[:,0]
@@ -184,17 +184,17 @@ def CalcQualityForPair(inliers1, inliers2, corresp1, corresp2):
 	corresp2homo = np.hstack((corresp2, np.ones(shape=(corresp2.shape[0], 1)))) #Convert to homogenious co
 
 	transform = np.dot(inliers2homo.transpose(), np.linalg.pinv(inliers1homo.transpose()))
-	#print "inv", transform
+	#print str(("inv", transform))
 	if 0:
 		proj = np.dot(transform, inliers1homo.transpose())
 		diff = proj - inliers2homo.transpose()
 		errs = np.power(np.power(diff[:2,:].transpose(),2.).sum(axis=1),0.5)
-		#print "inlier av err", errs.mean()
+		#print str(("inlier av err", errs.mean()))
 
 		proj = np.dot(transform, corresp1homo.transpose())
 		diff = proj - corresp2homo.transpose()
 		errs2 = np.power(np.power(diff[:2,:].transpose(),2.).sum(axis=1),0.5)
-		#print "corresp av err", errs2.mean()
+		#print str(("corresp av err", errs2.mean()))
 
 	#plt.plot(proj[0,:], proj[1,:],'x')
 	#plt.plot(inliers2homo[:,0], inliers2homo[:,1],'o')
@@ -203,7 +203,7 @@ def CalcQualityForPair(inliers1, inliers2, corresp1, corresp2):
 	#plt.hist(errs, bins=10)
 	#plt.show()
 
-	print transform
+	print str(transform)
 	transformA = abs(1. - transform[0,0])
 	transformB = abs(transform[1,0])
 	transformC = abs(transform[0,1])
@@ -237,7 +237,7 @@ class CameraArrangement(object):
 	def AddAnchorPhoto(self, photoId, camModel,
 		progressThisIter, progressIterPlusOne, progressCallback):
 
-		print "AddAnchorPhoto", photoId
+		print str(("AddAnchorPhoto", photoId))
 		if len(self.addedPhotos) > 0:
 			raise Exception("Anchor photo should be first added")
 		self.addedPhotos[photoId] = camModel
@@ -246,7 +246,7 @@ class CameraArrangement(object):
 		progressThisIter, progressIterPlusOne, progressCallback, 
 		optRotation=False):
 
-		print "OptimiseFit", photoId
+		print str(("OptimiseFit", photoId))
 		if len(self.addedPhotos) == 0:
 			raise Exception("Anchor photo should be first added")
 		if photoId in self.addedPhotos:
@@ -256,10 +256,10 @@ class CameraArrangement(object):
 
 		x0 = [camModel.cLat, camModel.cLon, camModel.rot, camModelParams['a'], camModelParams['b'], 
 			camModelParams['c'], camModelParams['d'], camModelParams['e']]
-		print "x0", x0
+		print str(("x0", x0))
 		for dof in range(1,len(x0)+1):
 			#Progress calc
-			print progressThisIter, progressIterPlusOne
+			print str((progressThisIter, progressIterPlusOne))
 			if progressCallback is not None:
 				progress = progressThisIter + (float(dof) / (len(x0)+1)) * (progressIterPlusOne - progressThisIter)
 				progressCallback(progress)
@@ -311,13 +311,13 @@ class CameraArrangement(object):
 			included1 = pair[1] in self.addedPhotos
 			included2 = pair[2] in self.addedPhotos
 			if not included1 or not included2: continue
-			#print "Found pair", pair[:3]
+			#print str(("Found pair", pair[:3]))
 
 			cam1 = self.addedPhotos[pair[1]]
 			cam2 = self.addedPhotos[pair[2]]
 
 			#for pt1, pt2 in zip(pair[3], pair[4]):
-			#	print "pt", pt1, pt2
+			#	print str(("pt", pt1, pt2))
 
 			cam1latLons = cam1.UnProj(pair[3])
 			cam2latLons = cam2.UnProj(pair[4])
@@ -325,12 +325,12 @@ class CameraArrangement(object):
 			for ptcam1, ptcam2 in zip(cam1latLons, cam2latLons):
 				herr = abs(ptcam1[0] - ptcam2[0])
 				verr = abs(ptcam1[1] - ptcam2[1])
-				#print "err", herr, verr
+				#print str(("err", herr, verr))
 				err += herr
 				err += verr
 				count += 1
 
-		#print vals, err / count
+		#print str((vals, err / count))
 		return err / count
 
 	def NumPhotos(self):
@@ -350,7 +350,7 @@ class CameraArrangement(object):
 			for pair in frameSet:
 				photoIds.add(pair[1])
 				photoIds.add(pair[2])
-		print photoIds
+		print str(photoIds)
 
 		camProjFactory = None
 		if self.camParams['proj'] == "rectilinear":
@@ -370,11 +370,11 @@ class CameraArrangement(object):
 
 		#Calc quality of match pairs
 		for pair in firstFrameSetPairs:
-			print "Quality for pair", pair[:3]
-			print "old quality", pair[0]
+			print str(("Quality for pair", pair[:3]))
+			print str(("old quality", pair[0]))
 			quality = CalcQualityForPair(pair[3], pair[4], pair[8], pair[9])
 			pair[0] = quality
-			print "new quality", pair[0]
+			print str(("new quality", pair[0]))
 
 		#Calibrate cameras
 		#self.cameraArrangement = CameraArrangement(framePairs[0])
@@ -384,12 +384,12 @@ class CameraArrangement(object):
 		while bestPair is not None:
 			
 			bestPair, newInd1, newInd2 = SelectPhotoToAdd(firstFrameSetPairs, self)
-			#print "SelectPhotoToAdd", bestPair, newInd1, newInd2
+			#print str(("SelectPhotoToAdd", bestPair, newInd1, newInd2))
 			if bestPair is None: continue
-			print bestPair[:3], newInd1, newInd2
+			print str((bestPair[:3], newInd1, newInd2))
 
 			#Update progress calc
-			print "len self.addedPhotos", len(self.addedPhotos)
+			print str(("len self.addedPhotos", len(self.addedPhotos)))
 			progressThisIter = float(len(self.addedPhotos)) / len(photoIds)
 			progressIterPlusOne = float(len(self.addedPhotos)+1) / len(photoIds)
 			if progressCallback is not None:
@@ -399,12 +399,12 @@ class CameraArrangement(object):
 			photosMetaToAdd = []
 
 			if not newInd1:
-				print "Adding", bestPair[1]
+				print str(("Adding", bestPair[1]))
 				photosToAdd.append(bestPair[1])
 				photosMetaToAdd.append(bestPair[5])
 				
 			if not newInd2:
-				print "Adding", bestPair[2]
+				print str(("Adding", bestPair[2]))
 				photosToAdd.append(bestPair[2])
 				photosMetaToAdd.append(bestPair[6])
 			
@@ -434,12 +434,12 @@ class CameraArrangement(object):
 
 			for photoId in self.addedPhotos:
 				photo = self.addedPhotos[photoId]
-				print photoId, photo.cLat, photo.cLon
-				#print "Proj test", photo.Proj([(0.,0.)])
+				print str((photoId, photo.cLat, photo.cLon))
+				#print str(("Proj test", photo.Proj([(0.,0.)])))
 				hfov = photo.UnProj([(0., photo.imgH * 0.5), (photo.imgW, photo.imgH * 0.5)])
 				vfov = photo.UnProj([(photo.imgW * 0.5, 0.), (photo.imgW * 0.5, photo.imgH)])
-				print "HFOV", math.degrees(hfov[1][1] - hfov[0][1])
-				print "VFOV", math.degrees(vfov[1][0] - vfov[0][0])
+				print str(("HFOV", math.degrees(hfov[1][1] - hfov[0][1])))
+				print str(("VFOV", math.degrees(vfov[1][0] - vfov[0][0])))
 
 			if 0:
 				vis = visobj.Vis(self.calibrationFrames[0], self.calibrationMeta[0], framePairs[0], self.cameraArrangement)
@@ -471,11 +471,11 @@ def SelectPhotoToAdd(imgPairs, cameraArrangement):
 		
 		included1 = pair[1] in cameraArrangement.addedPhotos
 		included2 = pair[2] in cameraArrangement.addedPhotos
-		print "pair check", pair[:3], included1, included2
+		print str(("pair check "+str(pair[:3])+" "+str(included1)+","+str(included2)))
 		if len(cameraArrangement.addedPhotos) > 0:
 			if included1 + included2 != 1: continue
 
-		#print pairScore, pair[1:3], included1, included2
+		#print str((pairScore, pair[1:3], included1, included2))
 		if bestScore is None or pairScore > bestScore:
 			bestScore = pairScore
 			bestPair = pair
@@ -620,11 +620,11 @@ class LensParamsWidget(QtGui.QFrame):
 
 	def PresetActivated(self, arg):
 		arg = str(arg)
-		print "PresetActivated", arg
+		print str(("PresetActivated", arg))
 		if arg not in self.presets: return
 
 		selectedPreset = self.presets[arg]
-		print selectedPreset
+		print str(selectedPreset)
 
 		#Update gui
 		projInd = self.projectionType.findText(selectedPreset['proj'].capitalize())
@@ -700,7 +700,7 @@ class FindCorrespondences(object):
 			if devInfo[0] not in self.currentFrames:
 				framesNotReady.append(devInfo[0])
 		if len(framesNotReady) != 0:
-			print "Frames not ready", framesNotReady
+			print str(("Frames not ready", framesNotReady))
 			return
 		
 		#Store frame set for calibration use
@@ -762,7 +762,7 @@ class FindCorrespondences(object):
 
 				for i2, (frame2, meta2, (keyp2, desc2), img2) in enumerate(zip(photoSet, metaSet, keypDescsSet, imgs)):
 					if i <= i2: continue
-					print "Compare pair", i, i2
+					print str(("Compare pair", i, i2))
 
 					arr2 = np.array(frame2, dtype=np.uint8)
 					im2 = arr2.reshape((meta2['height'], meta2['width'], 3))
@@ -771,17 +771,17 @@ class FindCorrespondences(object):
 						print "Warning: No keypoints in frame"
 						continue
 
-					print "num key pts", len(keyp1), len(keyp2)
+					print str(("num key pts", len(keyp1), len(keyp2)))
 
 					frac, inliers1, inliers2, corresp1, corresp2 = FindRobustMatchesForImagePair(keyp1, desc1, 
 						keyp2, desc2, img1, img2)
 					
 					quality = CalcQualityForPair(inliers1, inliers2, corresp1, corresp2)
 
-					#print "Homography", H
-					print "Fraction used", frac
-					print "Quality score", quality
-					#print inliers1
+					#print str(("Homography", H))
+					print str(("Fraction used", frac))
+					print str(("Quality score", quality))
+					#print str(inliers1)
 					#print inliers2
 
 					qualityThreshold = 0.04
