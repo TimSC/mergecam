@@ -266,6 +266,7 @@ class CameraArrangement(object):
 
 			#Optimise Lens Model
 			ret = optimize.fmin_bfgs(self.Eval, x0[:dof], args=(photoId, imgPairs), full_output=1, epsilon = 0.01)
+			
 			#print ret
 			if len(ret[0].shape) == 0:
 				x0[0] = float(ret[0])
@@ -431,7 +432,7 @@ class CameraArrangement(object):
 					newCam.imgH = pmeta[0]				
 					self.AddAndOptimiseFit(pid, newCam, firstFrameSetPairs, 
 						progressThisIter, progressIterPlusOne, progressCallback, optRotation = True)
-
+			
 			for photoId in self.addedPhotos:
 				photo = self.addedPhotos[photoId]
 				print str((photoId, photo.cLat, photo.cLon))

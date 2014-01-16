@@ -290,18 +290,12 @@ def WorkerProcess(findCorrespondences, cameraArrangement, framePairs,
 	doCorrespondence, doCameraPositions):
 
 	try:
-		tmpStdOut = sys.stdout
 		sys.stdout = StringIO.StringIO()
 		sys.stderr = StringIO.StringIO()
 
 		if doCorrespondence:
 			#Find point correspondances
 			framePairs = findCorrespondences.Calc()
-
-		print tmpStdOut.write(str(sys.stdout.getvalue()))
-		print tmpStdOut.write(str(sys.stderr.getvalue()))
-		sys.stdout = StringIO.StringIO()
-		sys.stderr = StringIO.StringIO()
 
 		if framePairs is not None and doCameraPositions:
 			#Check there are some points to use for optimisation
@@ -315,20 +309,12 @@ def WorkerProcess(findCorrespondences, cameraArrangement, framePairs,
 				childErrorPipe.send("No points available for camera estimation")
 				return
 
-		print tmpStdOut.write(str(sys.stdout.getvalue()))
-		print tmpStdOut.write(str(sys.stderr.getvalue()))
-		sys.stdout = StringIO.StringIO()
-		sys.stderr = StringIO.StringIO()
-
 		if doCameraPositions:
 			cameraArrangement.OptimiseCameraPositions(framePairs, childProgressPipe.send)
 			cameraArrangement.PrepareForPickle()
 			childResultPipe.send((framePairs, cameraArrangement))
 		else:
 			childResultPipe.send((framePairs, None))
-
-		#print tmpStdOut.write(str(sys.stdout.getvalue()))
-		#print tmpStdOut.write(str(sys.stderr.getvalue()))
 
 	except Exception as err:
 		childErrorPipe.send(str(err) + str(traceback.format_exc()))

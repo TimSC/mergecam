@@ -7,7 +7,7 @@ import glcamgui
 import sys
 
 if __name__ == '__main__':
-        if 1:
-                sys.stdout = open("mylog.txt", "wt")
-                sys.stderr = open("myerr.txt", "wt")
+	if 0:
+		sys.stdout = open("mylog.txt", "wt")
+		sys.stderr = open("myerr.txt", "wt")
 	glcamgui.main()
