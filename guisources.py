@@ -314,6 +314,7 @@ def WorkerProcess(findCorrespondences, cameraArrangement, framePairs,
 			childResultPipe.send((framePairs, None))
 
 	except Exception as err:
+                childErrorPipe.send(str(err) + str(traceback.format_exc()))
 		print err
 		print traceback.format_exc()
 		childResultPipe.send(None)
@@ -393,11 +394,12 @@ class CalibratePopup(QtGui.QDialog):
 			msgBox = QtGui.QMessageBox()
 			msgBox.setText(errMsg)
 			msgBox.exec_()
+			print errMsg
 			self.done = True
 
 		if self.resultPipe is not None and self.resultPipe.poll(0.01):
 			ret = self.resultPipe.recv()
-			#print "Data received from worker", ret
+			print "Data received from worker", type(ret)
 			if ret is not None and ret[0] is not None:
 				self.framePairs = ret[0]
 			if ret is not None and ret[1] is not None:
