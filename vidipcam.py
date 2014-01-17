@@ -42,9 +42,12 @@ class DecodeXMixedReplace(object):
 		self.contentLength = None
 		self.contentType = None
 		self.callback = HandleBinData
+		self.foundBoundary = 0
 
 	def writeHeader(self, dat):
-		if dat[:13].lower()=="Content-Type:":
+		print dat
+		if dat[:13].lower()=="content-type:":
+
 			valsplit = dat[13:].split(";")
 
 			dataType = valsplit[0].strip()
@@ -64,17 +67,43 @@ class DecodeXMixedReplace(object):
 			if eol < 0: continue
 
 			li = self.rxBuff[:eol]
-			#print eol, "'"+str(li)+"'"
+			#print eol, "'"+str(li[:100])+"'"
+
 			self.rxBuff = self.rxBuff[eol+2:]
-			if eol == 0 and self.contentLength is not None:
+			if eol == 0 and self.foundBoundary:
 				self.inBinarySection = True
+				return
+
+			if li == self.boundary: #Boundary mark
+				self.foundBoundary = 1
+
+			if li == "--"+self.boundary: #Two different styles of boundary marks
+				self.foundBoundary = 1
 
 			if li[:15].lower()=="content-length:":
 				self.contentLength = int(li[15:].strip())
 			if li[:13].lower()=="content-type:":
 				self.contentType = li[13:].strip()
 
-		if self.inBinarySection and len(self.rxBuff) >= self.contentLength:
+		if self.inBinarySection and self.contentLength is None:
+			#If content length is not specified, look for the end of jpeg
+			jpegEnd = '\xff\xd9'
+			twoLineBreaks = jpegEnd+'\r\n\r\n'+self.boundary
+			eol = self.rxBuff.find(twoLineBreaks)
+
+			if eol >= 0:
+				#print ":".join("{0:x}".format(ord(c)) for c in self.rxBuff[eol-10:eol+10])
+
+				binData = self.rxBuff[:eol+2]
+				self.callback(self.contentType, binData)
+
+				self.rxBuff = self.rxBuff[eol+2:]
+				self.contentLength = None
+				self.inBinarySection = False
+				self.contentType = None
+				self.foundBoundary = 0
+
+		if self.inBinarySection and self.contentLength is not None and len(self.rxBuff) >= self.contentLength:
 			binData = self.rxBuff[:self.contentLength]
 			self.callback(self.contentType, binData)
 
@@ -82,6 +111,7 @@ class DecodeXMixedReplace(object):
 			self.contentLength = None
 			self.inBinarySection = False
 			self.contentType = None
+			self.foundBoundary = 0
 
 def Get(url, rx, incomingImages, userpass = None):
 	while not incomingImages.stop:
