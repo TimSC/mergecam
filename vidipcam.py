@@ -44,11 +44,11 @@ class DecodeXMixedReplace(object):
 		self.callback = HandleBinData
 
 	def writeHeader(self, dat):
-		if dat.startswith("Content-Type:"):
+		if dat[:13].lower()=="Content-Type:":
 			valsplit = dat[13:].split(";")
 
 			dataType = valsplit[0].strip()
-			if dataType != "multipart/x-mixed-replace":
+			if dataType.lower() != "multipart/x-mixed-replace":
 				raise Exception("Unexpected mime type: "+dataType)
 
 			boundaryVal = valsplit[1].strip()
@@ -58,17 +58,20 @@ class DecodeXMixedReplace(object):
 	def writeBody(self, dat):
 		self.rxBuff += dat
 		eol = 0
+
 		while eol >= 0 and not self.inBinarySection:
 			eol = self.rxBuff.find("\r\n")
 			if eol < 0: continue
+
 			li = self.rxBuff[:eol]
 			#print eol, "'"+str(li)+"'"
 			self.rxBuff = self.rxBuff[eol+2:]
 			if eol == 0 and self.contentLength is not None:
 				self.inBinarySection = True
-			if li.startswith("Content-Length:"):
+
+			if li[:15].lower()=="content-length:":
 				self.contentLength = int(li[15:].strip())
-			if li.startswith("Content-Type:"):
+			if li[:13].lower()=="content-type:":
 				self.contentType = li[13:].strip()
 
 		if self.inBinarySection and len(self.rxBuff) >= self.contentLength:

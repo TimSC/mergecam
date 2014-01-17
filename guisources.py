@@ -434,7 +434,7 @@ class AddIpCameraDialog(QtGui.QDialog):
 		self.camTypeCombo.addItem("MJPEG IP Camera")
 		self.mainLayout.addWidget(self.camTypeCombo)
 
-		self.urlEdit = QtGui.QLineEdit("type url here") #http://umevakameran.net.umea.se/mjpg/video.mjpg
+		self.urlEdit = QtGui.QLineEdit("http://oharano.miemasu.net:60011/nphMotionJpeg?Resolution=640x480&Quality=Standard") #http://umevakameran.net.umea.se/mjpg/video.mjpg
 		self.mainLayout.addWidget(self.urlEdit)
 
 		self.getWebcamUrlsButton = QtGui.QPushButton("Get Example Webcam URLs")
