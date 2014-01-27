@@ -44,6 +44,43 @@ class EquirectangularCam(object):
 
 		return out
 
+	def MultiProj(self, ptsLatLon): #Lat, lon radians to image px
+		#print self.hFov, self.vFov, self.imgW, self.imgH
+
+		#lats = [pt[0] for pt in ptsLatLon]
+		#lons = [pt[1] for pt in ptsLatLon]
+		#print "lats:", min(lats), max(lats), "lons:", min(lons), max(lons)
+
+		out = []
+		for pt in ptsLatLon:
+			centred = (pt[1]-self.cLon, pt[0]-self.cLat)
+			scaled = (centred[0] * 2. / self.hFov, centred[1] * 2. / self.vFov) #Range from -1 to 1
+			print scaled
+			if self.limitRange:
+				scaled = (math.modf(scaled[0])[0], math.modf(scaled[1])[0])
+			scaled2 = (scaled[0] + 1. * 0.5, scaled[1] + 1. * 0.5) #Range from 0 to 1
+
+			imgPos = (scaled2[0] * self.imgW, scaled2[1] * self.imgH)
+
+			#Check if wrapping around one width is still in the image
+			rpos = None
+			lpos = None
+			scaled2r = (scaled2[0] + math.radians(360.) / self.hFov, scaled2[1])
+			if scaled2r[0] >= -0.5 and scaled2r[0] < 1.5:
+				rpos = (scaled2r[0] * self.imgW, scaled2r[1] * self.imgH)
+			scaled2l = (scaled2[0] - math.radians(360.) / self.hFov, scaled2[1])
+			if scaled2l[0] >= -0.5 and scaled2l[0] < 1.5:
+				lpos = (scaled2l[0] * self.imgW, scaled2l[1] * self.imgH)
+
+			out.append([imgPos, lpos, rpos])
+
+		#xs = [pt[0] for pt in out]
+		#ys = [pt[1] for pt in out]
+		#print "x:", min(xs), max(xs), "y:", min(ys), max(ys)
+
+		return out
+
+
 	def UnProj(self, ptsPix): #Image px to Lat, lon radians
 		out = []
 		for pt in ptsPix:
