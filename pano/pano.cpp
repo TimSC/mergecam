@@ -705,7 +705,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	//Scale display area to fit
 	glLoadIdentity();
-	int showEntire = 0;
+	int showEntire = 1;
 	if(showEntire || !self->dstXRangeSet)
 	{
 		glTranslated(-1.0, -1.0, 0.);

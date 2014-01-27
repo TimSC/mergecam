@@ -226,7 +226,7 @@ class MainWindow(QtGui.QMainWindow):
 
 		self.guiPanorama = guipanorama.GuiPanorama()
 		self.guiPanorama.setShown(0)
-		self.guiPanorama.outputSizeChanged.connect(self.PanoramaSizeChanged)
+		self.guiPanorama.viewParametersChanged.connect(self.ViewParamsChanged)
 
 		self.mainLayout.addWidget(self.guiSources, 1)
 		self.mainLayout.addWidget(self.guiCorrespondences, 1)
@@ -323,17 +323,7 @@ class MainWindow(QtGui.QMainWindow):
 			msgBox.exec_()
 			return
 
-		if len(self.cameraArrangement.addedPhotos):
-			#Estimate final transform
-			outProj = proj.EquirectangularCam()
-			imgW, imgH = self.guiPanorama.GetOutputSize()
-			outProj.imgW = imgW
-			outProj.imgH = imgH
-			visObj = pano.PanoView(self.cameraArrangement, outProj)
-
-			self.guiPanorama.SetVisObject(visObj, outProj)
-		else:
-			self.guiPanorama.SetVisObject(None, None)
+		self.UpdatePanoMapping()
 
 		#Update gui with camera parameters
 		self.guiSources.SetCamParams(self.cameraArrangement.camParams)
@@ -341,8 +331,29 @@ class MainWindow(QtGui.QMainWindow):
 		self.guiCorrespondences.SetFrames(self.findCorrespondences.calibrationFrames, 
 			self.findCorrespondences.calibrationMeta)
 
+	def UpdatePanoMapping(self):
+		if len(self.cameraArrangement.addedPhotos):
+			#Estimate final transform
+			outProj = proj.EquirectangularCam()
+			outProj.imgW, outProj.imgH = self.guiPanorama.GetOutputSize()
+			outProj.cLat, outProj.cLon = self.guiPanorama.GetViewCentre()
+			outProj.hFov, outProj.vFov = self.guiPanorama.GetFov()
+			visObj = pano.PanoView(self.cameraArrangement, outProj)
+
+			self.guiPanorama.SetVisObject(visObj, outProj)
+		else:
+			self.guiPanorama.SetVisObject(None, None)		
+
 	def DeviceAdded(self, devId):
 		print "DeviceAdded"
+
+	def ViewParamsChanged(self):
+		print "ViewParamsChanged"
+
+		try:
+			self.UpdatePanoMapping()		
+		except Exception as err:
+			print err
 
 	def CameraParamsChanged(self, camParams):
 		self.cameraArrangement.SetCamParams(camParams)
@@ -414,20 +425,6 @@ class MainWindow(QtGui.QMainWindow):
 		outData['correspond'] = self.findCorrespondences
 
 		pickle.dump(outData, open(choice[0], "wb"), protocol = -1)
-
-	def PanoramaSizeChanged(self, width, height):
-		print "PanoramaSizeChanged", width, height
-
-		if len(self.cameraArrangement.addedPhotos):
-			#Estimate final transform
-			outProj = proj.EquirectangularCam()
-			outProj.imgW = width
-			outProj.imgH = height
-			visObj = pano.PanoView(self.cameraArrangement, outProj)
-
-			self.guiPanorama.SetVisObject(visObj, outProj)
-		else:
-			self.guiPanorama.SetVisObject(None, None)		
 
 	def HelpPressed(self):
 		QtGui.QDesktopServices.openUrl(QtCore.QUrl(config.SUPPORT_URL))

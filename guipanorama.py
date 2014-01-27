@@ -1,11 +1,11 @@
 from PySide import QtGui, QtCore
-import time, vidoutput, vidwriter, videolive, config
+import time, vidoutput, vidwriter, videolive, config, math
 import scipy.misc as misc
 import numpy as np
 
 class GuiPanorama(QtGui.QFrame):
 
-	outputSizeChanged = QtCore.Signal(int, int)
+	viewParametersChanged = QtCore.Signal()
 
 	def __init__(self):
 		QtGui.QFrame.__init__(self)
@@ -20,6 +20,8 @@ class GuiPanorama(QtGui.QFrame):
 		self.blend = False
 		self.outw = 640
 		self.outh = 480
+		self.hfov = math.radians(360.0)
+		self.vfov = math.radians(180.0)
 
 		self.outStreamsManager = videolive.Video_out_stream_manager()
 		self.outFilesManager = videolive.Video_out_file_manager()
@@ -152,7 +154,7 @@ class GuiPanorama(QtGui.QFrame):
 
 	def OutputChangeSizePressed(self, w, h):
 
-		self.outputSizeChanged.emit(w, h)
+		self.viewParametersChanged.emit(w, h)
 		self.watermark = None
 
 	def GetOutputSize(self):
@@ -170,16 +172,27 @@ class GuiPanorama(QtGui.QFrame):
 		except Exception as err:
 			print err
 
+	def GetViewCentre(self):
+		return 0., 0.
+
+	def GetFov(self):
+		return self.hfov, self.vfov
+
 	def ZoomInPressed(self):
 		try:
 			print "zoom in"
+			self.hfov /= 2.
+			self.vfov /= 2.
+			self.viewParametersChanged.emit()
 		except Exception as err:
 			print err
 	
-
 	def ZoomOutPressed(self):
 		try:
 			print "zoom out"
+			self.hfov *= 2.
+			self.vfov *= 2.
+			self.viewParametersChanged.emit()
 		except Exception as err:
 			print err
 
