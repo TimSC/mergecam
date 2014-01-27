@@ -34,10 +34,21 @@ class GuiPanorama(QtGui.QFrame):
 		#Output bar
 		self.outputBar = QtGui.QHBoxLayout()
 		self.layout.addLayout(self.outputBar)
-		
+				
+		self.controlButtons = QtGui.QVBoxLayout()
+		self.outputBar.addLayout(self.controlButtons)
+
 		self.configure = QtGui.QPushButton("Configure View")
 		self.configure.pressed.connect(self.ConfigurePressed)
-		self.outputBar.addWidget(self.configure)		
+		self.controlButtons.addWidget(self.configure)
+
+		self.zoomInButton = QtGui.QPushButton("Zoom In")
+		self.zoomInButton.pressed.connect(self.ZoomInPressed)
+		self.controlButtons.addWidget(self.zoomInButton)	
+
+		self.zoomOutButton = QtGui.QPushButton("Zoom Out")
+		self.zoomOutButton.pressed.connect(self.ZoomOutPressed)
+		self.controlButtons.addWidget(self.zoomOutButton)	
 
 		self.vidOutStreamWidget = vidoutput.VideoOutWidget(self.outStreamsManager)
 		self.outputBar.addWidget(self.vidOutStreamWidget)
@@ -148,13 +159,30 @@ class GuiPanorama(QtGui.QFrame):
 		return self.outw, self.outh
 
 	def ConfigurePressed(self):
-		dlg = ConfigDialog(self, config.FULL_VERSION)
-		dlg.outputSizeChanged.connect(self.outputSizeChanged)
-		dlg.blendCheckBox.setChecked(self.blend)
-		dlg.SetOutputSize(self.outw, self.outh)
-		dlg.exec_()
-		self.blend = dlg.blendCheckBox.isChecked()
-		self.outw, self.outh = dlg.GetOutputSize()
+		try:
+			dlg = ConfigDialog(self, config.FULL_VERSION)
+			dlg.outputSizeChanged.connect(self.outputSizeChanged)
+			dlg.blendCheckBox.setChecked(self.blend)
+			dlg.SetOutputSize(self.outw, self.outh)
+			dlg.exec_()
+			self.blend = dlg.blendCheckBox.isChecked()
+			self.outw, self.outh = dlg.GetOutputSize()
+		except Exception as err:
+			print err
+
+	def ZoomInPressed(self):
+		try:
+			print "zoom in"
+		except Exception as err:
+			print err
+	
+
+	def ZoomOutPressed(self):
+		try:
+			print "zoom out"
+		except Exception as err:
+			print err
+
 
 # ***************************************************************
 
