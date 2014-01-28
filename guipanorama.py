@@ -1,7 +1,59 @@
 from PySide import QtGui, QtCore
-import time, vidoutput, vidwriter, videolive, config, math
+import time, vidoutput, vidwriter, videolive, config, math, copy
 import scipy.misc as misc
 import numpy as np
+
+class PanoGraphicsView(QtGui.QGraphicsView):
+	viewMoved = QtCore.Signal(float, float)
+
+	def __init__(self, scene = None):
+		QtGui.QGraphicsView.__init__(self, scene)
+		self.proj = None
+		self.prevMousePos = None
+		self.staticProj = None
+
+	def mousePressEvent(self, event):
+		try:
+			return self.ProcessMousePress(event)
+		except Exception as err:
+			print err
+
+	def ProcessMousePress(self, event):
+
+		if self.proj is None: return
+		self.staticProj = self.proj
+		mousePos = event.pos()
+		posx = mousePos.x()
+		posy = mousePos.y()
+		self.prevMousePos = self.staticProj.UnProj([(posx, posy)])[0]
+
+	def mouseMoveEvent(self, event):
+		try:
+			return self.ProcessMouseMove(event)
+		except Exception as err:
+			print err
+
+	def ProcessMouseMove(self, event):
+		if self.staticProj is None: return
+		if self.prevMousePos is None: return
+
+		mousePos = event.pos()
+		posx = mousePos.x()
+		posy = mousePos.y()
+		mouseLatLon = self.staticProj.UnProj([(posx, posy)])[0]
+		
+		shift = (mouseLatLon[0] - self.prevMousePos[0], mouseLatLon[1] - self.prevMousePos[1])
+		self.prevMousePos = mouseLatLon
+		self.viewMoved.emit(shift[0], shift[1])
+
+	def mouseReleaseEvent(self, event):
+		try:
+			self.staticProj = None
+		except Exception as err:
+			print err
+
+	def SetProj(self, proj):
+		self.proj = proj
 
 class GuiPanorama(QtGui.QFrame):
 
@@ -30,7 +82,8 @@ class GuiPanorama(QtGui.QFrame):
 		self.setLayout(self.layout)
 
 		self.scene = QtGui.QGraphicsScene()
-		self.view = QtGui.QGraphicsView(self.scene)
+		self.view = PanoGraphicsView(self.scene)
+		self.view.viewMoved.connect(self.ViewMoved)
 		self.layout.addWidget(self.view, 1)
 
 		#Output bar
@@ -85,6 +138,7 @@ class GuiPanorama(QtGui.QFrame):
 
 	def SetVisObject(self, visobj, outProj):
 		self.visObj = visobj
+		self.view.SetProj(outProj)
 
 		#Update visualisation sizes
 		if outProj is not None:
@@ -195,6 +249,9 @@ class GuiPanorama(QtGui.QFrame):
 			self.viewParametersChanged.emit()
 		except Exception as err:
 			print err
+
+	def ViewMoved(self, dLat, dLon):
+		print dLat, dLon
 
 
 # ***************************************************************
