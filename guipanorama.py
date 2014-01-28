@@ -72,6 +72,8 @@ class GuiPanorama(QtGui.QFrame):
 		self.blend = False
 		self.outw = 640
 		self.outh = 480
+		self.cLat = 0.
+		self.cLon = 0.
 		self.hfov = math.radians(360.0)
 		self.vfov = math.radians(180.0)
 
@@ -227,7 +229,7 @@ class GuiPanorama(QtGui.QFrame):
 			print err
 
 	def GetViewCentre(self):
-		return 0., 0.
+		return self.cLat, self.cLon
 
 	def GetFov(self):
 		return self.hfov, self.vfov
@@ -251,8 +253,13 @@ class GuiPanorama(QtGui.QFrame):
 			print err
 
 	def ViewMoved(self, dLat, dLon):
-		print dLat, dLon
-
+		try:
+			print dLat, dLon
+			self.cLat += dLat
+			self.cLon += dLon
+			self.viewParametersChanged.emit()
+		except Exception as err:
+			print err
 
 # ***************************************************************
 
