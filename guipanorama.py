@@ -209,7 +209,8 @@ class GuiPanorama(QtGui.QFrame):
 		self.activeCams = activeCams
 
 	def OutputChangeSizePressed(self, w, h):
-
+		self.outw = w
+		self.outh = h
 		self.viewParametersChanged.emit()
 		self.watermark = None
 
