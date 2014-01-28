@@ -145,6 +145,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.processingWidgets = {}
 		self.frameTestStore = []
 		self.metaTestStore = []
+		self.visObj = None
 		self.rxTimes = {}
 		self.findCorrespondences = vidpano.FindCorrespondences()
 
@@ -338,9 +339,13 @@ class MainWindow(QtGui.QMainWindow):
 			outProj.imgW, outProj.imgH = self.guiPanorama.GetOutputSize()
 			outProj.cLat, outProj.cLon = self.guiPanorama.GetViewCentre()
 			outProj.hFov, outProj.vFov = self.guiPanorama.GetFov()
-			visObj = pano.PanoView(self.cameraArrangement, outProj)
 
-			self.guiPanorama.SetVisObject(visObj, outProj)
+			if self.visObj is None:
+				self.visObj = pano.PanoView(self.cameraArrangement, outProj)
+			else:
+				self.visObj.SetProjection(outProj)
+
+			self.guiPanorama.SetVisObject(self.visObj, outProj)
 		else:
 			self.guiPanorama.SetVisObject(None, None)		
 
@@ -393,9 +398,9 @@ class MainWindow(QtGui.QMainWindow):
 		imgW, imgH = self.guiPanorama.GetOutputSize()
 		outProj.imgW = imgW
 		outProj.imgH = imgH
-		visObj = pano.PanoView(self.cameraArrangement, outProj)
+		self.visObj = pano.PanoView(self.cameraArrangement, outProj)
 
-		self.guiPanorama.SetVisObject(visObj, outProj)
+		self.guiPanorama.SetVisObject(self.visObj, outProj)
 
 		#Update gui with camera parameters
 		self.guiSources.SetCamParams(self.cameraArrangement.camParams)

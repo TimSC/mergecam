@@ -196,6 +196,70 @@ static void PanoView_dealloc(PanoView *self)
 	self->ob_type->tp_free((PyObject *)self);
 }
 
+int InitOpengl(PanoView *self)
+{	
+	int argc = 1; 
+	char *arg1 = new char[9];
+	strcpy(arg1, "pano.dll");
+	char **argv = &arg1;
+	if(!gGlutInitDone)
+	{
+		glutInit(&argc, argv);
+		glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
+		gGlutInitDone = 1;
+	}
+	glutInitWindowSize(self->outImgW, self->outImgH);
+
+	int glut_id = glutCreateWindow("VWGL");
+	int hideOpenGL = 1;
+	if(hideOpenGL)
+	{
+		/*GLuint fbo, renderBuff;
+		glGenFramebuffersEXT(1, &fbo);
+		glGenRenderbuffers(1, &renderBuff);
+		glBindRenderbuffer(fbo);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_BGRA8, outWidth, outHeight);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);*/
+
+		glutHideWindow();
+	}
+
+	delete [] arg1;
+
+	glutCloseFunc(GlutWindowCloseEvent);
+
+	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
+
+	glClearColor(0,0,0,0);
+	PrintGlErrors("set clear colour");
+
+	glClear(GL_COLOR_BUFFER_BIT);
+	PrintGlErrors("clear colour buff");
+
+	glViewport(0, 0, self->outImgW, self->outImgH);
+	PrintGlErrors("set viewport");
+
+	std::string extensions = (const char *)glGetString(GL_EXTENSIONS);
+	PrintGlErrors("get extensions");
+	std::vector<std::string> splitExt = ::split(extensions, ' ');
+
+	if(0) for(unsigned i=0; i< splitExt.size(); i++)
+	{
+		std::cout << i << ": " << splitExt[i] << std::endl;
+	}
+
+	self->nonPowerTwoTexSupported = FindStringInVector("GL_ARB_texture_non_power_of_two", splitExt);
+
+	const GLubyte *ven = glGetString(GL_VENDOR);
+	PrintGlErrors("get vendor");
+	if(ven!=NULL) std::cout << "opengl vendor: " << ven << std::endl;
+	const GLubyte *ren = glGetString(GL_RENDERER);
+	PrintGlErrors("get renderer");
+	if(ren!=NULL) std::cout << "opengl renderer: " << ren << std::endl;
+
+	return 1;
+}
+
 static int PanoView_init(PanoView *self, PyObject *args,
 		PyObject *kwargs)
 {
@@ -225,8 +289,9 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	self->outProjection = PyTuple_GetItem(args, 1);
 	Py_INCREF(self->outProjection);
 
-	PyObject *outWidthObj = PyObject_GetAttrString(outProj, "imgW");
-	PyObject *outHeightObj = PyObject_GetAttrString(outProj, "imgH");
+	//Store output dimensions
+	PyObject *outWidthObj = PyObject_GetAttrString(self->outProjection, "imgW");
+	PyObject *outHeightObj = PyObject_GetAttrString(self->outProjection, "imgH");
 	long outWidth = PyInt_AsLong(outWidthObj);
 	long outHeight = PyInt_AsLong(outHeightObj);
 	std::cout << "PanoView_init: " << outWidth << "," << outHeight << std::endl;
@@ -235,67 +300,57 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	self->outImgH = outHeight;
 	Py_DECREF(outWidthObj);
 	Py_DECREF(outHeightObj);
-	
-	int argc = 1; 
-	char *arg1 = new char[9];
-	strcpy(arg1, "pano.dll");
-	char **argv = &arg1;
-	if(!gGlutInitDone)
-	{
-		glutInit(&argc, argv);
-		glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
-		gGlutInitDone = 1;
-	}
-	glutInitWindowSize(outWidth, outHeight);
 
-	int glut_id = glutCreateWindow("VWGL");
-	int hideOpenGL = 1;
-	if(hideOpenGL)
-	{
-		/*GLuint fbo, renderBuff;
-		glGenFramebuffersEXT(1, &fbo);
-		glGenRenderbuffers(1, &renderBuff);
-		glBindRenderbuffer(fbo);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_BGRA8, outWidth, outHeight);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);*/
-
-		glutHideWindow();
-	}
-
-	delete [] arg1;
-
-	glutCloseFunc(GlutWindowCloseEvent);
-
-	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
-
-	glClearColor(0,0,0,0);
-	PrintGlErrors("set clear colour");
-
-	glClear(GL_COLOR_BUFFER_BIT);
-	PrintGlErrors("clear colour buff");
-
-	glViewport(0, 0, outWidth, outHeight);
-	PrintGlErrors("set viewport");
-
-	std::string extensions = (const char *)glGetString(GL_EXTENSIONS);
-	PrintGlErrors("get extensions");
-	std::vector<std::string> splitExt = ::split(extensions, ' ');
-
-	if(0) for(unsigned i=0; i< splitExt.size(); i++)
-	{
-		std::cout << i << ": " << splitExt[i] << std::endl;
-	}
-
-	self->nonPowerTwoTexSupported = FindStringInVector("GL_ARB_texture_non_power_of_two", splitExt);
-
-	const GLubyte *ven = glGetString(GL_VENDOR);
-	PrintGlErrors("get vendor");
-	if(ven!=NULL) std::cout << "opengl vendor: " << ven << std::endl;
-	const GLubyte *ren = glGetString(GL_RENDERER);
-	PrintGlErrors("get renderer");
-	if(ren!=NULL) std::cout << "opengl renderer: " << ren << std::endl;
+	InitOpengl(self);
 
 	return 0;
+}
+
+static PyObject *PanoView_SetProjection(PanoView *self, PyObject *args,
+		PyObject *kwargs)
+{
+	long oldImgW = self->outImgW;
+	long oldImgH = self->outImgH;
+
+	//Remove old projection reference
+	if(self->outProjection != NULL)
+		Py_DECREF(self->outProjection);
+	self->outProjection = NULL;
+
+	//Add new reference
+	self->outProjection = PyTuple_GetItem(args, 0);
+	Py_INCREF(self->outProjection);	
+
+	//Store output dimensions
+	PyObject *outWidthObj = PyObject_GetAttrString(self->outProjection, "imgW");
+	PyObject *outHeightObj = PyObject_GetAttrString(self->outProjection, "imgH");
+	PyObject *cLatObj = PyObject_GetAttrString(self->outProjection, "cLat");
+	PyObject *cLonObj = PyObject_GetAttrString(self->outProjection, "cLon");
+	long outWidth = PyInt_AsLong(outWidthObj);
+	long outHeight = PyInt_AsLong(outHeightObj);
+	double cLat = PyFloat_AsDouble(cLatObj);
+	double cLon = PyFloat_AsDouble(cLonObj);
+	//std::cout << "PanoView_SetProjection: " << outWidth << "," << outHeight << std::endl;
+	//std::cout << cLat << "," << cLon << std::endl;
+
+	self->outImgW = outWidth;
+	self->outImgH = outHeight;
+	Py_DECREF(outWidthObj);
+	Py_DECREF(outHeightObj);
+	Py_DECREF(cLatObj);
+	Py_DECREF(cLonObj);
+
+	//Clear old display lists
+	for(unsigned int i=0; i< self->displayLists.size(); i++)
+		glDeleteLists(self->displayLists[i], 1);
+	self->displayLists.clear();
+	self->displayListImgWidth.clear();
+	self->displayListImgHeight.clear();
+
+	if(self->outImgW != oldImgW || self->outImgH != oldImgH)
+		InitOpengl(self);
+
+	Py_RETURN_NONE;
 }
 
 static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
@@ -799,6 +854,10 @@ static PyMethodDef PanoView_methods[] = {
 	{"Vis", (PyCFunction)PanoView_Vis, METH_VARARGS,
 			 "Vis(image_byte_buffer_list, meta_data_list)\n\n"
 			 "Combine images to form a panorama"},
+	{"SetProjection", (PyCFunction)PanoView_SetProjection, METH_VARARGS,
+			 "SetProjection(outProjection)\n\n"
+			 "Update the projection used for output"},
+
 	{NULL}
 };
 

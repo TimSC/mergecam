@@ -210,7 +210,7 @@ class GuiPanorama(QtGui.QFrame):
 
 	def OutputChangeSizePressed(self, w, h):
 
-		self.viewParametersChanged.emit(w, h)
+		self.viewParametersChanged.emit()
 		self.watermark = None
 
 	def GetOutputSize(self):
@@ -219,7 +219,7 @@ class GuiPanorama(QtGui.QFrame):
 	def ConfigurePressed(self):
 		try:
 			dlg = ConfigDialog(self, config.FULL_VERSION)
-			dlg.outputSizeChanged.connect(self.outputSizeChanged)
+			dlg.outputSizeChanged.connect(self.OutputChangeSizePressed)
 			dlg.blendCheckBox.setChecked(self.blend)
 			dlg.SetOutputSize(self.outw, self.outh)
 			dlg.exec_()
@@ -254,9 +254,9 @@ class GuiPanorama(QtGui.QFrame):
 
 	def ViewMoved(self, dLat, dLon):
 		try:
-			print dLat, dLon
-			self.cLat += dLat
-			self.cLon += dLon
+			#print dLat, dLon, self.cLat, self.cLon
+			self.cLat -= dLat
+			self.cLon -= dLon
 			self.viewParametersChanged.emit()
 		except Exception as err:
 			print err
