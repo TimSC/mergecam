@@ -679,9 +679,10 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				glColor4d(1., 1., 1., alphaLi[c]);
 				glVertex2f(ptx[c],pty[c]);
 			}
-			}
 			//std::cout << std::endl;
 			glEnd();
+			}
+
 
 		}
 
