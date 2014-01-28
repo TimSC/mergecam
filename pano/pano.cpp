@@ -298,35 +298,6 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	return 0;
 }
 
-void UpdateRanges(PanoView *self, double dstx, double dsty)
-{
-	//Update ranges
-	if(!self->dstXRangeSet)
-	{
-		self->dstXMin = dstx;
-		self->dstXMax = dstx;
-		self->dstXRangeSet = 1;
-	}
-	else
-	{
-		if(dstx < self->dstXMin) self->dstXMin = dstx;
-		if(dstx > self->dstXMax) self->dstXMax = dstx;
-	}
-		
-	if(!self->dstYRangeSet)
-	{
-		self->dstYMin = dsty;
-		self->dstYMax = dsty;
-		self->dstYRangeSet = 1;
-	}
-	else
-	{
-		if(dsty < self->dstYMin) self->dstYMin = dsty;
-		if(dsty > self->dstYMax) self->dstYMax = dsty;
-	}
-}
-
-
 static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 {
 
@@ -615,9 +586,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		//PyObject_Print(worldPos, stdout, Py_PRINT_RAW); std::cout << std::endl;
 
 		//Transform world positions to destination image
-		PyObject *dstProj = PyObject_GetAttrString(self->outProjection, "Proj");
+		PyObject *dstProj = PyObject_GetAttrString(self->outProjection, "MultiProj");
 		if(dstProj==NULL)
-			throw std::runtime_error("Proj method not defined");
+			throw std::runtime_error("MultiProj method not defined");
 
 		PyObject *projArgs = PyTuple_New(1);
 		PyTuple_SetItem(projArgs, 0, worldPos);
@@ -633,49 +604,81 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		if(self->textureIds[i] >= 0)
 			glBindTexture(GL_TEXTURE_2D, self->textureIds[i]);
 		glColor3d(1.,1.,1.);
-		
+
+		//For each square in piecewise grid		
 		for(unsigned sqNum = 0; sqNum < sqInd.size(); sqNum++)
 		{
 			std::vector<int> &singleSq = sqInd[sqNum];
 			double alpha = sqIndAlpha[sqNum];
 
-			glBegin(GL_QUADS);
-			for(int c = 0; c < singleSq.size(); c++)
+			//Check how many valid destination positions were found
+			PyObject *dstPtLi = PySequence_GetItem(dstPos, singleSq[0]);
+			Py_ssize_t numDestPoints = PySequence_Size(dstPtLi);
+			Py_DECREF(dstPtLi);
+
+			//The projection mapping is one to many
+			//Iterate over destination points
+			for(Py_ssize_t destNum = 0; destNum < numDestPoints; destNum++)
 			{
 
+			std::vector<double> ptx, pty, texx, texy, alphaLi;
+			int isValid = 1;
+			//Check each corner point and see if any are None valued
+			for(Py_ssize_t c = 0; c < singleSq.size(); c++)
+			{
 				int ptInd = singleSq[c];
-				PyObject *dstPt = PySequence_GetItem(dstPos, ptInd);
+				PyObject *dstLi = PySequence_GetItem(dstPos, ptInd);
+				PyObject *dstPt = PySequence_GetItem(dstLi, destNum);
 				//std::cout << singleSq[c] << ",";
 
-				if(PySequence_Size(dstPt)< 2) continue;
+				if(PySequence_Size(dstPt)< 2)
+				{
+					isValid = 0;
+					continue;
+				}
 				PyObject *pydstx = PySequence_GetItem(dstPt, 0);
 				PyObject *pydsty = PySequence_GetItem(dstPt, 1);
-				double dstx = PyFloat_AsDouble(pydstx);
-				double dsty = PyFloat_AsDouble(pydsty);
+				if (pydstx == Py_None)
+					isValid = 0;
+				else
+				{
+					double dstx = PyFloat_AsDouble(pydstx);
+					ptx.push_back(dstx);
+				}
+
+				if (pydsty == Py_None)
+					isValid = 0;
+				else
+				{
+					double dsty = PyFloat_AsDouble(pydsty);
+					pty.push_back(dsty);
+				}
+
 				//std::cout << "tex " << texPos[ptInd][0] <<","<< texPos[ptInd][1] << std::endl;
 				//std::cout << "pt " << c << "," << (dstx / self->outImgW) <<","<< (dsty / self->outImgH) << std::endl;
-				glTexCoord2d(texPos[ptInd][0],texPos[ptInd][1]);
-				//std::cout << alpha << std::endl;
-				glColor4d(1., 1., 1., alpha);
-				glVertex2f(dstx,dsty);
-				Py_DECREF(dstPt);
+				texx.push_back(texPos[ptInd][0]);
+				texy.push_back(texPos[ptInd][1]);
+				alphaLi.push_back(alpha);
+
 				Py_DECREF(pydstx);
 				Py_DECREF(pydsty);
+				Py_DECREF(dstPt);
+				Py_DECREF(dstLi);
+			}
 
-				//Update max and min extent but consider wrap around effect
-				UpdateRanges(self, dstx, dsty);
-				int wrapOutputHorizontally = 1;
-				while(dstx > self->outImgW && wrapOutputHorizontally)
-				{
-					dstx -= self->outImgW;
-					UpdateRanges(self, dstx, dsty);
-				}
+			if(!isValid)
+				continue; //Skip this invalid square
 
-				while(dstx < 0. && wrapOutputHorizontally)
-				{
-					dstx += self->outImgW;
-					UpdateRanges(self, dstx, dsty);
-				}
+			glBegin(GL_QUADS);
+			//For each corner of the square
+			for(int c = 0; c < ptx.size(); c++)
+			{
+				int ptInd = singleSq[c];
+
+				glTexCoord2d(texx[c],texy[c]);
+				glColor4d(1., 1., 1., alphaLi[c]);
+				glVertex2f(ptx[c],pty[c]);
+			}
 			}
 			//std::cout << std::endl;
 			glEnd();
