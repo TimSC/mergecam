@@ -744,20 +744,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		if(self->displayLists[i] == 0)
 			continue;
 
-		//Repeat drawing for wrap around
-		glPushMatrix();
-		glTranslatef(-self->outImgW,0.,0.);
-		glCallList(self->displayLists[i]);
-		glPopMatrix();
-
 		//Draw centre image
 		glPushMatrix();
-		glCallList(self->displayLists[i]);
-		glPopMatrix();
-
-		//Repeat drawing for wrap around
-		glPushMatrix();
-		glTranslatef(self->outImgW,0.,0.);
 		glCallList(self->displayLists[i]);
 		glPopMatrix();
 	}
