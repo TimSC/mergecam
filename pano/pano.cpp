@@ -45,6 +45,7 @@ public:
 	double dstYMin, dstYMax;
 	std::vector<int> displayListImgWidth, displayListImgHeight;
 	std::vector<std::map<int, std::vector<double> > > samplePoints;
+	std::vector<double> camBrightnessLi;
 };
 typedef PanoView_cl PanoView;
 
@@ -132,12 +133,12 @@ int FindStringInVector(const char *needle, std::vector<std::string> haystack)
 	return false;
 }
 
-std::vector<float> GetPixFromRawBuff(const unsigned char* buff, unsigned buffLen, long width, long height, 
+std::vector<double> GetPixFromRawBuff(const unsigned char* buff, unsigned buffLen, long width, long height, 
 	double x, double y, const char *pxFmt)
 {
 	if(strcmp(pxFmt, "RGB24")!=0)
 		throw std::runtime_error("Unsupported pixel format");
-	std::vector<float> out;
+	std::vector<double> out;
 
 	//Nearest neighbour pixel	
 	int rx = (int)(x + 0.5);
@@ -154,6 +155,20 @@ std::vector<float> GetPixFromRawBuff(const unsigned char* buff, unsigned buffLen
 	out.push_back(buff[tupleOffset+1]);
 	out.push_back(buff[tupleOffset+2]);
 	return out;
+}
+
+double VecRgbToGrey(std::vector<double> &col)
+{
+	return 0.2126 * col[0] + 0.7152  * col[1] + 0.0722 * col[2];
+}
+
+double VecAverage(std::vector<double> &vals)
+{
+	//TODO Not very good way to calc average!
+	double total = 0;
+	for(unsigned i=0;i<vals.size();i++)
+		total += vals[i];
+	return total / (double)(vals.size());
 }
 
 //**************************************************************************
@@ -421,6 +436,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	while(self->openglTxWidthLi.size() < numCams) self->openglTxWidthLi.push_back(0);
 	if(self->openglTxHeightLi.size() > numCams) self->openglTxHeightLi.clear();
 	while(self->openglTxHeightLi.size() < numCams) self->openglTxHeightLi.push_back(0);
+	if(self->camBrightnessLi.size() > numCams) self->camBrightnessLi.clear();
+	while(self->camBrightnessLi.size() < numCams) self->camBrightnessLi.push_back(1.);
 
 	// ***************************************************
 	// Load source images from python structures
@@ -586,20 +603,23 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		Py_DECREF(camDataTup);
 	}
 
-	//For each sample point in auto exposure calc
+	//For each sample point in auto exposure calc, store colour
+	std::vector<std::map<int, std::vector<double> > > sampleColsLi;
 	for(unsigned ptNum = 0; ptNum < self->samplePoints.size(); ptNum++)
 	{
 		std::map<int, std::vector<double> > &samplePoint = self->samplePoints[ptNum];
+		std::map<int, std::vector<double> > sampleCols;
 		if(samplePoint.size() < 2) continue;
 
 		//For each camera
 		for(std::map<int, std::vector<double> >::iterator it = samplePoint.begin(); it != samplePoint.end(); it++)
 		{
+			//Get the pixel colour in the source texture
 			int camNum = it->first;
 			double px = it->second[0];
 			double py = it->second[1];
-			std::cout << ptNum << "," << camNum << "," << px << "," << py << std::endl;
-			std::vector<float> pix;
+			//std::cout << ptNum << "," << camNum << "," << px << "," << py << std::endl;
+			std::vector<double> pix;
 			try
 			{
 				pix = GetPixFromRawBuff((const unsigned char*)srcImgRawLi[camNum], 
@@ -611,9 +631,50 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 				
 			}
 			if (pix.size() >= 3)
-				std::cout << pix[0] << "," << pix[1] << "," << pix[2] << std::endl;
+			{
+				//std::cout << pix[0] << "," << pix[1] << "," << pix[2] << std::endl;
+				std::vector<double> col;
+				col.push_back(pix[0]);
+				col.push_back(pix[1]);
+				col.push_back(pix[2]);
+				sampleCols[camNum] = col;
+			}
 		}
+
+		sampleColsLi.push_back(sampleCols);
 	}
+
+	int currentCam = 0;
+	std::vector<double> currentCamGreyLi;
+	std::vector<double> otherCamGreyLi;
+	for(unsigned ptNum = 0; ptNum < sampleColsLi.size(); ptNum++)
+	{
+		std::map<int, std::vector<double> > &pointCols = sampleColsLi[ptNum];
+		if(pointCols.size() < 2) continue;
+		std::map<int, std::vector<double> >::iterator fit = pointCols.find(currentCam);
+		if(fit == pointCols.end()) continue; //Active camera not present
+		currentCamGreyLi.push_back(VecRgbToGrey(fit->second));		
+
+		//For the other cameras
+		std::vector<double> greyLi;
+		for(std::map<int, std::vector<double> >::iterator it = pointCols.begin(); it != pointCols.end(); it++)
+		{
+			if(it->first == currentCam) continue;
+			double grey = VecRgbToGrey(it->second);
+			greyLi.push_back(grey);
+		}
+		
+		double avGrey = VecAverage(greyLi);
+		otherCamGreyLi.push_back(avGrey);
+	}
+	double camABright = VecAverage(currentCamGreyLi);
+	double otherABright = VecAverage(otherCamGreyLi);
+	double brRation = otherABright / camABright;
+	std::cout << camABright << "," << otherABright << "," << brRation << std::endl;
+	if(brRation<1.)
+		self->camBrightnessLi[0] = brRation;
+	else
+		self->camBrightnessLi[1] = 1./brRation;
 
 	Py_DECREF(sampleLatLons);
 
@@ -868,7 +929,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		//Draw images using opengl to display lists
 		if(self->textureIds[i] >= 0)
 			glBindTexture(GL_TEXTURE_2D, self->textureIds[i]);
-		glColor3d(1.,1.,1.);
+		glColor3d(self->camBrightnessLi[i],self->camBrightnessLi[i],self->camBrightnessLi[i]);
 
 		//For each square in piecewise grid		
 		for(unsigned sqNum = 0; sqNum < sqInd.size(); sqNum++)
