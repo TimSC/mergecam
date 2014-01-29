@@ -44,6 +44,7 @@ public:
 	double dstXMin, dstXMax;
 	double dstYMin, dstYMax;
 	std::vector<int> displayListImgWidth, displayListImgHeight;
+	std::vector<std::map<int, std::vector<double> > > samplePoints;
 };
 typedef PanoView_cl PanoView;
 
@@ -347,6 +348,9 @@ static PyObject *PanoView_SetProjection(PanoView *self, PyObject *args,
 	self->displayListImgWidth.clear();
 	self->displayListImgHeight.clear();
 
+	//Clear auto exposure sample points
+	self->samplePoints.clear();
+
 	if(self->outImgW != oldImgW || self->outImgH != oldImgH)
 		InitOpengl(self);
 
@@ -394,6 +398,10 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	if(self->openglTxHeightLi.size() > numCams) self->openglTxHeightLi.clear();
 	while(self->openglTxHeightLi.size() < numCams) self->openglTxHeightLi.push_back(0);
 
+	// ***************************************************
+	// Automatic Exposure Control
+	// ***************************************************
+
 	//Find points that are common in images
 	int nsamp = 50;
 	PyObject *samplePxPos = PyList_New(0);
@@ -409,6 +417,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		Py_DECREF(tupleTemp);
 		//std::cout << x << "," << y << "," << px << "," << py << std::endl;
 	}
+	Py_ssize_t numSamplePoints = PySequence_Size(samplePxPos);
 
 	//TODO what about wrap around effects in this case of sampling?
 
@@ -427,7 +436,22 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	//PyObject_Print(sampleLatLons,stdout,Py_PRINT_RAW); printf("\n");
 
+	//Check the sample structure is correct size, if not reinitialise it
+	int regenSampleMapping = 0;
+	if(self->samplePoints.size() != numSamplePoints)
+	{
+		self->samplePoints.clear();
+		regenSampleMapping = 1;
+	}
+	while(self->samplePoints.size() < numSamplePoints)
+	{
+		std::map<int, std::vector<double> > tmp;
+		self->samplePoints.push_back(tmp);
+		regenSampleMapping = 1;
+	}
+
 	//Iterate over cameras and find where the sample points are in the source image
+	if(regenSampleMapping) 
 	for(Py_ssize_t i=0; i<numCams; i++)
 	{
 		//Get camera projection function
@@ -452,10 +476,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		Py_ssize_t numRetPoints = PySequence_Size(sourceSamplePos);
 
-		std::cout << "Cam sample points: " << i << "," << numRetPoints << std::endl;
-		std::cout.flush();
+		//std::cout << "Cam sample points: " << i << "," << numRetPoints << std::endl;
+		//std::cout.flush();
 
-		int count = 0;
 		for(Py_ssize_t ptNum = 0; ptNum < numRetPoints; ptNum++)
 		{
 			PyObject *retPtTup = PySequence_GetItem(sourceSamplePos, ptNum);
@@ -465,7 +488,12 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 			if(xObj != Py_None)
 			{
-				count ++;
+				std::map<int, std::vector<double> > &samplePoint = self->samplePoints[ptNum];
+				std::vector<double> pt;
+				pt.push_back(PyFloat_AsDouble(xObj));
+				pt.push_back(PyFloat_AsDouble(yObj));
+				samplePoint[i] = pt;
+
 				//PyObject_Print(retPtTup,stdout,Py_PRINT_RAW);
 				//PyObject_Print(ptTest,stdout,Py_PRINT_RAW); printf("\n");
 			}
@@ -475,7 +503,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			Py_DECREF(retPtTup);
 			Py_DECREF(ptTest);
 		}
-		std::cout << "count " << count << std::endl;
 
 		//PyObject_Print(sourceSamplePos,stdout,Py_PRINT_RAW); printf("\n");
 
@@ -483,6 +510,13 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		Py_DECREF(camDataTup);
 	}
 
+	for(unsigned ptNum = 0; ptNum < self->samplePoints.size(); ptNum++)
+	{
+		std::map<int, std::vector<double> > &samplePoint = self->samplePoints[ptNum];
+		if(samplePoint.size()==0) continue;
+
+
+	}
 
 	Py_DECREF(sampleLatLons);
 
@@ -497,6 +531,10 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	PrintGlErrors("clear colour buff");
+
+	// ***************************************************
+	// Copy textures to OpenGL
+	// ***************************************************
 
 	//Load textures into opengl
 	for(Py_ssize_t i=0; i<numCams; i++)
@@ -596,6 +634,10 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		Py_DECREF(metaObj);
 
 	}
+
+	// ***************************************************
+	// Draw images to display lists
+	// ***************************************************
 
 	//Initialise memory to contain display lists
 	while(self->displayLists.size() < numCams)
@@ -850,6 +892,10 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		self->displayListImgHeight[i] = sourceHeight;
 	}
 
+	// ***************************************************
+	// Automatic Scaling
+	// ***************************************************
+
 	//Limit display area to bounds
 	if(self->dstXMax > self->outImgW) self->dstXMax = self->outImgW;
 	if(self->dstXMin < 0.) self->dstXMin = 0.;
@@ -888,6 +934,10 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	}
 	PrintGlErrors("scale view");
 	
+	// ***************************************************
+	// Draw images
+	// ***************************************************
+
 	//Perform actual drawing from display lists
 	for(int i=0;i< self->displayLists.size(); i++)
 	{
