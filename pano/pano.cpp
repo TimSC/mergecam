@@ -382,6 +382,103 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
  		return NULL;
 	}
 
+	//Prepare to iterate over cameras in arrangement
+	PyObject *addedPhotos = PyObject_GetAttrString(self->cameraArrangement, "addedPhotos");
+	if(addedPhotos==NULL) throw std::runtime_error("addedPhotos pointer is null");
+	PyObject *addedPhotosItems = PyDict_Items(addedPhotos);
+	if(addedPhotosItems==NULL) throw std::runtime_error("addedPhotosItems pointer is null");
+	Py_ssize_t numCams = PySequence_Size(addedPhotosItems);
+
+	if(self->openglTxWidthLi.size() > numCams) self->openglTxWidthLi.clear();
+	while(self->openglTxWidthLi.size() < numCams) self->openglTxWidthLi.push_back(0);
+	if(self->openglTxHeightLi.size() > numCams) self->openglTxHeightLi.clear();
+	while(self->openglTxHeightLi.size() < numCams) self->openglTxHeightLi.push_back(0);
+
+	//Find points that are common in images
+	int nsamp = 50;
+	PyObject *samplePxPos = PyList_New(0);
+	for(int x = 0; x < nsamp; x++)
+	for(int y = 0; y < nsamp; y++)
+	{
+		double px = (double)x * (double)self->outImgW / (double)nsamp;
+		double py = (double)y * (double)self->outImgH / (double)nsamp;
+		PyObject *tupleTemp = PyTuple_New(2);
+		PyTuple_SetItem(tupleTemp, 0, PyInt_FromLong(x));
+		PyTuple_SetItem(tupleTemp, 1, PyInt_FromLong(y));
+		PyList_Append(samplePxPos, tupleTemp);
+		Py_DECREF(tupleTemp);
+	}
+
+	//TODO what about wrap around effects in this case of sampling?
+
+	//Transform sample points to lat lon
+	PyObject *pxToLatLonUnProj = PyObject_GetAttrString(self->outProjection, "UnProj");
+	if(pxToLatLonUnProj==NULL)
+		throw std::runtime_error("UnProj method not defined");
+	
+	PyObject *unprojArgs = PyTuple_New(1);
+	PyTuple_SetItem(unprojArgs, 0, samplePxPos);
+	PyObject *sampleLatLons = PyObject_Call(pxToLatLonUnProj, unprojArgs, NULL);
+	
+	Py_DECREF(unprojArgs);
+	Py_DECREF(pxToLatLonUnProj);
+	Py_DECREF(samplePxPos);
+
+	//PyObject_Print(sampleLatLons,stdout,Py_PRINT_RAW); printf("\n");
+
+	//Create display lists of camera lens shapes
+	for(Py_ssize_t i=0; i<numCams; i++)
+	{
+		//Get camera projection function
+		PyObject *camDataTup = PySequence_GetItem(addedPhotosItems, i);
+		PyObject *camIdObj = PyTuple_GetItem(camDataTup, 0);
+		long camId = PyLong_AsLong(camIdObj);
+		PyObject *camData = PyTuple_GetItem(camDataTup, 1);
+
+		//Transform world lat lon to source image
+		PyObject *camProj = PyObject_GetAttrString(camData, "Proj");
+		if(camProj==NULL)
+			throw std::runtime_error("Proj method not defined");
+
+		PyObject *unprojArgs = PyTuple_New(1);
+		PyTuple_SetItem(unprojArgs, 0, sampleLatLons);
+		Py_INCREF(sampleLatLons);
+		
+		PyObject *sourceSamplePos = PyObject_Call(camProj, unprojArgs, NULL);
+		
+		Py_DECREF(unprojArgs);
+		Py_DECREF(camProj);
+
+		Py_ssize_t numRetPoints = PySequence_Size(sourceSamplePos);
+
+		std::cout << "Cam sample points: " << i << "," << numRetPoints << std::endl;
+		std::cout.flush();
+
+		for(Py_ssize_t ptNum = 0; ptNum < numRetPoints; ptNum++)
+		{
+			PyObject *retPtTup = PySequence_GetItem(sourceSamplePos, ptNum);
+			PyObject *xObj = PySequence_GetItem(retPtTup, 0);
+			PyObject *yObj = PySequence_GetItem(retPtTup, 1);
+
+			if(xObj != Py_None)
+			{
+				PyObject_Print(retPtTup,stdout,Py_PRINT_RAW); printf("\n");
+			}
+
+			Py_DECREF(xObj);
+			Py_DECREF(yObj);
+			Py_DECREF(retPtTup);
+		}
+
+		//PyObject_Print(sourceSamplePos,stdout,Py_PRINT_RAW); printf("\n");
+
+		Py_DECREF(sourceSamplePos);
+		Py_DECREF(camDataTup);
+	}
+
+
+	Py_DECREF(sampleLatLons);
+
 	//Create output image buffer
 	unsigned pxOutSize = 3 * self->outImgH * self->outImgW;
 	PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
@@ -393,18 +490,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	PrintGlErrors("clear colour buff");
-
-	//Iterate over cameras in arrangement
-	PyObject *addedPhotos = PyObject_GetAttrString(self->cameraArrangement, "addedPhotos");
-	if(addedPhotos==NULL) throw std::runtime_error("addedPhotos pointer is null");
-	PyObject *addedPhotosItems = PyDict_Items(addedPhotos);
-	if(addedPhotosItems==NULL) throw std::runtime_error("addedPhotosItems pointer is null");
-	Py_ssize_t numCams = PySequence_Size(addedPhotosItems);
-
-	if(self->openglTxWidthLi.size() > numCams) self->openglTxWidthLi.clear();
-	while(self->openglTxWidthLi.size() < numCams) self->openglTxWidthLi.push_back(0);
-	if(self->openglTxHeightLi.size() > numCams) self->openglTxHeightLi.clear();
-	while(self->openglTxHeightLi.size() < numCams) self->openglTxHeightLi.push_back(0);
 
 	//Load textures into opengl
 	for(Py_ssize_t i=0; i<numCams; i++)
@@ -639,6 +724,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		PyObject *worldPos = PyObject_Call(camUnProj, unprojArgs, NULL);
 		//PyObject_Print(worldPos, stdout, Py_PRINT_RAW); std::cout << std::endl;
+		Py_DECREF(camUnProj);
 
 		//Transform world positions to destination image
 		PyObject *dstProj = PyObject_GetAttrString(self->outProjection, "MultiProj");
@@ -652,6 +738,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		//PyObject_Print(dstProj,stdout,Py_PRINT_RAW); printf("\n");
 
 		PyObject *dstPos = PyObject_Call(dstProj, projArgs, NULL);
+		Py_DECREF(dstProj);
 
 		//PyObject_Print(dstPos,stdout,Py_PRINT_RAW); printf("\n");
 
