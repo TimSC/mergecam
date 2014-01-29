@@ -403,10 +403,11 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		double px = (double)x * (double)self->outImgW / (double)nsamp;
 		double py = (double)y * (double)self->outImgH / (double)nsamp;
 		PyObject *tupleTemp = PyTuple_New(2);
-		PyTuple_SetItem(tupleTemp, 0, PyInt_FromLong(x));
-		PyTuple_SetItem(tupleTemp, 1, PyInt_FromLong(y));
+		PyTuple_SetItem(tupleTemp, 0, PyFloat_FromDouble(px));
+		PyTuple_SetItem(tupleTemp, 1, PyFloat_FromDouble(py));
 		PyList_Append(samplePxPos, tupleTemp);
 		Py_DECREF(tupleTemp);
+		//std::cout << x << "," << y << "," << px << "," << py << std::endl;
 	}
 
 	//TODO what about wrap around effects in this case of sampling?
@@ -426,7 +427,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	//PyObject_Print(sampleLatLons,stdout,Py_PRINT_RAW); printf("\n");
 
-	//Create display lists of camera lens shapes
+	//Iterate over cameras and find where the sample points are in the source image
 	for(Py_ssize_t i=0; i<numCams; i++)
 	{
 		//Get camera projection function
@@ -454,21 +455,27 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		std::cout << "Cam sample points: " << i << "," << numRetPoints << std::endl;
 		std::cout.flush();
 
+		int count = 0;
 		for(Py_ssize_t ptNum = 0; ptNum < numRetPoints; ptNum++)
 		{
 			PyObject *retPtTup = PySequence_GetItem(sourceSamplePos, ptNum);
 			PyObject *xObj = PySequence_GetItem(retPtTup, 0);
 			PyObject *yObj = PySequence_GetItem(retPtTup, 1);
+			PyObject *ptTest = PySequence_GetItem(sampleLatLons, ptNum);
 
 			if(xObj != Py_None)
 			{
-				PyObject_Print(retPtTup,stdout,Py_PRINT_RAW); printf("\n");
+				count ++;
+				//PyObject_Print(retPtTup,stdout,Py_PRINT_RAW);
+				//PyObject_Print(ptTest,stdout,Py_PRINT_RAW); printf("\n");
 			}
 
 			Py_DECREF(xObj);
 			Py_DECREF(yObj);
 			Py_DECREF(retPtTup);
+			Py_DECREF(ptTest);
 		}
+		std::cout << "count " << count << std::endl;
 
 		//PyObject_Print(sourceSamplePos,stdout,Py_PRINT_RAW); printf("\n");
 
