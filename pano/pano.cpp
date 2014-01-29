@@ -399,6 +399,55 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	while(self->openglTxHeightLi.size() < numCams) self->openglTxHeightLi.push_back(0);
 
 	// ***************************************************
+	// Load source images from python structures
+	// ***************************************************
+
+	std::vector<char *> srcImgRawLi;
+	std::vector<long> srcHeightLi, srcWidthLi;
+	std::vector<std::string> srcFmtLi;
+	std::vector<PyObject *> srcPyImage, srcMetaObj;
+	for(Py_ssize_t i=0; i<numCams; i++)
+	{
+		//Get meta data from python objects
+		PyObject *pyImage = PySequence_GetItem(images, i);
+		if(pyImage==NULL) throw std::runtime_error("pyImage pointer is null");
+		PyObject *metaObj = PySequence_GetItem(metas, i);
+		if(metaObj==NULL) throw std::runtime_error("metaObj pointer is null");
+
+		if(pyImage == Py_None || metaObj == Py_None)
+		{
+			srcImgRawLi.push_back(NULL);
+			srcHeightLi.push_back(0);
+			srcWidthLi.push_back(0);
+			srcFmtLi.push_back("NULL");
+			srcPyImage.push_back(NULL);
+			srcMetaObj.push_back(NULL);
+			Py_DECREF(pyImage);
+			Py_DECREF(metaObj);
+			continue;
+		}
+
+		PyObject *widthObj = PyDict_GetItemString(metaObj, "width");
+		if(widthObj==NULL) throw std::runtime_error("widthObj pointer is null");
+		long sourceWidth = PyInt_AsLong(widthObj);
+		PyObject *heightObj = PyDict_GetItemString(metaObj, "height");
+		if(heightObj==NULL) throw std::runtime_error("heightObj pointer is null");
+		long sourceHeight = PyInt_AsLong(heightObj);
+
+		PyObject *formatObj = PyDict_GetItemString(metaObj, "format");
+		std::string sourceFmt = PyString_AsString(formatObj);
+
+		char *imgRaw = PyByteArray_AsString(pyImage);
+		if(imgRaw==NULL) throw std::runtime_error("imgRaw pointer is null");
+		srcImgRawLi.push_back(imgRaw);
+		srcHeightLi.push_back(sourceHeight);
+		srcWidthLi.push_back(sourceWidth);
+		srcFmtLi.push_back(sourceFmt);
+		srcPyImage.push_back(pyImage);
+		srcMetaObj.push_back(metaObj);
+	}
+
+	// ***************************************************
 	// Automatic Exposure Control
 	// ***************************************************
 
@@ -510,12 +559,17 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		Py_DECREF(camDataTup);
 	}
 
+	//For each sample point in auto exposure calc
 	for(unsigned ptNum = 0; ptNum < self->samplePoints.size(); ptNum++)
 	{
 		std::map<int, std::vector<double> > &samplePoint = self->samplePoints[ptNum];
-		if(samplePoint.size()==0) continue;
+		if(samplePoint.size() < 2) continue;
 
-
+		//For each camera
+		for(std::map<int, std::vector<double> >::iterator it = samplePoint.begin(); it != samplePoint.end(); it++)
+		{
+			//std::cout << ptNum << "," << it->first << "," << it->second[0] << "," << it->second[1] << std::endl;
+		}
 	}
 
 	Py_DECREF(sampleLatLons);
@@ -539,33 +593,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	//Load textures into opengl
 	for(Py_ssize_t i=0; i<numCams; i++)
 	{
-		//Get meta data from python objects
-		PyObject *pyImage = PySequence_GetItem(images, i);
-		if(pyImage==NULL) throw std::runtime_error("pyImage pointer is null");
-		PyObject *metaObj = PySequence_GetItem(metas, i);
-		if(metaObj==NULL) throw std::runtime_error("metaObj pointer is null");
-
-		if(pyImage == Py_None || metaObj == Py_None)
-		{
-			self->textureIds.push_back(0);
-			Py_DECREF(pyImage);
-			Py_DECREF(metaObj);
-			continue;
-		}
-
-		PyObject *widthObj = PyDict_GetItemString(metaObj, "width");
-		if(widthObj==NULL) throw std::runtime_error("widthObj pointer is null");
-		long sourceWidth = PyInt_AsLong(widthObj);
-		PyObject *heightObj = PyDict_GetItemString(metaObj, "height");
-		if(heightObj==NULL) throw std::runtime_error("heightObj pointer is null");
-		long sourceHeight = PyInt_AsLong(heightObj);
-
-		PyObject *formatObj = PyDict_GetItemString(metaObj, "format");
-		std::string sourceFmt = PyString_AsString(formatObj);
-
-		char *imgRaw = PyByteArray_AsString(pyImage);
-		if(imgRaw==NULL) throw std::runtime_error("imgRaw pointer is null");
-
 		glEnable(GL_TEXTURE_2D);
 		if(blend)
 		{
@@ -588,13 +615,13 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		glBindTexture(GL_TEXTURE_2D, texture);
 		if(self->nonPowerTwoTexSupported)
 		{
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, sourceWidth, 
-				sourceHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, imgRaw);
-			self->openglTxWidthLi[i] = sourceWidth;
-			self->openglTxHeightLi[i] = sourceHeight;
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, srcWidthLi[i], 
+				srcHeightLi[i], 0, GL_RGB, GL_UNSIGNED_BYTE, srcImgRawLi[i]);
+			self->openglTxWidthLi[i] = srcWidthLi[i];
+			self->openglTxHeightLi[i] = srcHeightLi[i];
 
 			PrintGlErrors("transfer tex");
-			//std::cout << i << "\t" << sourceWidth << "," << sourceHeight << std::endl;
+			//std::cout << i << "\t" << sourceWidth[i] << "," << srcHeightLi[i] << std::endl;
 		}
 		else
 		{
@@ -602,9 +629,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			unsigned char *openglTex = NULL;
 			unsigned openglTexLen = 0, openglTxWidth = 0, openglTxHeight = 0;
 
-			int texOk = ResizeToPowersOfTwo((unsigned char *)imgRaw, 
-				sourceWidth, sourceHeight, 
-				sourceFmt.c_str(), &openglTex, &openglTexLen,
+			int texOk = ResizeToPowersOfTwo((unsigned char *)srcImgRawLi[i], 
+				srcWidthLi[i], srcHeightLi[i], 
+				srcFmtLi[i].c_str(), &openglTex, &openglTexLen,
 				&openglTxWidth, &openglTxHeight);
 			self->openglTxWidthLi[i] = openglTxWidth;
 			self->openglTxHeightLi[i] = openglTxHeight;
@@ -629,11 +656,15 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		PrintGlErrors("set texture params");
 
 		self->textureIds.push_back(texture);
-
-		Py_DECREF(pyImage);
-		Py_DECREF(metaObj);
-
 	}
+
+	//Free python structures
+	for(unsigned i=0;i < srcPyImage.size(); i++)
+		Py_DECREF(srcPyImage[i]);
+	srcPyImage.clear();
+	for(unsigned i=0;i < srcMetaObj.size(); i++)
+		Py_DECREF(srcMetaObj[i]);
+	srcMetaObj.clear();
 
 	// ***************************************************
 	// Draw images to display lists
