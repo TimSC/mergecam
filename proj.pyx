@@ -90,6 +90,33 @@ class EquirectangularCam(object):
 			out.append(worldPos)
 		return out
 
+	def MultiUnProj(self, ptsPix):
+		out = []
+		for pt in ptsPix:
+			centred = ((pt[0] * 2. / self.imgW) - 1., (pt[1] * 2. / self.imgH) - 1.) #Ranges -1 to 1
+
+			scaled = (centred[0] * self.hFov / 2., centred[1] * self.vFov / 2.)
+			worldPos = (scaled[1] + self.cLon, scaled[0] + self.cLon)
+
+			worldPosl = None
+			centredl = (centred[0] - 2., centred[1])
+			scaledl = (centredl[0] * self.hFov / 2., centredl[1] * self.vFov / 2.)
+			worldPosl = (scaledl[1] + self.cLon, scaledl[0] + self.cLon)
+			if worldPosl[1] < -0.5 * self.hFov or worldPosl[1] >= +0.5 * self.hFov:
+				worldPosl = None
+
+			worldPosr = None
+			centredr = (centred[0] + 2., centred[1])
+			scaledr = (centredr[0] * self.hFov / 2., centredr[1] * self.vFov / 2.)
+			worldPosr = (scaledr[1] + self.cLon, scaledr[0] + self.cLon)
+			if worldPosr[1] < -0.5 * self.hFov or worldPosr[1] >= +0.5 * self.hFov:
+				worldPosr = None
+
+			out.append([worldPos, worldPosl, worldPosr])
+
+		return out
+
+
 	def __repr__(self):
 		return "EquirectangularCam"+str(self.GetParams())
 
