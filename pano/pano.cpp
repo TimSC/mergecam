@@ -171,6 +171,40 @@ double VecAverage(std::vector<double> &vals)
 	return total / (double)(vals.size());
 }
 
+double CompareCameraBrightness(int currentCam, PanoView *self, 
+	std::vector<std::map<int, std::vector<double> > > &sampleColsLi)
+{
+	std::vector<double> currentCamGreyLi;
+	std::vector<double> otherCamGreyLi;
+	for(unsigned ptNum = 0; ptNum < sampleColsLi.size(); ptNum++)
+	{
+		std::map<int, std::vector<double> > &pointCols = sampleColsLi[ptNum];
+		if(pointCols.size() < 2) continue;
+		std::map<int, std::vector<double> >::iterator fit = pointCols.find(currentCam);
+		if(fit == pointCols.end()) continue; //Active camera not present
+		currentCamGreyLi.push_back(VecRgbToGrey(fit->second));		
+
+		//For the other cameras
+		std::vector<double> greyLi;
+		for(std::map<int, std::vector<double> >::iterator it = pointCols.begin(); it != pointCols.end(); it++)
+		{
+			if(it->first == currentCam) continue;
+			double grey = VecRgbToGrey(it->second);
+			greyLi.push_back(grey * self->camBrightnessLi[it->first]);
+		}
+		
+		double avGrey = VecAverage(greyLi);
+		otherCamGreyLi.push_back(avGrey);
+	}
+	if(currentCamGreyLi.size()==0) throw std::runtime_error("No points");
+	if(otherCamGreyLi.size()==0) throw std::runtime_error("No points");
+
+	double camABright = VecAverage(currentCamGreyLi);
+	double otherABright = VecAverage(otherCamGreyLi);
+	double brRatio = camABright / otherABright; //Active brightness over other brightness
+	return brRatio;
+}
+
 //**************************************************************************
 //http://stackoverflow.com/a/236803
 
@@ -644,37 +678,33 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		sampleColsLi.push_back(sampleCols);
 	}
 
-	int currentCam = 0;
-	std::vector<double> currentCamGreyLi;
-	std::vector<double> otherCamGreyLi;
-	for(unsigned ptNum = 0; ptNum < sampleColsLi.size(); ptNum++)
+	//Scale brightness of cameras
+	for(Py_ssize_t i=0; i<numCams; i++)
 	{
-		std::map<int, std::vector<double> > &pointCols = sampleColsLi[ptNum];
-		if(pointCols.size() < 2) continue;
-		std::map<int, std::vector<double> >::iterator fit = pointCols.find(currentCam);
-		if(fit == pointCols.end()) continue; //Active camera not present
-		currentCamGreyLi.push_back(VecRgbToGrey(fit->second));		
-
-		//For the other cameras
-		std::vector<double> greyLi;
-		for(std::map<int, std::vector<double> >::iterator it = pointCols.begin(); it != pointCols.end(); it++)
+		try
 		{
-			if(it->first == currentCam) continue;
-			double grey = VecRgbToGrey(it->second);
-			greyLi.push_back(grey);
+			double brRatio = CompareCameraBrightness(i, self, sampleColsLi);
+			std::cout << i << " brRatio " << brRatio << std::endl;
+			self->camBrightnessLi[i] = 1./brRatio;
 		}
-		
-		double avGrey = VecAverage(greyLi);
-		otherCamGreyLi.push_back(avGrey);
+		catch(std::runtime_error &err)
+		{
+			std::cout << "Error:" << err.what() << std::endl;
+		}
 	}
-	double camABright = VecAverage(currentCamGreyLi);
-	double otherABright = VecAverage(otherCamGreyLi);
-	double brRation = otherABright / camABright;
-	std::cout << camABright << "," << otherABright << "," << brRation << std::endl;
-	if(brRation<1.)
-		self->camBrightnessLi[0] = brRation;
-	else
-		self->camBrightnessLi[1] = 1./brRation;
+
+	//Normalise brightness so max brightness is one
+	double maxBright = 0.;
+	for(Py_ssize_t i=0; i<numCams; i++)
+	{
+		if(self->camBrightnessLi[i] > maxBright)
+			maxBright = self->camBrightnessLi[i];
+	}	
+	for(Py_ssize_t i=0; i<numCams; i++)
+	{
+		self->camBrightnessLi[i] /= maxBright;
+		std::cout << i << " brightness " << self->camBrightnessLi[i] << std::endl;
+	}
 
 	Py_DECREF(sampleLatLons);
 
