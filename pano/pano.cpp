@@ -132,6 +132,30 @@ int FindStringInVector(const char *needle, std::vector<std::string> haystack)
 	return false;
 }
 
+std::vector<float> GetPixFromRawBuff(const unsigned char* buff, unsigned buffLen, long width, long height, 
+	double x, double y, const char *pxFmt)
+{
+	if(strcmp(pxFmt, "RGB24")!=0)
+		throw std::runtime_error("Unsupported pixel format");
+	std::vector<float> out;
+
+	//Nearest neighbour pixel	
+	int rx = (int)(x + 0.5);
+	int ry = (int)(y + 0.5);
+
+	if(rx < 0 || rx >= width || ry < 0 || ry >= height)
+		throw std::runtime_error("Out of image bounds");
+
+	unsigned tupleOffset = rx * 3 + ry * width * 3;
+	if(tupleOffset < 0 || tupleOffset+2 >= buffLen)
+		throw std::runtime_error("Out of image buffer bounds");
+
+	out.push_back(buff[tupleOffset]);
+	out.push_back(buff[tupleOffset+1]);
+	out.push_back(buff[tupleOffset+2]);
+	return out;
+}
+
 //**************************************************************************
 //http://stackoverflow.com/a/236803
 
@@ -403,6 +427,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	// ***************************************************
 
 	std::vector<char *> srcImgRawLi;
+	std::vector<unsigned> srcImgRawLenLi;
 	std::vector<long> srcHeightLi, srcWidthLi;
 	std::vector<std::string> srcFmtLi;
 	std::vector<PyObject *> srcPyImage, srcMetaObj;
@@ -417,6 +442,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		if(pyImage == Py_None || metaObj == Py_None)
 		{
 			srcImgRawLi.push_back(NULL);
+			srcImgRawLenLi.push_back(0);
 			srcHeightLi.push_back(0);
 			srcWidthLi.push_back(0);
 			srcFmtLi.push_back("NULL");
@@ -440,6 +466,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		char *imgRaw = PyByteArray_AsString(pyImage);
 		if(imgRaw==NULL) throw std::runtime_error("imgRaw pointer is null");
 		srcImgRawLi.push_back(imgRaw);
+		srcImgRawLenLi.push_back(PyByteArray_Size(pyImage));
 		srcHeightLi.push_back(sourceHeight);
 		srcWidthLi.push_back(sourceWidth);
 		srcFmtLi.push_back(sourceFmt);
@@ -568,7 +595,23 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		//For each camera
 		for(std::map<int, std::vector<double> >::iterator it = samplePoint.begin(); it != samplePoint.end(); it++)
 		{
-			//std::cout << ptNum << "," << it->first << "," << it->second[0] << "," << it->second[1] << std::endl;
+			int camNum = it->first;
+			double px = it->second[0];
+			double py = it->second[1];
+			std::cout << ptNum << "," << camNum << "," << px << "," << py << std::endl;
+			std::vector<float> pix;
+			try
+			{
+				pix = GetPixFromRawBuff((const unsigned char*)srcImgRawLi[camNum], 
+					srcImgRawLenLi[camNum], srcWidthLi[camNum], 
+					srcHeightLi[camNum], px, py, srcFmtLi[camNum].c_str());
+			}
+			catch(std::runtime_error)
+			{
+				
+			}
+			if (pix.size() >= 3)
+				std::cout << pix[0] << "," << pix[1] << "," << pix[2] << std::endl;
 		}
 	}
 
