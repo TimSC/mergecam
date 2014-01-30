@@ -46,6 +46,7 @@ public:
 	std::vector<int> displayListImgWidth, displayListImgHeight;
 	std::vector<std::map<int, std::vector<double> > > samplePoints;
 	std::vector<double> camBrightnessLi;
+	bool blend, autoBright;
 };
 typedef PanoView_cl PanoView;
 
@@ -343,6 +344,8 @@ static int PanoView_init(PanoView *self, PyObject *args,
 	self->dstXMax = 0.;
 	self->dstYMin = 0.;
 	self->dstYMax = 0.;
+	self->blend = 0;
+	self->autoBright = 1;
 
 	if(PyTuple_Size(args) < 2)
 	{
@@ -443,13 +446,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	PyObject *images = PyTuple_GetItem(args, 0);
 	PyObject *metas = PyTuple_GetItem(args, 1);
-
-	int blend = 1;
-	if(PyTuple_Size(args) >= 3)
-	{
-		PyObject *blendObj = PyTuple_GetItem(args, 2);
-		if(blendObj == Py_False) blend = 0;
-	}
 	
 	Py_ssize_t numSources = PySequence_Size(images);
 	Py_ssize_t numMetas = PySequence_Size(metas);
@@ -529,48 +525,22 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	// Automatic Exposure Control
 	// ***************************************************
 
-	//Find points that are common in images
-	int nsamp = 50;
-	PyObject *samplePxPos = PyList_New(0);
-	for(int x = 0; x < nsamp; x++)
-	for(int y = 0; y < nsamp; y++)
-	{
-		double px = (double)x * (double)self->outImgW / (double)nsamp;
-		double py = (double)y * (double)self->outImgH / (double)nsamp;
-		PyObject *tupleTemp = PyTuple_New(2);
-		PyTuple_SetItem(tupleTemp, 0, PyFloat_FromDouble(px));
-		PyTuple_SetItem(tupleTemp, 1, PyFloat_FromDouble(py));
-		PyList_Append(samplePxPos, tupleTemp);
-		Py_DECREF(tupleTemp);
-		//std::cout << x << "," << y << "," << px << "," << py << std::endl;
-	}
-	Py_ssize_t numSamplePoints = PySequence_Size(samplePxPos);
-
-	//TODO what about wrap around effects in this case of sampling?
-
-	//Transform sample points to lat lon
-	PyObject *pxToLatLonUnProj = PyObject_GetAttrString(self->outProjection, "UnProj");
-	if(pxToLatLonUnProj==NULL)
-		throw std::runtime_error("UnProj method not defined");
-	
-	PyObject *unprojArgs = PyTuple_New(1);
-	PyTuple_SetItem(unprojArgs, 0, samplePxPos);
-	PyObject *sampleLatLons = PyObject_Call(pxToLatLonUnProj, unprojArgs, NULL);
-	
-	Py_DECREF(unprojArgs);
-	Py_DECREF(pxToLatLonUnProj);
-	Py_DECREF(samplePxPos);
-
 	//PyObject_Print(sampleLatLons,stdout,Py_PRINT_RAW); printf("\n");
+	
+
+
+	if(self->autoBright)
+	{
+	int nsamp = 50;
 
 	//Check the sample structure is correct size, if not reinitialise it
 	int regenSampleMapping = 0;
-	if(self->samplePoints.size() != numSamplePoints)
+	if(self->samplePoints.size() != nsamp*nsamp)
 	{
 		self->samplePoints.clear();
 		regenSampleMapping = 1;
 	}
-	while(self->samplePoints.size() < numSamplePoints)
+	while(self->samplePoints.size() < nsamp*nsamp)
 	{
 		std::map<int, std::vector<double> > tmp;
 		self->samplePoints.push_back(tmp);
@@ -578,63 +548,98 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	}
 
 	//Iterate over cameras and find where the sample points are in the source image
-	if(regenSampleMapping) 
-	for(Py_ssize_t i=0; i<numCams; i++)
+	if(regenSampleMapping)
 	{
-		//Get camera projection function
-		PyObject *camDataTup = PySequence_GetItem(addedPhotosItems, i);
-		PyObject *camIdObj = PyTuple_GetItem(camDataTup, 0);
-		long camId = PyLong_AsLong(camIdObj);
-		PyObject *camData = PyTuple_GetItem(camDataTup, 1);
-
-		//Transform world lat lon to source image
-		PyObject *camProj = PyObject_GetAttrString(camData, "Proj");
-		if(camProj==NULL)
-			throw std::runtime_error("Proj method not defined");
-
-		PyObject *unprojArgs = PyTuple_New(1);
-		PyTuple_SetItem(unprojArgs, 0, sampleLatLons);
-		Py_INCREF(sampleLatLons);
-		
-		PyObject *sourceSamplePos = PyObject_Call(camProj, unprojArgs, NULL);
-		
-		Py_DECREF(unprojArgs);
-		Py_DECREF(camProj);
-
-		Py_ssize_t numRetPoints = PySequence_Size(sourceSamplePos);
-
-		//std::cout << "Cam sample points: " << i << "," << numRetPoints << std::endl;
-		//std::cout.flush();
-
-		for(Py_ssize_t ptNum = 0; ptNum < numRetPoints; ptNum++)
+		//Find points that are common in images
+		PyObject *samplePxPos = PyList_New(0);
+		for(int x = 0; x < nsamp; x++)
+		for(int y = 0; y < nsamp; y++)
 		{
-			PyObject *retPtTup = PySequence_GetItem(sourceSamplePos, ptNum);
-			PyObject *xObj = PySequence_GetItem(retPtTup, 0);
-			PyObject *yObj = PySequence_GetItem(retPtTup, 1);
-			PyObject *ptTest = PySequence_GetItem(sampleLatLons, ptNum);
+			double px = (double)x * (double)self->outImgW / (double)nsamp;
+			double py = (double)y * (double)self->outImgH / (double)nsamp;
+			PyObject *tupleTemp = PyTuple_New(2);
+			PyTuple_SetItem(tupleTemp, 0, PyFloat_FromDouble(px));
+			PyTuple_SetItem(tupleTemp, 1, PyFloat_FromDouble(py));
+			PyList_Append(samplePxPos, tupleTemp);
+			Py_DECREF(tupleTemp);
+			//std::cout << x << "," << y << "," << px << "," << py << std::endl;
+		}
+		Py_ssize_t numSamplePoints = PySequence_Size(samplePxPos);
 
-			if(xObj != Py_None)
+		//TODO what about wrap around effects in this case of sampling?
+
+		//Transform sample points to lat lon
+		PyObject *pxToLatLonUnProj = PyObject_GetAttrString(self->outProjection, "UnProj");
+		if(pxToLatLonUnProj==NULL)
+			throw std::runtime_error("UnProj method not defined");
+	
+		PyObject *unprojArgs = PyTuple_New(1);
+		PyTuple_SetItem(unprojArgs, 0, samplePxPos);
+		PyObject *sampleLatLons = PyObject_Call(pxToLatLonUnProj, unprojArgs, NULL);
+	
+		Py_DECREF(unprojArgs);
+		Py_DECREF(pxToLatLonUnProj);
+		Py_DECREF(samplePxPos);
+
+		for(Py_ssize_t i=0; i<numCams; i++)
+		{
+			//Get camera projection function
+			PyObject *camDataTup = PySequence_GetItem(addedPhotosItems, i);
+			PyObject *camIdObj = PyTuple_GetItem(camDataTup, 0);
+			long camId = PyLong_AsLong(camIdObj);
+			PyObject *camData = PyTuple_GetItem(camDataTup, 1);
+
+			//Transform world lat lon to source image
+			PyObject *camProj = PyObject_GetAttrString(camData, "Proj");
+			if(camProj==NULL)
+				throw std::runtime_error("Proj method not defined");
+
+			PyObject *unprojArgs = PyTuple_New(1);
+			PyTuple_SetItem(unprojArgs, 0, sampleLatLons);
+			Py_INCREF(sampleLatLons);
+		
+			PyObject *sourceSamplePos = PyObject_Call(camProj, unprojArgs, NULL);
+		
+			Py_DECREF(unprojArgs);
+			Py_DECREF(camProj);
+
+			Py_ssize_t numRetPoints = PySequence_Size(sourceSamplePos);
+
+			//std::cout << "Cam sample points: " << i << "," << numRetPoints << std::endl;
+			//std::cout.flush();
+
+			for(Py_ssize_t ptNum = 0; ptNum < numRetPoints; ptNum++)
 			{
-				std::map<int, std::vector<double> > &samplePoint = self->samplePoints[ptNum];
-				std::vector<double> pt;
-				pt.push_back(PyFloat_AsDouble(xObj));
-				pt.push_back(PyFloat_AsDouble(yObj));
-				samplePoint[i] = pt;
+				PyObject *retPtTup = PySequence_GetItem(sourceSamplePos, ptNum);
+				PyObject *xObj = PySequence_GetItem(retPtTup, 0);
+				PyObject *yObj = PySequence_GetItem(retPtTup, 1);
+				PyObject *ptTest = PySequence_GetItem(sampleLatLons, ptNum);
 
-				//PyObject_Print(retPtTup,stdout,Py_PRINT_RAW);
-				//PyObject_Print(ptTest,stdout,Py_PRINT_RAW); printf("\n");
+				if(xObj != Py_None)
+				{
+					std::map<int, std::vector<double> > &samplePoint = self->samplePoints[ptNum];
+					std::vector<double> pt;
+					pt.push_back(PyFloat_AsDouble(xObj));
+					pt.push_back(PyFloat_AsDouble(yObj));
+					samplePoint[i] = pt;
+
+					//PyObject_Print(retPtTup,stdout,Py_PRINT_RAW);
+					//PyObject_Print(ptTest,stdout,Py_PRINT_RAW); printf("\n");
+				}
+
+				Py_DECREF(xObj);
+				Py_DECREF(yObj);
+				Py_DECREF(retPtTup);
+				Py_DECREF(ptTest);
 			}
 
-			Py_DECREF(xObj);
-			Py_DECREF(yObj);
-			Py_DECREF(retPtTup);
-			Py_DECREF(ptTest);
+			//PyObject_Print(sourceSamplePos,stdout,Py_PRINT_RAW); printf("\n");
+
+			Py_DECREF(sourceSamplePos);
+			Py_DECREF(camDataTup);
 		}
 
-		//PyObject_Print(sourceSamplePos,stdout,Py_PRINT_RAW); printf("\n");
-
-		Py_DECREF(sourceSamplePos);
-		Py_DECREF(camDataTup);
+		Py_DECREF(sampleLatLons);
 	}
 
 	//For each sample point in auto exposure calc, store colour
@@ -684,12 +689,12 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		try
 		{
 			double brRatio = CompareCameraBrightness(i, self, sampleColsLi);
-			std::cout << i << " brRatio " << brRatio << std::endl;
+			//std::cout << i << " brRatio " << brRatio << std::endl;
 			self->camBrightnessLi[i] = 1./brRatio;
 		}
 		catch(std::runtime_error &err)
 		{
-			std::cout << "Error:" << err.what() << std::endl;
+			//std::cout << "Error:" << err.what() << std::endl;
 		}
 	}
 
@@ -703,10 +708,20 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	for(Py_ssize_t i=0; i<numCams; i++)
 	{
 		self->camBrightnessLi[i] /= maxBright;
-		std::cout << i << " brightness " << self->camBrightnessLi[i] << std::endl;
+		//std::cout << i << " brightness " << self->camBrightnessLi[i] << std::endl;
 	}
+	}
+	else
+	{
+		//Auto brightness is disabled
+		self->samplePoints.clear();
 
-	Py_DECREF(sampleLatLons);
+		for(Py_ssize_t i=0; i<numCams; i++)
+		{	
+			self->camBrightnessLi[i] = 1.;
+		}
+	}
+	
 
 	//Create output image buffer
 	unsigned pxOutSize = 3 * self->outImgH * self->outImgW;
@@ -728,7 +743,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	for(Py_ssize_t i=0; i<numCams; i++)
 	{
 		glEnable(GL_TEXTURE_2D);
-		if(blend)
+		if(self->blend)
 		{
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_DST_ALPHA);
@@ -1157,6 +1172,37 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	return out;
 }
 
+static PyObject *PanoView_SetSmoothBlending(PanoView *self, PyObject *args)
+{
+	if(PyTuple_Size(args) < 1)
+	{
+		PyErr_Format(PyExc_RuntimeError, "One argument required.");
+ 		Py_RETURN_NONE;
+	}
+
+	self->blend = 1;
+	PyObject *blendObj = PyTuple_GetItem(args, 0);
+	if(blendObj == Py_False) self->blend = 0;
+	
+	Py_RETURN_NONE;
+}
+
+static PyObject *PanoView_SetAutoBright(PanoView *self, PyObject *args)
+{
+	if(PyTuple_Size(args) < 1)
+	{
+		PyErr_Format(PyExc_RuntimeError, "One argument required.");
+ 		Py_RETURN_NONE;
+	}
+
+	self->autoBright = 1;
+	PyObject *blendObj = PyTuple_GetItem(args, 0);
+	if(blendObj == Py_False) self->autoBright = 0;
+	
+	Py_RETURN_NONE;
+}
+
+
 // *********************************************************************
 
 static PyMethodDef PanoView_methods[] = {
@@ -1166,7 +1212,12 @@ static PyMethodDef PanoView_methods[] = {
 	{"SetProjection", (PyCFunction)PanoView_SetProjection, METH_VARARGS,
 			 "SetProjection(outProjection)\n\n"
 			 "Update the projection used for output"},
-
+	{"SetSmoothBlending", (PyCFunction)PanoView_SetSmoothBlending, METH_VARARGS,
+			 "SetSmoothBlending(enabled)\n\n"
+			 "Enable or disable smooth blending"},
+	{"SetAutoBright", (PyCFunction)PanoView_SetAutoBright, METH_VARARGS,
+			 "SetAutoBright(enabled)\n\n"
+			 "Enable or disable auto brightness"},
 	{NULL}
 };
 

@@ -190,7 +190,10 @@ class GuiPanorama(QtGui.QFrame):
 			if 1:
 				#print len(self.currentFrame), self.currentMeta
 				startTime = time.time()
-				visPixOut, visMetaOut = self.visObj.Vis(self.currentFrame, self.currentMeta, self.blend)
+				
+				self.visObj.SetSmoothBlending(self.blend)
+				self.visObj.SetAutoBright(self.autoBright)
+				visPixOut, visMetaOut = self.visObj.Vis(self.currentFrame, self.currentMeta)
 				print "Generated panorama in",time.time()-startTime,"sec"
 				#self.visObj.Vis(self.currentFrame, self.currentMeta)
 			if 1:
