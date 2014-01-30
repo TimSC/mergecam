@@ -70,6 +70,7 @@ class GuiPanorama(QtGui.QFrame):
 		self.fullVersion = config.FULL_VERSION
 		self.watermark = None
 		self.blend = False
+		self.autoBright = True
 		self.outw = 640
 		self.outh = 480
 		self.cLat = 0.
@@ -221,10 +222,12 @@ class GuiPanorama(QtGui.QFrame):
 		try:
 			dlg = ConfigDialog(self, config.FULL_VERSION)
 			dlg.outputSizeChanged.connect(self.OutputChangeSizePressed)
-			dlg.blendCheckBox.setChecked(self.blend)
+			dlg.SetSmoothBlend(self.blend)
+			dlg.SetAutoBright(self.autoBright)
 			dlg.SetOutputSize(self.outw, self.outh)
 			dlg.exec_()
-			self.blend = dlg.blendCheckBox.isChecked()
+			self.blend = dlg.GetSmoothBlend()
+			self.autoBright = dlg.GetAutoBright()
 			self.outw, self.outh = dlg.GetOutputSize()
 		except Exception as err:
 			print err
@@ -326,6 +329,15 @@ class ConfigDialog(QtGui.QDialog):
 		self.blendLabel = QtGui.QLabel("Smooth Blend")
 		self.blendLayout.addWidget(self.blendLabel)
 
+		self.autoBrightLayout = QtGui.QHBoxLayout()
+		self.mainLayout.addLayout(self.autoBrightLayout)
+
+		self.autoBrightCheckBox = QtGui.QCheckBox()
+		self.autoBrightLayout.addWidget(self.autoBrightCheckBox)
+	
+		self.autoBrightLabel = QtGui.QLabel("Automatically Match Brightness")
+		self.autoBrightLayout.addWidget(self.autoBrightLabel)
+
 		self.closeButton = QtGui.QPushButton("Close")
 		self.mainLayout.addWidget(self.closeButton)
 		self.closeButton.pressed.connect(self.close)
@@ -350,3 +362,14 @@ class ConfigDialog(QtGui.QDialog):
 	def PurchasePressed(self):
 		QtGui.QDesktopServices.openUrl(QtCore.QUrl(config.REGISTER_URL))
 
+	def SetSmoothBlend(self, val):
+		self.blendCheckBox.setChecked(val)
+
+	def GetSmoothBlend(self):
+		return self.blendCheckBox.isChecked()
+
+	def SetAutoBright(self, val):
+		self.autoBrightCheckBox.setChecked(val)
+
+	def GetAutoBright(self):
+		return self.autoBrightCheckBox.isChecked()
