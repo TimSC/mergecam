@@ -443,7 +443,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	}
 
 	//double startTime = double(clock()) / CLOCKS_PER_SEC;
-
 	PyObject *images = PyTuple_GetItem(args, 0);
 	PyObject *metas = PyTuple_GetItem(args, 1);
 	
@@ -525,10 +524,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	// Automatic Exposure Control
 	// ***************************************************
 
-	//PyObject_Print(sampleLatLons,stdout,Py_PRINT_RAW); printf("\n");
-	
-
-
 	if(self->autoBright)
 	{
 	int nsamp = 50;
@@ -576,7 +571,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		PyObject *unprojArgs = PyTuple_New(1);
 		PyTuple_SetItem(unprojArgs, 0, samplePxPos);
 		PyObject *sampleLatLons = PyObject_Call(pxToLatLonUnProj, unprojArgs, NULL);
-	
+		//PyObject_Print(sampleLatLons,stdout,Py_PRINT_RAW); printf("\n");
+
 		Py_DECREF(unprojArgs);
 		Py_DECREF(pxToLatLonUnProj);
 		Py_DECREF(samplePxPos);
@@ -722,7 +718,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		}
 	}
 	
-
 	//Create output image buffer
 	unsigned pxOutSize = 3 * self->outImgH * self->outImgW;
 	PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);

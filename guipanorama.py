@@ -1,5 +1,5 @@
 from PySide import QtGui, QtCore
-import time, vidoutput, vidwriter, videolive, config, math, copy
+import time, vidoutput, vidwriter, videolive, config, math, copy, sys
 import scipy.misc as misc
 import numpy as np
 
@@ -190,6 +190,8 @@ class GuiPanorama(QtGui.QFrame):
 			if 1:
 				#print len(self.currentFrame), self.currentMeta
 				startTime = time.time()
+
+				#print sys.gettotalrefcount()
 				
 				self.visObj.SetSmoothBlending(self.blend)
 				self.visObj.SetAutoBright(self.autoBright)
