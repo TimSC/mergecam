@@ -781,6 +781,16 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	// Copy textures to OpenGL
 	// ***************************************************
 
+	while(self->textureIds.size() < numCams)
+	{
+		//Get texture handle
+		GLuint texture;
+		glGenTextures(1, &texture);
+		PrintGlErrors("allocate a texture");
+		std::cout << "allocate texture " << texture << std::endl;
+		self->textureIds.push_back(texture);
+	}
+
 	//Load textures into opengl
 	for(Py_ssize_t i=0; i<numCams; i++)
 	{
@@ -798,12 +808,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		}
 		//glBlendEquation(GL_FUNC_ADD);
 
-		//Get texture handle
-		GLuint texture;
-		glGenTextures(1, &texture);
-		PrintGlErrors("allocate a texture");
-
-		glBindTexture(GL_TEXTURE_2D, texture);
+		glBindTexture(GL_TEXTURE_2D, self->textureIds[i]);
 		if(self->nonPowerTwoTexSupported)
 		{
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self->srcWidthLi[i], 
@@ -846,7 +851,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		PrintGlErrors("set texture params");
 
-		self->textureIds.push_back(texture);
 	}
 
 	// ***************************************************
@@ -1141,14 +1145,14 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	}
 	PrintGlErrors("draw display list");
 
-	for(int i=0;i<self->textureIds.size(); i++)
+	/*for(int i=0;i<self->textureIds.size(); i++)
 	{
 		//Delete opengl texture
 		if(self->textureIds[i] >= 0)
 			glDeleteTextures(1, &self->textureIds[i]);
 	}
 	self->textureIds.clear();
-	PrintGlErrors("clear old textures");
+	PrintGlErrors("clear old textures");*/
 
 	glReadBuffer(GL_BACK);
 	glReadPixels(0,0,self->outImgW,self->outImgH,GL_RGB,GL_UNSIGNED_BYTE,pxOutRaw);

@@ -195,8 +195,8 @@ class GuiPanorama(QtGui.QFrame):
 				
 				self.visObj.SetSmoothBlending(self.blend)
 				self.visObj.SetAutoBright(self.autoBright)
-                        if 1:
-                                self.visObj.LoadTextures(self.currentFrame, self.currentMeta)
+			if 1:
+				self.visObj.LoadTextures(self.currentFrame, self.currentMeta)
 				visPixOut, visMetaOut = self.visObj.Vis()
 				self.visObj.ClearTextures()
 				print "Generated panorama in",time.time()-startTime,"sec"
