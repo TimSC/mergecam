@@ -643,9 +643,8 @@ static PyObject *PanoView_CopyTexturesToOpenGL(PanoView *self)
 	Py_RETURN_NONE;
 }
 
-static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
+static PyObject *PanoView_CalcAutoExposure(PanoView *self)
 {
-
 	//Prepare to iterate over cameras in arrangement
 	PyObject *addedPhotos = PyObject_GetAttrString(self->cameraArrangement, "addedPhotos");
 	if(addedPhotos==NULL) throw std::runtime_error("addedPhotos pointer is null");
@@ -856,7 +855,25 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			self->camBrightnessLi[i] = 1.;
 		}
 	}
-	
+
+	Py_DECREF(addedPhotos);
+	Py_DECREF(addedPhotosItems);
+
+	Py_RETURN_NONE;
+}
+
+static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
+{
+	//Prepare to iterate over cameras in arrangement
+	PyObject *addedPhotos = PyObject_GetAttrString(self->cameraArrangement, "addedPhotos");
+	if(addedPhotos==NULL) throw std::runtime_error("addedPhotos pointer is null");
+	PyObject *addedPhotosItems = PyDict_Items(addedPhotos);
+	if(addedPhotosItems==NULL) throw std::runtime_error("addedPhotosItems pointer is null");
+	Py_ssize_t numCams = PySequence_Size(addedPhotosItems);
+
+	if(self->camBrightnessLi.size() > numCams) self->camBrightnessLi.clear();
+	while(self->camBrightnessLi.size() < numCams) self->camBrightnessLi.push_back(1.);
+
 	//Create output image buffer
 	unsigned pxOutSize = 3 * self->outImgH * self->outImgW;
 	PyObject *pxOut = PyByteArray_FromStringAndSize("", 0);
@@ -1257,7 +1274,11 @@ static PyMethodDef PanoView_methods[] = {
 	{"CopyTexturesToOpenGL", (PyCFunction)PanoView_CopyTexturesToOpenGL, METH_NOARGS,
 			 "CopyTexturesToOpenGL()\n\n"
 			 "Copy textures to opengl."},
+	{"CalcAutoExposure", (PyCFunction)PanoView_CalcAutoExposure, METH_NOARGS,
+			 "CalcAutoExposure()\n\n"
+			 "Calculate brightness corrections."},
 			 
+
 	{NULL}
 };
 

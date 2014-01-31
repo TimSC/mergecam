@@ -198,6 +198,7 @@ class GuiPanorama(QtGui.QFrame):
 			if 1:
 				self.visObj.LoadTextures(self.currentFrame, self.currentMeta)
 				self.visObj.CopyTexturesToOpenGL()
+				self.visObj.CalcAutoExposure()
 				visPixOut, visMetaOut = self.visObj.Vis()
 				self.visObj.ClearTextures()
 				print "Generated panorama in",time.time()-startTime,"sec"
