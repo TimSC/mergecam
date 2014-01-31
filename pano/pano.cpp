@@ -442,6 +442,12 @@ static PyObject *PanoView_SetProjection(PanoView *self, PyObject *args,
 
 static PyObject *PanoView_ClearTextures(PanoView *self)
 {
+	self->srcImgRawLi.clear();
+	self->srcImgRawLenLi.clear();
+	self->srcHeightLi.clear();
+	self->srcWidthLi.clear();
+	self->srcFmtLi.clear();
+
 	//Free python structures
 	for(unsigned i=0;i < self->srcPyImage.size(); i++)
 		Py_DECREF(self->srcPyImage[i]);
@@ -800,11 +806,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		glBindTexture(GL_TEXTURE_2D, texture);
 		if(self->nonPowerTwoTexSupported)
 		{
-			char *rawImg = PyByteArray_AsString(self->srcPyImage[i]);
-			unsigned rawImgLen = PyByteArray_Size(self->srcPyImage[i]);
-
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self->srcWidthLi[i], 
-				self->srcHeightLi[i], 0, GL_RGB, GL_UNSIGNED_BYTE, rawImg);
+				self->srcHeightLi[i], 0, GL_RGB, GL_UNSIGNED_BYTE, self->srcImgRawLi[i]);
 			self->openglTxWidthLi[i] = self->srcWidthLi[i];
 			self->openglTxHeightLi[i] = self->srcHeightLi[i];
 
