@@ -526,7 +526,9 @@ static PyObject *PanoView_LoadTextures(PanoView *self, PyObject *args)
 		self->srcHeightLi.push_back(sourceHeight);
 		self->srcWidthLi.push_back(sourceWidth);
 		self->srcFmtLi.push_back(sourceFmt);
+		Py_INCREF(metaObj);
 		self->srcPyImage.push_back(pyImage);
+		Py_INCREF(pyImage);
 		self->srcMetaObj.push_back(metaObj);
 
 		Py_DECREF(pyImage);
@@ -693,8 +695,11 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			std::vector<double> pix;
 			try
 			{
-				pix = GetPixFromRawBuff((const unsigned char*)self->srcImgRawLi[camNum], 
-					self->srcImgRawLenLi[camNum], self->srcWidthLi[camNum], 
+				char *rawImg = PyByteArray_AsString(self->srcPyImage[camNum]);
+				unsigned rawImgLen = PyByteArray_Size(self->srcPyImage[camNum]);
+
+				pix = GetPixFromRawBuff((const unsigned char*)rawImg, 
+					rawImgLen, self->srcWidthLi[camNum], 
 					self->srcHeightLi[camNum], px, py, self->srcFmtLi[camNum].c_str());
 			}
 			catch(std::runtime_error)
@@ -795,8 +800,11 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		glBindTexture(GL_TEXTURE_2D, texture);
 		if(self->nonPowerTwoTexSupported)
 		{
+			char *rawImg = PyByteArray_AsString(self->srcPyImage[i]);
+			unsigned rawImgLen = PyByteArray_Size(self->srcPyImage[i]);
+
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self->srcWidthLi[i], 
-				self->srcHeightLi[i], 0, GL_RGB, GL_UNSIGNED_BYTE, self->srcImgRawLi[i]);
+				self->srcHeightLi[i], 0, GL_RGB, GL_UNSIGNED_BYTE, rawImg);
 			self->openglTxWidthLi[i] = self->srcWidthLi[i];
 			self->openglTxHeightLi[i] = self->srcHeightLi[i];
 
