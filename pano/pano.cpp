@@ -547,9 +547,8 @@ static PyObject *PanoView_LoadTextures(PanoView *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
-static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
+static PyObject *PanoView_CopyTexturesToOpenGL(PanoView *self)
 {
-
 	//Prepare to iterate over cameras in arrangement
 	PyObject *addedPhotos = PyObject_GetAttrString(self->cameraArrangement, "addedPhotos");
 	if(addedPhotos==NULL) throw std::runtime_error("addedPhotos pointer is null");
@@ -561,6 +560,99 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	while(self->openglTxWidthLi.size() < numCams) self->openglTxWidthLi.push_back(0);
 	if(self->openglTxHeightLi.size() > numCams) self->openglTxHeightLi.clear();
 	while(self->openglTxHeightLi.size() < numCams) self->openglTxHeightLi.push_back(0);
+
+	// ***************************************************
+	// Copy textures to OpenGL
+	// ***************************************************
+
+	while(self->textureIds.size() < numCams)
+	{
+		//Get texture handle
+		GLuint texture;
+		glGenTextures(1, &texture);
+		PrintGlErrors("allocate a texture");
+		std::cout << "allocate texture " << texture << std::endl;
+		self->textureIds.push_back(texture);
+	}
+
+	//Load textures into opengl
+	for(Py_ssize_t i=0; i<numCams; i++)
+	{
+		glEnable(GL_TEXTURE_2D);
+		if(self->blend)
+		{
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_DST_ALPHA);
+			PrintGlErrors("set blend mode");
+		}
+		else
+		{
+			glDisable(GL_BLEND);
+			PrintGlErrors("disable blending");
+		}
+		//glBlendEquation(GL_FUNC_ADD);
+
+		glBindTexture(GL_TEXTURE_2D, self->textureIds[i]);
+		if(self->nonPowerTwoTexSupported)
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self->srcWidthLi[i], 
+				self->srcHeightLi[i], 0, GL_RGB, GL_UNSIGNED_BYTE, self->srcImgRawLi[i]);
+			self->openglTxWidthLi[i] = self->srcWidthLi[i];
+			self->openglTxHeightLi[i] = self->srcHeightLi[i];
+
+			PrintGlErrors("transfer tex");
+			//std::cout << i << "\t" << sourceWidth[i] << "," << srcHeightLi[i] << std::endl;
+		}
+		else
+		{
+			//Convert to powers of two shape
+			unsigned char *openglTex = NULL;
+			unsigned openglTexLen = 0, openglTxWidth = 0, openglTxHeight = 0;
+
+			int texOk = ResizeToPowersOfTwo((unsigned char *)self->srcImgRawLi[i], 
+				self->srcWidthLi[i], self->srcHeightLi[i], 
+				self->srcFmtLi[i].c_str(), &openglTex, &openglTexLen,
+				&openglTxWidth, &openglTxHeight);
+			self->openglTxWidthLi[i] = openglTxWidth;
+			self->openglTxHeightLi[i] = openglTxHeight;
+
+			if(openglTex!=NULL)
+			{
+				if(texOk)
+				{
+					//Load texture into opengl
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, openglTxWidth, 
+						openglTxHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, openglTex);
+
+					PrintGlErrors("transfer tex2");
+				}
+				delete [] openglTex;
+				openglTex = NULL;
+			}
+		}
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		PrintGlErrors("set texture params");
+
+	}
+
+	Py_DECREF(addedPhotos);
+	Py_DECREF(addedPhotosItems);
+
+	Py_RETURN_NONE;
+}
+
+static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
+{
+
+	//Prepare to iterate over cameras in arrangement
+	PyObject *addedPhotos = PyObject_GetAttrString(self->cameraArrangement, "addedPhotos");
+	if(addedPhotos==NULL) throw std::runtime_error("addedPhotos pointer is null");
+	PyObject *addedPhotosItems = PyDict_Items(addedPhotos);
+	if(addedPhotosItems==NULL) throw std::runtime_error("addedPhotosItems pointer is null");
+	Py_ssize_t numCams = PySequence_Size(addedPhotosItems);
+
 	if(self->camBrightnessLi.size() > numCams) self->camBrightnessLi.clear();
 	while(self->camBrightnessLi.size() < numCams) self->camBrightnessLi.push_back(1.);
 
@@ -776,82 +868,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	PrintGlErrors("clear colour buff");
-
-	// ***************************************************
-	// Copy textures to OpenGL
-	// ***************************************************
-
-	while(self->textureIds.size() < numCams)
-	{
-		//Get texture handle
-		GLuint texture;
-		glGenTextures(1, &texture);
-		PrintGlErrors("allocate a texture");
-		std::cout << "allocate texture " << texture << std::endl;
-		self->textureIds.push_back(texture);
-	}
-
-	//Load textures into opengl
-	for(Py_ssize_t i=0; i<numCams; i++)
-	{
-		glEnable(GL_TEXTURE_2D);
-		if(self->blend)
-		{
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_DST_ALPHA);
-			PrintGlErrors("set blend mode");
-		}
-		else
-		{
-			glDisable(GL_BLEND);
-			PrintGlErrors("disable blending");
-		}
-		//glBlendEquation(GL_FUNC_ADD);
-
-		glBindTexture(GL_TEXTURE_2D, self->textureIds[i]);
-		if(self->nonPowerTwoTexSupported)
-		{
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self->srcWidthLi[i], 
-				self->srcHeightLi[i], 0, GL_RGB, GL_UNSIGNED_BYTE, self->srcImgRawLi[i]);
-			self->openglTxWidthLi[i] = self->srcWidthLi[i];
-			self->openglTxHeightLi[i] = self->srcHeightLi[i];
-
-			PrintGlErrors("transfer tex");
-			//std::cout << i << "\t" << sourceWidth[i] << "," << srcHeightLi[i] << std::endl;
-		}
-		else
-		{
-			//Convert to powers of two shape
-			unsigned char *openglTex = NULL;
-			unsigned openglTexLen = 0, openglTxWidth = 0, openglTxHeight = 0;
-
-			int texOk = ResizeToPowersOfTwo((unsigned char *)self->srcImgRawLi[i], 
-				self->srcWidthLi[i], self->srcHeightLi[i], 
-				self->srcFmtLi[i].c_str(), &openglTex, &openglTexLen,
-				&openglTxWidth, &openglTxHeight);
-			self->openglTxWidthLi[i] = openglTxWidth;
-			self->openglTxHeightLi[i] = openglTxHeight;
-
-			if(openglTex!=NULL)
-			{
-				if(texOk)
-				{
-					//Load texture into opengl
-					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, openglTxWidth, 
-						openglTxHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, openglTex);
-
-					PrintGlErrors("transfer tex2");
-				}
-				delete [] openglTex;
-				openglTex = NULL;
-			}
-		}
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		PrintGlErrors("set texture params");
-
-	}
 
 	// ***************************************************
 	// Draw images to display lists
@@ -1238,6 +1254,9 @@ static PyMethodDef PanoView_methods[] = {
 	{"ClearTextures", (PyCFunction)PanoView_ClearTextures, METH_NOARGS,
 			 "ClearTextures()\n\n"
 			 "Clear stored textures."},
+	{"CopyTexturesToOpenGL", (PyCFunction)PanoView_CopyTexturesToOpenGL, METH_NOARGS,
+			 "CopyTexturesToOpenGL()\n\n"
+			 "Copy textures to opengl."},
 			 
 	{NULL}
 };
