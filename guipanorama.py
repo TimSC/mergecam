@@ -187,7 +187,7 @@ class GuiPanorama(QtGui.QFrame):
 					print img.shape
 					misc.imsave("test{0}.png".format(i), img)
 
-			if 0:
+			if 1:
 				#print len(self.currentFrame), self.currentMeta
 				startTime = time.time()
 
@@ -195,10 +195,13 @@ class GuiPanorama(QtGui.QFrame):
 				
 				self.visObj.SetSmoothBlending(self.blend)
 				self.visObj.SetAutoBright(self.autoBright)
-				visPixOut, visMetaOut = self.visObj.Vis(self.currentFrame, self.currentMeta)
+                        if 1:
+                                self.visObj.LoadTextures(self.currentFrame, self.currentMeta)
+				visPixOut, visMetaOut = self.visObj.Vis()
+				self.visObj.ClearTextures()
 				print "Generated panorama in",time.time()-startTime,"sec"
 				#self.visObj.Vis(self.currentFrame, self.currentMeta)
-			if 0:
+			if 1:
 				#visPixOut = bytearray([128 for i in range(800 * 600 * 3)])
 				#visMetaOut = {"height": 600, "width": 800, "format": "RGB24"}
 					

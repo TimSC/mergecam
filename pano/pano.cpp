@@ -47,6 +47,13 @@ public:
 	std::vector<std::map<int, std::vector<double> > > samplePoints;
 	std::vector<double> camBrightnessLi;
 	bool blend, autoBright;
+
+	std::vector<char *> srcImgRawLi;
+	std::vector<unsigned> srcImgRawLenLi;
+	std::vector<long> srcHeightLi, srcWidthLi;
+	std::vector<std::string> srcFmtLi;
+	std::vector<PyObject *> srcPyImage, srcMetaObj;
+
 };
 typedef PanoView_cl PanoView;
 
@@ -433,13 +440,26 @@ static PyObject *PanoView_SetProjection(PanoView *self, PyObject *args,
 	Py_RETURN_NONE;
 }
 
-static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
+static PyObject *PanoView_ClearTextures(PanoView *self)
+{
+	//Free python structures
+	for(unsigned i=0;i < self->srcPyImage.size(); i++)
+		Py_DECREF(self->srcPyImage[i]);
+	self->srcPyImage.clear();
+	for(unsigned i=0;i < self->srcMetaObj.size(); i++)
+		Py_DECREF(self->srcMetaObj[i]);
+	self->srcMetaObj.clear();
+
+	Py_RETURN_NONE;
+}
+
+static PyObject *PanoView_LoadTextures(PanoView *self, PyObject *args)
 {
 
 	if(PyTuple_Size(args) < 2)
 	{
 		PyErr_Format(PyExc_RuntimeError, "Two arguments required.");
- 		Py_RETURN_NONE;
+ 		return NULL;
 	}
 
 	//double startTime = double(clock()) / CLOCKS_PER_SEC;
@@ -461,22 +481,12 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	if(addedPhotosItems==NULL) throw std::runtime_error("addedPhotosItems pointer is null");
 	Py_ssize_t numCams = PySequence_Size(addedPhotosItems);
 
-	if(self->openglTxWidthLi.size() > numCams) self->openglTxWidthLi.clear();
-	while(self->openglTxWidthLi.size() < numCams) self->openglTxWidthLi.push_back(0);
-	if(self->openglTxHeightLi.size() > numCams) self->openglTxHeightLi.clear();
-	while(self->openglTxHeightLi.size() < numCams) self->openglTxHeightLi.push_back(0);
-	if(self->camBrightnessLi.size() > numCams) self->camBrightnessLi.clear();
-	while(self->camBrightnessLi.size() < numCams) self->camBrightnessLi.push_back(1.);
-
 	// ***************************************************
 	// Load source images from python structures
 	// ***************************************************
 
-	std::vector<char *> srcImgRawLi;
-	std::vector<unsigned> srcImgRawLenLi;
-	std::vector<long> srcHeightLi, srcWidthLi;
-	std::vector<std::string> srcFmtLi;
-	std::vector<PyObject *> srcPyImage, srcMetaObj;
+	PanoView_ClearTextures(self);
+
 	for(Py_ssize_t i=0; i<numCams; i++)
 	{
 		//Get meta data from python objects
@@ -487,13 +497,13 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		if(pyImage == Py_None || metaObj == Py_None)
 		{
-			srcImgRawLi.push_back(NULL);
-			srcImgRawLenLi.push_back(0);
-			srcHeightLi.push_back(0);
-			srcWidthLi.push_back(0);
-			srcFmtLi.push_back("NULL");
-			srcPyImage.push_back(NULL);
-			srcMetaObj.push_back(NULL);
+			self->srcImgRawLi.push_back(NULL);
+			self->srcImgRawLenLi.push_back(0);
+			self->srcHeightLi.push_back(0);
+			self->srcWidthLi.push_back(0);
+			self->srcFmtLi.push_back("NULL");
+			self->srcPyImage.push_back(NULL);
+			self->srcMetaObj.push_back(NULL);
 			Py_DECREF(pyImage);
 			Py_DECREF(metaObj);
 			continue;
@@ -511,14 +521,40 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		char *imgRaw = PyByteArray_AsString(pyImage);
 		if(imgRaw==NULL) throw std::runtime_error("imgRaw pointer is null");
-		srcImgRawLi.push_back(imgRaw);
-		srcImgRawLenLi.push_back(PyByteArray_Size(pyImage));
-		srcHeightLi.push_back(sourceHeight);
-		srcWidthLi.push_back(sourceWidth);
-		srcFmtLi.push_back(sourceFmt);
-		srcPyImage.push_back(pyImage);
-		srcMetaObj.push_back(metaObj);
+		self->srcImgRawLi.push_back(imgRaw);
+		self->srcImgRawLenLi.push_back(PyByteArray_Size(pyImage));
+		self->srcHeightLi.push_back(sourceHeight);
+		self->srcWidthLi.push_back(sourceWidth);
+		self->srcFmtLi.push_back(sourceFmt);
+		self->srcPyImage.push_back(pyImage);
+		self->srcMetaObj.push_back(metaObj);
+
+		Py_DECREF(pyImage);
+		Py_DECREF(metaObj);
 	}
+
+	Py_DECREF(addedPhotos);
+	Py_DECREF(addedPhotosItems);
+
+	Py_RETURN_NONE;
+}
+
+static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
+{
+
+	//Prepare to iterate over cameras in arrangement
+	PyObject *addedPhotos = PyObject_GetAttrString(self->cameraArrangement, "addedPhotos");
+	if(addedPhotos==NULL) throw std::runtime_error("addedPhotos pointer is null");
+	PyObject *addedPhotosItems = PyDict_Items(addedPhotos);
+	if(addedPhotosItems==NULL) throw std::runtime_error("addedPhotosItems pointer is null");
+	Py_ssize_t numCams = PySequence_Size(addedPhotosItems);
+
+	if(self->openglTxWidthLi.size() > numCams) self->openglTxWidthLi.clear();
+	while(self->openglTxWidthLi.size() < numCams) self->openglTxWidthLi.push_back(0);
+	if(self->openglTxHeightLi.size() > numCams) self->openglTxHeightLi.clear();
+	while(self->openglTxHeightLi.size() < numCams) self->openglTxHeightLi.push_back(0);
+	if(self->camBrightnessLi.size() > numCams) self->camBrightnessLi.clear();
+	while(self->camBrightnessLi.size() < numCams) self->camBrightnessLi.push_back(1.);
 
 	// ***************************************************
 	// Automatic Exposure Control
@@ -657,9 +693,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			std::vector<double> pix;
 			try
 			{
-				pix = GetPixFromRawBuff((const unsigned char*)srcImgRawLi[camNum], 
-					srcImgRawLenLi[camNum], srcWidthLi[camNum], 
-					srcHeightLi[camNum], px, py, srcFmtLi[camNum].c_str());
+				pix = GetPixFromRawBuff((const unsigned char*)self->srcImgRawLi[camNum], 
+					self->srcImgRawLenLi[camNum], self->srcWidthLi[camNum], 
+					self->srcHeightLi[camNum], px, py, self->srcFmtLi[camNum].c_str());
 			}
 			catch(std::runtime_error)
 			{
@@ -759,10 +795,10 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		glBindTexture(GL_TEXTURE_2D, texture);
 		if(self->nonPowerTwoTexSupported)
 		{
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, srcWidthLi[i], 
-				srcHeightLi[i], 0, GL_RGB, GL_UNSIGNED_BYTE, srcImgRawLi[i]);
-			self->openglTxWidthLi[i] = srcWidthLi[i];
-			self->openglTxHeightLi[i] = srcHeightLi[i];
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self->srcWidthLi[i], 
+				self->srcHeightLi[i], 0, GL_RGB, GL_UNSIGNED_BYTE, self->srcImgRawLi[i]);
+			self->openglTxWidthLi[i] = self->srcWidthLi[i];
+			self->openglTxHeightLi[i] = self->srcHeightLi[i];
 
 			PrintGlErrors("transfer tex");
 			//std::cout << i << "\t" << sourceWidth[i] << "," << srcHeightLi[i] << std::endl;
@@ -773,9 +809,9 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 			unsigned char *openglTex = NULL;
 			unsigned openglTexLen = 0, openglTxWidth = 0, openglTxHeight = 0;
 
-			int texOk = ResizeToPowersOfTwo((unsigned char *)srcImgRawLi[i], 
-				srcWidthLi[i], srcHeightLi[i], 
-				srcFmtLi[i].c_str(), &openglTex, &openglTexLen,
+			int texOk = ResizeToPowersOfTwo((unsigned char *)self->srcImgRawLi[i], 
+				self->srcWidthLi[i], self->srcHeightLi[i], 
+				self->srcFmtLi[i].c_str(), &openglTex, &openglTexLen,
 				&openglTxWidth, &openglTxHeight);
 			self->openglTxWidthLi[i] = openglTxWidth;
 			self->openglTxHeightLi[i] = openglTxHeight;
@@ -802,14 +838,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		self->textureIds.push_back(texture);
 	}
 
-	//Free python structures
-	for(unsigned i=0;i < srcPyImage.size(); i++)
-		Py_DECREF(srcPyImage[i]);
-	srcPyImage.clear();
-	for(unsigned i=0;i < srcMetaObj.size(); i++)
-		Py_DECREF(srcMetaObj[i]);
-	srcMetaObj.clear();
-
 	// ***************************************************
 	// Draw images to display lists
 	// ***************************************************
@@ -826,26 +854,8 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 	for(Py_ssize_t i=0; i<numCams; i++)
 	{
 
-		//Get meta data from python objects
-		PyObject *pyImage = PySequence_GetItem(images, i);
-		if(pyImage==NULL) throw std::runtime_error("pyImage pointer is null");
-		PyObject *metaObj = PySequence_GetItem(metas, i);
-		if(metaObj==NULL) throw std::runtime_error("metaObj pointer is null");
-
-		if(pyImage == Py_None || metaObj == Py_None)
-		{
-			//Skip if camera data is missing
-			Py_DECREF(pyImage);
-			Py_DECREF(metaObj);
-			continue;
-		}
-
-		PyObject *widthObj = PyDict_GetItemString(metaObj, "width"); //Returns borrowed ref
-		if(widthObj==NULL) throw std::runtime_error("widthObj pointer is null");
-		long sourceWidth = PyInt_AsLong(widthObj); //Returns borrowed ref
-		PyObject *heightObj = PyDict_GetItemString(metaObj, "height");
-		if(heightObj==NULL) throw std::runtime_error("heightObj pointer is null");
-		long sourceHeight = PyInt_AsLong(heightObj);
+		long sourceWidth = self->srcWidthLi[i];
+		long sourceHeight = self->srcHeightLi[i];
 
 		//std::cout << i<<"src " << sourceWidth << "," << sourceHeight << std::endl;
 		//std::cout << i<<"expected " << self->displayListImgWidth[i] << "," << self->displayListImgHeight[i] << std::endl;
@@ -864,11 +874,7 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 
 		//Existing display list is fine, continue
 		if(self->displayLists[i] != 0)
-		{
-			Py_DECREF(pyImage);
-			Py_DECREF(metaObj);
 			continue;
-		}
 
 		GLuint dl = glGenLists(1);
 		PrintGlErrors("create display list");
@@ -1056,8 +1062,6 @@ static PyObject *PanoView_Vis(PanoView *self, PyObject *args)
 		Py_DECREF(worldPos);
 		Py_DECREF(unprojArgs);
 		Py_DECREF(imgPix);
-		Py_DECREF(pyImage);
-		Py_DECREF(metaObj);
 		Py_DECREF(camDataTup);
 
 		glEndList();
@@ -1202,7 +1206,7 @@ static PyObject *PanoView_SetAutoBright(PanoView *self, PyObject *args)
 
 static PyMethodDef PanoView_methods[] = {
 	{"Vis", (PyCFunction)PanoView_Vis, METH_VARARGS,
-			 "Vis(image_byte_buffer_list, meta_data_list)\n\n"
+			 "Vis()\n\n"
 			 "Combine images to form a panorama"},
 	{"SetProjection", (PyCFunction)PanoView_SetProjection, METH_VARARGS,
 			 "SetProjection(outProjection)\n\n"
@@ -1213,6 +1217,13 @@ static PyMethodDef PanoView_methods[] = {
 	{"SetAutoBright", (PyCFunction)PanoView_SetAutoBright, METH_VARARGS,
 			 "SetAutoBright(enabled)\n\n"
 			 "Enable or disable auto brightness"},
+	{"LoadTextures", (PyCFunction)PanoView_LoadTextures, METH_VARARGS,
+			 "LoadTextures(image_byte_buffer_list, meta_data_list)\n\n"
+			 "Set textures for visualisation."},
+	{"ClearTextures", (PyCFunction)PanoView_ClearTextures, METH_NOARGS,
+			 "ClearTextures()\n\n"
+			 "Clear stored textures."},
+			 
 	{NULL}
 };
 

@@ -4,7 +4,14 @@
 import os
 from distutils.core import Extension, setup
 
+debug = 1
 if os.name == "nt":
+	if debug:
+		c_args=['/Zi', '/EHsc']
+		l_args=["/MANIFEST", "/DEBUG"]
+	else:
+		c_args=[]
+		l_args=["/MANIFEST"]
 	libs = ["pthreadVC2", "freeglut", "glu32", "opengl32"]
 else:
 	libs = ["pthread", "glut", "GLU", "GL"]
@@ -30,6 +37,8 @@ setup(
 			libraries = libs,
 			include_dirs=['C:\\Dev\\Lib\\freeglut-2.8.1\\include', "C:\\Dev\\Lib\\pthreads\\pthreads.2"],
 			library_dirs=['C:\\Dev\\Lib\\freeglut-2.8.1\\lib\\x86', "C:\\Dev\\Lib\\pthreads\\pthreads.2"],
+			extra_compile_args=c_args,
+			extra_link_args=l_args,
 			)
 		]
 )
