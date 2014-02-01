@@ -298,8 +298,8 @@ def WorkerProcess(findCorrespondences, cameraArrangement, framePairs,
 	doCorrespondence, doCameraPositions):
 
 	try:
-		#sys.stdout = NullConsole()
-		#sys.stderr = NullConsole()
+		sys.stdout = NullConsole()
+		sys.stderr = NullConsole()
 
 		if doCorrespondence:
 			#Find point correspondances
