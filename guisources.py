@@ -284,14 +284,22 @@ class GuiSources(QtGui.QFrame):
 #def CalibrateProgressCallback(progress):
 #	print "progress", progress
 
+class NullConsole(object):
+	def write(self, data):
+		pass
+	def read(self):
+		return ""
+	def flush(self):
+		pass
+
 def WorkerProcess(findCorrespondences, cameraArrangement, framePairs, 
 	childResultPipe, childProgressPipe,
 	childErrorPipe,
 	doCorrespondence, doCameraPositions):
 
 	try:
-		sys.stdout = StringIO.StringIO()
-		sys.stderr = StringIO.StringIO()
+		#sys.stdout = NullConsole()
+		#sys.stderr = NullConsole()
 
 		if doCorrespondence:
 			#Find point correspondances

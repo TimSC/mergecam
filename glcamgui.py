@@ -441,7 +441,7 @@ class MainWindow(QtGui.QMainWindow):
 		aboutDlg = AboutDialog(self, config.FULL_VERSION)
 		aboutDlg.exec_()
 
-def main():
+def main(console = 0):
 	app = QtGui.QApplication(sys.argv)
 	mainWindow = MainWindow()
 	sys.exit(app.exec_())
