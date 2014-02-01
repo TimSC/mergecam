@@ -1,7 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "MergeCam", "MergeCam\MergeCam.vdproj", "{230F1852-A677-4980-A169-3BE687F81F3C}"
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "MergeCam Pro", "MergeCam\MergeCam.vdproj", "{230F1852-A677-4980-A169-3BE687F81F3C}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "MergeCam Lite", "MergeCam\Lite.vdproj", "{9663A838-338B-4384-971D-0259D76B318E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,6 +15,10 @@ Global
 		{230F1852-A677-4980-A169-3BE687F81F3C}.Debug|Default.Build.0 = Debug
 		{230F1852-A677-4980-A169-3BE687F81F3C}.Release|Default.ActiveCfg = Release
 		{230F1852-A677-4980-A169-3BE687F81F3C}.Release|Default.Build.0 = Release
+		{9663A838-338B-4384-971D-0259D76B318E}.Debug|Default.ActiveCfg = Debug
+		{9663A838-338B-4384-971D-0259D76B318E}.Debug|Default.Build.0 = Debug
+		{9663A838-338B-4384-971D-0259D76B318E}.Release|Default.ActiveCfg = Release
+		{9663A838-338B-4384-971D-0259D76B318E}.Release|Default.Build.0 = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
