@@ -4,14 +4,17 @@
 import os
 from distutils.core import Extension, setup
 
-debug = 1
+debug = 0
+c_args=[]
+l_args=[]
+	
 if os.name == "nt":
-	if debug:
-		c_args=['/Zi', '/EHsc']
-		l_args=["/MANIFEST", "/DEBUG"]
-	else:
-		c_args=[]
-		l_args=["/MANIFEST"]
+	#if debug:
+	#	c_args=['/Zi', '/EHsc']
+	#	l_args=["/MANIFEST", "/DEBUG"]
+	#else:
+	#	c_args=[]
+	#	l_args=["/MANIFEST"]
 	libs = ["pthreadVC2", "freeglut", "glu32", "opengl32"]
 else:
 	libs = ["pthread", "glut", "GLU", "GL"]

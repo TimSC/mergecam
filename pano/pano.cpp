@@ -62,7 +62,6 @@ static PyObject *TestFunc(PyObject *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
-
 // Calculates log2 of number.  
 double Log2( double n )  
 {  
