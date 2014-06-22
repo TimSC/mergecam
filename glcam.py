@@ -1,6 +1,6 @@
 '''
 Copyright (c) 2013-2014, Tim Sheerman-Chase
-All rights reserved.
+See README.md for license information.
 '''
 
 import glcamgui
@@ -28,4 +28,4 @@ if __name__ == '__main__':
 		sys.stdout = open("mylog.txt", "wt")
 		sys.stderr = open("myerr.txt", "wt")
 
-	glcamgui.main(1)
+	glcamgui.main()
