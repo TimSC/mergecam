@@ -28,4 +28,4 @@ if __name__ == '__main__':
 		sys.stdout = open("mylog.txt", "wt")
 		sys.stderr = open("myerr.txt", "wt")
 
-	glcamgui.main(0)
+	glcamgui.main(1)
